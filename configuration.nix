@@ -1,7 +1,7 @@
 { config, pkgs, ... }:
 
 {
-  imports = [ <nixpkgs/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix> ];
+  imports = [ ./virtualbox-iso/installer/cd-dvd/installation-cd-minimal.nix ];
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
   
   nixpkgs.config.allowUnfree = true;
@@ -29,3 +29,4 @@
     };
   };
 }
+
