@@ -7,8 +7,13 @@
   # The master branch of the NixOS/nixpkgs repository on GitHub.
   # inputs.unstable.url = "github:NixOS/nixpkgs/master";
 
-  inputs.nixpkgs.url = "nixpkgs";
-  # inputs.nixpkgs.follows = "unstable";
+  inputs = {
+    nixpkgs.url = "nixpkgs";
+    home-manager = {
+      url = "github:nix-community/home-manager/release-23.05";
+      follows = "nixpkgs";
+    };
+  };
 
   outputs = all@{ self, nixpkgs, ... }: {
 
