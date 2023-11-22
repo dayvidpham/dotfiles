@@ -9,10 +9,7 @@
 
   inputs = {
     nixpkgs.url = "nixpkgs";
-    home-manager = {
-      url = "github:nix-community/home-manager/release-23.05";
-      follows = "nixpkgs";
-    };
+    home-manager.url = "github:nix-community/home-manager/release-23.05";
   };
 
   outputs = inputs@{ self, nixpkgs, home-manager, ... }: 
@@ -28,9 +25,11 @@
       modules = [ ./configuration.nix ] ;
     };
     
-    homeConfigurations.nixos = home-manager.lib.homeManagerConfigurations {
-      inherit pkgs;
-      modules = [ ./home.nix ];
+    homeConfigurations = {
+      nixos = home-manager.lib.homeManagerConfiguration {
+        inherit pkgs system;
+        modules = [ ./home.nix ];
+      };
     };
   };
 }
