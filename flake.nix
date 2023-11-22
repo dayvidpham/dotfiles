@@ -15,13 +15,22 @@
     };
   };
 
-  outputs = all@{ self, nixpkgs, ... }: {
-
+  outputs = inputs@{ self, nixpkgs, home-manager, ... }: 
+  let
+    lib = nixpkgs.lib;
+    system = "x86_64-linux";
+    pkgs = nixpkgs.legacyPackages.${system};
+  in {
     # Used with `nixos-rebuild --flake .#<hostname>`
     # nixosConfigurations."<hostname>".config.system.build.toplevel must be a derivation
     nixosConfigurations.nixos = nixpkgs.lib.nixosSystem {
-      system = "x86_64-linux";
+      inherit system;
       modules = [ ./configuration.nix ] ;
+    };
+    
+    homeConfigurations.nixos = home-manager.lib.homeManagerConfigurations {
+      inherit pkgs;
+      modules = [ ./home.nix ];
     };
   };
 }
