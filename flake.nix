@@ -11,9 +11,10 @@
     nixpkgs.url = "nixpkgs";
     home-manager.url = "github:nix-community/home-manager/release-23.05";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
+    hyprland.url = "github:hyprwm/Hyprland";
   };
 
-  outputs = inputs@{ self, nixpkgs, home-manager, ... }: 
+  outputs = inputs@{ self, nixpkgs, home-manager, hyprland, ... }: 
   let
     lib = nixpkgs.lib;
     system = "x86_64-linux";
@@ -29,7 +30,11 @@
     homeConfigurations = {
       nixos = home-manager.lib.homeManagerConfiguration {
         inherit pkgs;
-        modules = [ ./home.nix ];
+        modules = [ 
+          ./home.nix
+          hyprland.homeManagerModules.default
+          { wayland.windowManager.hyprland.enable = true; }
+        ];
       };
     };
   };
