@@ -9,6 +9,12 @@
     vim wget git
   ];
   programs.vim.defaultEditor = true;
+  programs.git.config = {
+    init.defaultBranch = "main";
+    core.editor = "vim";
+    user.email = "dayvidpham@gmail.com";
+    user.name = "dayvidpham";
+  };
 
   documentation = {
     enable = true;
