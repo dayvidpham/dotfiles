@@ -7,6 +7,7 @@
   nixpkgs.config.allowUnfree = true;
   environment.systemPackages = with pkgs; [
     vim wget git
+    hyprland
   ];
   programs.vim.defaultEditor = true;
   programs.git = {
@@ -18,6 +19,9 @@
       user.name = "dayvidpham";
     };
   };
+
+  programs.hyprland.enable = true;
+
   documentation = {
     enable = true;
     man.enable = true;
