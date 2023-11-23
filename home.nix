@@ -64,4 +64,18 @@
 
   # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;
+
+  programs.vim = {
+    enable = true;
+    extraConfig = ''
+      set re=0
+      syntax on
+      set number
+      set smartindent
+      set tabstop=4
+      set softtabstop=4
+      set shiftwidth=4
+      set expandtab
+    '';
+  };
 }
