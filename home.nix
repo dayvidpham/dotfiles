@@ -3,8 +3,8 @@
 {
   # Home Manager needs a bit of information about you and the paths it should
   # manage.
-  home.username = "nixos";
-  home.homeDirectory = "/home/nixos";
+  home.username = "dhpham";
+  home.homeDirectory = "/home/dhpham";
 
   # This value determines the Home Manager release that your configuration is
   # compatible with. This helps avoid breakage when a new Home Manager release
@@ -60,11 +60,8 @@
   #
   home.sessionVariables = {
     EDITOR = "vim";
+    VISUAL = "vim";
   };
-
-  # Let Home Manager install and manage itself.
-  programs.home-manager.enable = true;
-
   programs.vim = {
     enable = true;
     extraConfig = ''
@@ -78,4 +75,8 @@
       set expandtab
     '';
   };
+
+  # Let Home Manager install and manage itself.
+  programs.home-manager.enable = true;
+
 }
