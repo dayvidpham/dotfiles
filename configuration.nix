@@ -1,7 +1,7 @@
 { config, pkgs, ... }:
 
 {
-  imports = [ ./virtualbox-iso/installer/cd-dvd/installation-cd-minimal.nix ];
+  imports = [ ./virtualbox-iso/installer/cd-dvd/installation-cd-graphical-calamares.nix ];
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
   
   nixpkgs.config.allowUnfree = true;
