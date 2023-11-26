@@ -8,8 +8,8 @@
   # inputs.unstable.url = "github:NixOS/nixpkgs/master";
 
   inputs = {
-    nixpkgs.url = "nixpkgs";
-    home-manager.url = "github:nix-community/home-manager/release-23.05";
+    nixpkgs.url = "github:NixOS/nixpkgs";
+    home-manager.url = "github:nix-community/home-manager";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     hyprland.url = "github:hyprwm/Hyprland";
     hyprland.inputs.nixpkgs.follows = "nixpkgs";
