@@ -46,17 +46,12 @@
   # Enable and configure hyprland
   programs.hyprland = {
     enable = true;
-    enableNvidiaPatches = true;
     xwayland.enable = true;
   };
   environment.sessionVariables = {
     WLR_NO_HARDWARE_CURSORS = "1";    # If you can't see mouse
     NIXOS_OZONE_WL = "1";             # ??? from Wayland + NixOS vid
     MOZ_ENABLE_WAYLAND="1";             # tell firefox to use wayland
-  };
-  hardware = {
-    opengl.enable = true;
-    nvidia.modesetting.enable = true;
   };
 
   # Enable CUPS to print documents.
