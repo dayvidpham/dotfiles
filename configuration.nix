@@ -110,14 +110,14 @@
 
   # DEPRECATED
   # Enable the X11 windowing system.
-  services.xserver.enable = true;
-  services.xserver.displayManager.gdm.enable = false;
+  # services.xserver.enable = true;
+  # services.xserver.displayManager.gdm.enable = false;
 
-  # Configure keymap in X11
-  services.xserver = {
-    layout = "us";
-    xkbVariant = "";
-  };
+  # # Configure keymap in X11
+  # services.xserver = {
+  #   layout = "us";
+  #   xkbVariant = "";
+  # };
 
   # Enable automatic login for the user.
   # services.xserver.displayManager.autoLogin.enable = true;
