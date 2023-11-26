@@ -111,7 +111,7 @@
   # DEPRECATED
   # Enable the X11 windowing system.
   services.xserver.enable = true;
-  services.xserver.displayManager.gdm.enable = true;
+  services.xserver.displayManager.gdm.enable = false;
 
   # Configure keymap in X11
   services.xserver = {
@@ -120,8 +120,8 @@
   };
 
   # Enable automatic login for the user.
-  services.xserver.displayManager.autoLogin.enable = true;
-  services.xserver.displayManager.autoLogin.user = "dhpham";
+  # services.xserver.displayManager.autoLogin.enable = true;
+  # services.xserver.displayManager.autoLogin.user = "dhpham";
 
 
   # Some programs need SUID wrappers, can be configured further or are
