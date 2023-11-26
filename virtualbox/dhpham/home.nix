@@ -8,9 +8,20 @@
   home.stateVersion = "23.05"; # Please read the comment before changing.
 
   # Graphics
-  wayland.windowManager.hyprland = {
+  # wayland.windowManager.hyprland = {
+  #   enable = true;
+  #   extraConfig = builtins.readFile ../../hypr/hyprland.conf;
+  # };
+  wayland.windowManager.sway = {
     enable = true;
-    extraConfig = builtins.readFile ../../hypr/hyprland.conf;
+    config = rec {
+      modifier = "Mod4";
+      terminal = "alacritty";
+      startup = [
+        { command = "firefox"; }
+        { command = "alacritty"; }
+      ];
+    };
   };
 
   # The home.packages option allows you to install Nix packages into your
