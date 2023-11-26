@@ -46,8 +46,8 @@
   # Enable and configure hyprland
   programs.hyprland = {
     enable = true;
-    nvidiaPatches = true;
-    xwayland.enable = true;
+    enableNvidiaPatches = true;
+    # xwayland.enable = true;
   };
   environment.sessionVariables = {
     WLR_NO_HARDWARE_CURSORS = "1";
