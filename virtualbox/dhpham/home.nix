@@ -10,7 +10,6 @@
   # Graphics
   wayland.windowManager.hyprland = {
     enable = true;
-
   };
 
   # The home.packages option allows you to install Nix packages into your
@@ -43,6 +42,8 @@
       set shiftwidth=4
       set expandtab
     '';
+
+    ".config/hypr/hyprland.conf".source = ../../hypr/hyprland.conf;
   };
 
   # Env variables
