@@ -25,14 +25,14 @@
     # nixosConfigurations."<hostname>".config.system.build.toplevel must be a derivation
     nixosConfigurations.nixos = nixpkgs.lib.nixosSystem {
       inherit system;
-      modules = [ ./configuration.nix ] ;
+      modules = [ ./virtualbox/configuration.nix ] ;
     };
     
     homeConfigurations = {
-      dhpham = home-manager.lib.homeManagerConfiguration {
+      "dhpham@nixos" = home-manager.lib.homeManagerConfiguration {
         inherit pkgs;
         modules = [ 
-          ./home.nix
+          ./virtualbox/dhpham/home.nix
           hyprland.homeManagerModules.default
         ];
       };
