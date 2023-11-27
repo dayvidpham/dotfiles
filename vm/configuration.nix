@@ -28,8 +28,8 @@
   i18n.defaultLocale = "en_CA.UTF-8";
 
   fonts = {
-    enableDefaultFonts = true;
-    fonts = with pkgs; [
+    enableDefaultPackages = true;
+    packages = with pkgs; [
       (nerdfonts.override { fonts = [ "iA-Writer" ]; })
     ];
   };
