@@ -99,4 +99,6 @@
     enable = true;
     extraPackages = [ pkgs.mesa ];
   };
+  services.xserver.videoDrivers = [ "xf86videovmware" ];
+  boot.kernelPackages = pkgs.linuxPackages_latest;
 }
