@@ -17,7 +17,6 @@
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
   nixpkgs.config.allowUnfree = true;
-  system.copySystemConfiguration = true;
   system.stateVersion = "23.05";
 
   networking.hostName = "nixos"; # Define your hostname.
