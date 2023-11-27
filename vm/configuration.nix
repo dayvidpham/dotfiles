@@ -95,4 +95,8 @@
     enable = true;
     xwayland.enable = true;
   };
+  hardware.opengl = {
+    enable = true;
+    extraPackages = [ pkgs.mesa ];
+  };
 }

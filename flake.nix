@@ -32,8 +32,8 @@
       "dhpham@nixos" = home-manager.lib.homeManagerConfiguration {
         inherit pkgs;
         modules = [ 
-          ./vm/dhpham/home.nix
           hyprland.homeManagerModules.default
+          ./vm/dhpham/home.nix
         ];
       };
     };
