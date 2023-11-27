@@ -18,6 +18,7 @@
   boot.loader.efi.canTouchEfiVariables = true;
   nixpkgs.config.allowUnfree = true;
   system.stateVersion = "23.05";
+  virtualisation.vmware.guest.enable = true;
 
   networking.hostName = "nixos"; # Define your hostname.
   networking.networkmanager.enable = true;  # Easiest to use and most distros use this by default.
