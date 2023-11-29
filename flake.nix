@@ -7,6 +7,19 @@
   # The master branch of the NixOS/nixpkgs repository on GitHub.
   # inputs.unstable.url = "github:NixOS/nixpkgs/master";
 
+  nixConfig = {
+    experimental-features = [ "nix-command" "flakes" ];
+    substituters = [
+      "https://cache.nixos.org"
+    ];
+    extra-substituters = [
+      "https://nix-community.cachix.org"
+    ];
+    extra-trusted-public-keys = [
+      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+    ];
+  };
+
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs";
     home-manager.url = "github:nix-community/home-manager";
