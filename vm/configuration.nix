@@ -82,6 +82,7 @@
     git
     curl
     dwl # Window Manager
+    alacritty
   ];
   programs.vim.defaultEditor = true;
   programs.git = {
@@ -121,7 +122,7 @@
     settings = {
       default_session = {
         command = ''
-          ${pkgs.greetd.tuigreet}/bin/tuigreet --time --cmd dwl
+          ${pkgs.greetd.tuigreet}/bin/tuigreet --time --cmd dwl -s 'alacritty'
         '';
         user = "greeter";
       };
