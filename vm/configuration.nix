@@ -93,8 +93,13 @@
   };
   hardware.opengl = {
     enable = true;
-    extraPackages = [ pkgs.mesa ];
+    extraPackages = [ pkgs.org.xf86videovmware ];
   };
-  # services.xserver.videoDrivers = [ "xf86videovmware" ];
+  services.xserver.videoDrivers = [ 
+    "vmwgfx"
+    "modesetting"
+    "fbdev"
+    # "xf86videovmware"
+  ];
   boot.kernelPackages = pkgs.linuxPackages_latest;
 }
