@@ -26,13 +26,9 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    hyprland = {
-      url = "github:hyprwm/Hyprland";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
-  outputs = inputs@{ self, nixpkgs, home-manager, hyprland, ... }: 
+  outputs = inputs@{ self, nixpkgs, home-manager, ... }: 
   let
     lib = nixpkgs.lib;
     system = "x86_64-linux";
@@ -49,7 +45,6 @@
       "dhpham@nixos" = home-manager.lib.homeManagerConfiguration {
         inherit pkgs;
         modules = [ 
-          hyprland.homeManagerModules.default
           ./vm/dhpham/home.nix
         ];
       };

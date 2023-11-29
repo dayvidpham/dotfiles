@@ -11,11 +11,6 @@
   home.stateVersion = "23.05"; # Please read the comment before changing.
 
   # Graphics
-  wayland.windowManager.hyprland = {
-    enable = true;
-    extraConfig = builtins.readFile ../../hypr/hyprland.conf;
-  };
-
   # The home.packages option allows you to install Nix packages into your
   # environment.
   home.packages = with pkgs; [

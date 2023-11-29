@@ -87,10 +87,6 @@
   };
 
   # Window manager
-  programs.hyprland = {
-    enable = true;
-    xwayland.enable = true;
-  };
   hardware.opengl = {
     enable = true;
     # extraPackages = [ pkgs.org.xf86videovmware ];
