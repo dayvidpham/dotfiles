@@ -109,6 +109,13 @@
     xdg-desktop-portal-wlr
     xdg-desktop-portal-gtk
   ];
+
+  services.logind.extraConfig = ''
+    # Don't shutdown when power button is short-pressed
+    HandlePowerKey=ignore
+  '';
+
+  # Display manager
   services.greetd = {
     enable = true;
     settings = {
