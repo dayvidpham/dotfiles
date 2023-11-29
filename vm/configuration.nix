@@ -10,25 +10,35 @@
       ./hardware-configuration.nix
     ];
 
-  # Use the systemd-boot EFI boot loader.
+  system.stateVersion = "23.05";
   nix = {
     settings.experimental-features = [ "nix-command" "flakes" ];
   };
-  boot.loader.systemd-boot.enable = true;
-  boot.loader.efi.canTouchEfiVariables = true;
 
-  nixpkgs.config.allowUnfree = true;
-  system.stateVersion = "23.05";
+  boot = {
+    # Use the systemd-boot EFI boot loader.
+    loader.systemd-boot.enable = true;
+    loader.efi.canTouchEfiVariables = true;
+    kernelPackages = pkgs.linuxPackages_latest;
+  }; 
   virtualisation.vmware.guest.enable = true;
 
-  networking.hostName = "nixos"; # Define your hostname.
-  networking.networkmanager.enable = true;  # Easiest to use and most distros use this by default.
 
-  # Set your time zone.
+  # ################################
+  # General system-config
+
+  # Networking
+  networking = {
+    hostName = "nixos"; # Define your hostname.
+    networkmanager.enable = true;  # Easiest to use and most distros use this by default.
+  };
+
+  # Set time zone.
   time.timeZone = "America/Vancouver";
   # Select internationalisation properties.
   i18n.defaultLocale = "en_CA.UTF-8";
 
+  # Setup tty and fonts
   fonts = {
     enableDefaultPackages = true;
     packages = with pkgs; [
@@ -46,7 +56,6 @@
   # Enable sound.
   sound.enable = true;
   hardware.pulseaudio.enable = false;
-  security.rtkit.enable = true;
   services.pipewire = {
     enable = true;
     alsa.enable = true;
@@ -55,18 +64,23 @@
     jack.enable = true;
   };
 
-  # Define a user account. Don't forget to set a password with ‘passwd’.
-  users.users.dhpham = {
-    isNormalUser = true;
-    description = "dhpham";
-    extraGroups = [ "networkmanager" "wheel" ];
+  # Some programs need SUID wrappers, can be configured further or are
+  # started in user sessions.
+  security.rtkit.enable = true;
+  programs.mtr.enable = true;
+  programs.gnupg.agent = {
+    enable = true;
+    enableSSHSupport = true;
   };
 
-  # List packages installed in system profile. To search, run:
+  #####################################################
+  # Package management
+  nixpkgs.config.allowUnfree = true;
   environment.systemPackages = with pkgs; [
     vim
     wget
     git
+    curl
   ];
   programs.vim.defaultEditor = true;
   programs.git = {
@@ -78,24 +92,20 @@
     };
   };
 
-  # Some programs need SUID wrappers, can be configured further or are
-  # started in user sessions.
-  programs.mtr.enable = true;
-  programs.gnupg.agent = {
-    enable = true;
-    enableSSHSupport = true;
-  };
-
+  ######################################
   # Window manager
-  hardware.opengl = {
-    enable = true;
-    # extraPackages = [ pkgs.org.xf86videovmware ];
-  };
+  hardware.opengl.enable = true;
   services.xserver.videoDrivers = [ 
-    "vmwgfx"
+    "vmwgfx" # VMWare SVGA
     "modesetting"
     "fbdev"
-    # "xf86videovmware"
   ];
-  boot.kernelPackages = pkgs.linuxPackages_latest;
+
+  ######################################
+  # Some user setup: Most user-stuff will be in home-manager
+  users.users.dhpham = {
+    isNormalUser = true;
+    description = "dhpham";
+    extraGroups = [ "networkmanager" "wheel" ];
+  };
 }
