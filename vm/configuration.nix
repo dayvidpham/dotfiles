@@ -110,6 +110,9 @@
     xdg-desktop-portal-wlr
     xdg-desktop-portal-gtk
   ];
+  environment.sessionVariables = {
+    WLR_NO_HARDWARE_CURSORS = "1";
+  };
 
   services.logind.extraConfig = ''
     # Don't shutdown when power button is short-pressed
