@@ -96,11 +96,30 @@
   ######################################
   # Window manager
   hardware.opengl.enable = true;
-  services.xserver.videoDrivers = [ 
-    "vmwgfx" # VMWare SVGA
-    "modesetting"
-    "fbdev"
+  services.xserver = {
+    enable = true;
+    videoDrivers = [ 
+      "vmwgfx" # VMWare SVGA
+      "modesetting"
+      "fbdev"
+    ];
+  };
+  programs.xwayland.enable = true;
+  xdg.portal.extraPortals = with pkgs; [
+    xdg-desktop-portal-wlr
+    xdg-desktop-portal-gtk
   ];
+  services.greetd = {
+    enable = true;
+    settings = {
+      default_session = {
+        command = ''
+          ${pkgs.greetd.tuigreet}/bin/tuigreet --time --cmd dwl
+        '';
+        user = "greeter";
+      };
+    };
+  };
   # nixpkgs.overlays = [
   #   (final: prev: {
   #     dwl = prev.dwl.override { conf = ./dwl-config.h; };
