@@ -93,7 +93,7 @@
   };
   hardware.opengl = {
     enable = true;
-    extraPackages = [ pkgs.org.xf86videovmware ];
+    # extraPackages = [ pkgs.org.xf86videovmware ];
   };
   services.xserver.videoDrivers = [ 
     "vmwgfx"
