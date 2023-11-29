@@ -16,6 +16,7 @@
   };
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
+
   nixpkgs.config.allowUnfree = true;
   system.stateVersion = "23.05";
   virtualisation.vmware.guest.enable = true;
@@ -59,10 +60,6 @@
     isNormalUser = true;
     description = "dhpham";
     extraGroups = [ "networkmanager" "wheel" ];
-    packages = with pkgs; [
-      firefox
-      tree
-    ];
   };
 
   # List packages installed in system profile. To search, run:
@@ -70,7 +67,6 @@
     vim
     wget
     git
-    alacritty
   ];
   programs.vim.defaultEditor = true;
   programs.git = {
