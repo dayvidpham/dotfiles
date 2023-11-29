@@ -81,6 +81,7 @@
     wget
     git
     curl
+    dwl # Window Manager
   ];
   programs.vim.defaultEditor = true;
   programs.git = {
@@ -100,6 +101,11 @@
     "modesetting"
     "fbdev"
   ];
+  # nixpkgs.overlays = [
+  #   (final: prev: {
+  #     dwl = prev.dwl.override { conf = ./dwl-config.h; };
+  #   })
+  # ];
 
   ######################################
   # Some user setup: Most user-stuff will be in home-manager
