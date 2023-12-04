@@ -81,8 +81,10 @@
     wget
     git
     curl
-    dwl # Window Manager
-    alacritty
+    dwl       # Window Manager
+    alacritty # terminal emulator
+    kanshi    # display settings manager
+    hwinfo
   ];
   programs.vim.defaultEditor = true;
   programs.git = {
