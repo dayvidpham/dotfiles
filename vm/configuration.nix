@@ -46,7 +46,7 @@
     ];
   };
   console = {
-    font = "arm8";
+    # font = "arm8";
     keyMap = "us";
   };
 
