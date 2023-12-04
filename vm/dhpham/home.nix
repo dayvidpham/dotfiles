@@ -18,7 +18,7 @@
         outputs = [
           { 
             criteria = "Virtual-1";
-            mode = "2560x1440@170Hz";
+            mode = "2560x1440";
           }
         ];
       };
