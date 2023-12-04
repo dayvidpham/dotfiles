@@ -77,15 +77,13 @@
   # Package management
   nixpkgs.config.allowUnfree = true;
   environment.systemPackages = with pkgs; [
-    vim
-    wget
-    git
-    curl
+    git vim hwinfo
+    wget curl
+    greetd.tuigreet
     dwl       # Window Manager
     alacritty # terminal emulator
-    kanshi    # display settings manager
-    hwinfo
-    greetd.tuigreet
+    kanshi    # display settings daemon
+    wdisplays # gui for display settings
   ];
   programs.vim.defaultEditor = true;
   programs.git = {
