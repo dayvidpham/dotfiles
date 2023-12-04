@@ -77,7 +77,7 @@
   # Package management
   nixpkgs.config.allowUnfree = true;
   environment.systemPackages = with pkgs; [
-    git vim hwinfo
+    git vim hwinfo file
     wget curl
     greetd.tuigreet
     # Wayland stuff
