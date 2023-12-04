@@ -87,6 +87,7 @@
     kanshi        # display settings daemon
     wdisplays     # gui for display settings
     wl-clipboard  # CLI clipboard utility
+    ranger
   ];
   programs.vim.defaultEditor = true;
   programs.git = {
