@@ -82,6 +82,7 @@
     greetd.tuigreet
     # Wayland stuff
     dwl           # Window Manager
+    bemenu        # launcher menu
     alacritty     # terminal emulator
     kanshi        # display settings daemon
     wdisplays     # gui for display settings
@@ -117,6 +118,7 @@
   environment.sessionVariables = {
     WLR_NO_HARDWARE_CURSORS = "1";
     MOZ_ENABLE_WAYLAND = "1";
+    BEMENU_BACKEND = "wayland";
   };
 
   services.logind.extraConfig = ''
