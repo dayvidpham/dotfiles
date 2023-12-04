@@ -85,6 +85,7 @@
     alacritty # terminal emulator
     kanshi    # display settings manager
     hwinfo
+    greetd.tuigreet
   ];
   programs.vim.defaultEditor = true;
   programs.git = {
@@ -101,6 +102,7 @@
   hardware.opengl.enable = true;
   services.xserver = {
     enable = true;
+    xkb.layout = "us";
     videoDrivers = [ 
       "vmwgfx" # VMWare SVGA
       "modesetting"
@@ -114,6 +116,7 @@
   ];
   environment.sessionVariables = {
     WLR_NO_HARDWARE_CURSORS = "1";
+    MOZ_ENABLE_WAYLAND = "1";
   };
 
   services.logind.extraConfig = ''
@@ -127,7 +130,7 @@
     settings = {
       default_session = {
         command = ''
-          ${pkgs.greetd.tuigreet}/bin/tuigreet --time --cmd dwl -s 'alacritty'
+          ${pkgs.greetd.tuigreet}/bin/tuigreet --time --asterisks --cmd "dwl -s alacritty"
         '';
         user = "greeter";
       };
