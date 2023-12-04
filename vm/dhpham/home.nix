@@ -16,7 +16,10 @@
     profiles = {
       desktop = {
         outputs = [
-          { criteria = "DP-1"; }
+          { 
+            criteria = "Virtual-1";
+            mode = "2560x1440@170Hz";
+          }
         ];
       };
     };
