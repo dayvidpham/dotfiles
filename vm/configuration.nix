@@ -120,6 +120,7 @@
     WLR_NO_HARDWARE_CURSORS = "1";
     MOZ_ENABLE_WAYLAND = "1";
     BEMENU_BACKEND = "wayland";
+    GDK_BACKEND = "wayland";
   };
 
   services.logind.extraConfig = ''
