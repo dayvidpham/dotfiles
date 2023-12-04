@@ -80,10 +80,12 @@
     git vim hwinfo
     wget curl
     greetd.tuigreet
-    dwl       # Window Manager
-    alacritty # terminal emulator
-    kanshi    # display settings daemon
-    wdisplays # gui for display settings
+    # Wayland stuff
+    dwl           # Window Manager
+    alacritty     # terminal emulator
+    kanshi        # display settings daemon
+    wdisplays     # gui for display settings
+    wl-clipboard  # CLI clipboard utility
   ];
   programs.vim.defaultEditor = true;
   programs.git = {
