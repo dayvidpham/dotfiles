@@ -11,31 +11,34 @@
   home.stateVersion = "23.05"; # Please read the comment before changing.
 
   # Graphics
-  # The home.packages option allows you to install Nix packages into your
-  # environment.
+  services.kanshi = {
+    enable = true;
+  };
+
+  # General package stuff
   home.packages = with pkgs; [
     firefox
     tree
     alacritty
   ];
   programs.vim = {
-      enable = true;
-      extraConfig = ''
-        set re=0
-        syntax on
-        set number
-        set smartindent
-        set tabstop=4
-        set softtabstop=4
-        set shiftwidth=4
-        set expandtab
+    enable = true;
+    extraConfig = ''
+      set re=0
+      syntax on
+      set number
+      set smartindent
+      set tabstop=4
+      set softtabstop=4
+      set shiftwidth=4
+      set expandtab
 
-        " Open files to last position
-        if has("autocmd")
-            au BufReadPost * if line("'\"") > 0 && line("'\"") <= line("$")
-                \| exe "normal! g`\"" | endif
-        endif
-      '';
+      " Open files to last position
+      if has("autocmd")
+          au BufReadPost * if line("'\"") > 0 && line("'\"") <= line("$")
+              \| exe "normal! g`\"" | endif
+      endif
+    '';
   };
 
   # Env variables
