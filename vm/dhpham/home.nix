@@ -18,20 +18,24 @@
     tree
     alacritty
   ];
+  programs.vim = {
+      enable = true;
+      extraConfig = ''
+        set re=0
+        syntax on
+        set number
+        set smartindent
+        set tabstop=4
+        set softtabstop=4
+        set shiftwidth=4
+        set expandtab
 
-  # Home Manager is pretty good at managing dotfiles. The primary way to manage
-  # plain files is through 'home.file'.
-  home.file = {
-    ".vimrc".text = ''
-      set re=0
-      syntax on
-      set number
-      set smartindent
-      set tabstop=4
-      set softtabstop=4
-      set shiftwidth=4
-      set expandtab
-    '';
+        " Open files to last position
+        if has("autocmd")
+            au BufReadPost * if line("'\"") > 0 && line("'\"") <= line("$")
+                \| exe "normal! g`\"" | endif
+        endif
+      '';
   };
 
   # Env variables
