@@ -13,6 +13,13 @@
   # Graphics
   services.kanshi = {
     enable = true;
+    profiles = {
+      desktop = {
+        outputs = [
+          { criteria = "DP-1"; }
+        ];
+      };
+    };
   };
 
   # General package stuff
