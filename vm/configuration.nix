@@ -122,6 +122,9 @@
     BEMENU_BACKEND = "wayland";
     GDK_BACKEND = "wayland";
   };
+  environment.interactiveShellInit = ''
+    alias ranger='. ranger';
+  '';
 
   services.logind.extraConfig = ''
     # Don't shutdown when power button is short-pressed
