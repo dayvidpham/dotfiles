@@ -37,7 +37,8 @@
     # Used with `nixos-rebuild --flake .#<hostname>`
     # nixosConfigurations."<hostname>".config.system.build.toplevel must be a derivation
     nixosConfigurations.nixos = nixpkgs.lib.nixosSystem {
-      inherit system;
+      inherit system; 
+      specialArgs = { inherit pkgs; };
       modules = [ ./vm/configuration.nix ] ;
     };
     
