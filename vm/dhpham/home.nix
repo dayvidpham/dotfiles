@@ -51,6 +51,17 @@
     '';
   };
 
+  # Enable nix-direnv for convenience
+  programs = {
+    direnv = {
+      enable = true;
+      enableBashIntegration = true;
+      nix-direnv.enable = true;
+    };
+
+    bash.enable = true;
+  };
+
   # Env variables
   home.sessionVariables = {
     EDITOR = "vim";
