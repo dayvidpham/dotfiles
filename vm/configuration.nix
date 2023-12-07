@@ -119,8 +119,9 @@
     ];
   };
   environment.sessionVariables = {
-    WLR_NO_HARDWARE_CURSORS = "1";
-    MOZ_ENABLE_WAYLAND = "1";
+    WLR_NO_HARDWARE_CURSORS = "1";  # To fix wlroots on VMs
+    NIXOS_OZONE_WL = "1";           # Tell electron apps to use Wayland
+    MOZ_ENABLE_WAYLAND = "1";       # Tell Firefox to use Wayland
     BEMENU_BACKEND = "wayland";
     GDK_BACKEND = "wayland";
   };
