@@ -146,6 +146,7 @@
       };
     };
   };
+  services.dbus.enable = true;
   # nixpkgs.overlays = [
   #   (final: prev: {
   #     dwl = prev.dwl.override { conf = ./dwl-config.h; };
