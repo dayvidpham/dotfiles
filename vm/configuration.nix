@@ -137,7 +137,7 @@
     settings = {
       default_session = {
         command = ''
-          ${pkgs.greetd.tuigreet}/bin/tuigreet --time --asterisks --cmd "dwl -s 'alacritty -e ranger'"
+          ${pkgs.greetd.tuigreet}/bin/tuigreet --time --asterisks --cmd "dwl -s 'kanshi& alacritty -e ranger'"
         '';
         user = "greeter";
       };
