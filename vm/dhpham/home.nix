@@ -42,6 +42,11 @@
       set softtabstop=4
       set shiftwidth=4
       set expandtab
+      " Highlight all search matches
+      set hlsearch
+
+      " Don't copy line numbers
+      set mouse+=a
 
       " Open files to last position
       if has("autocmd")
