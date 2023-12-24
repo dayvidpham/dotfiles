@@ -46,7 +46,6 @@
     ];
   };
   console = {
-    # font = "arm8";
     keyMap = "us";
   };
 
@@ -101,29 +100,41 @@
 
   ######################################
   # Window manager
-  hardware.opengl.enable = true;
+  hardware.opengl = {
+    enable = true;
+    driSupport = true;
+    driSupport32Bit = true;
+  };
   services.xserver = {
     enable = true;
     xkb.layout = "us";
-    videoDrivers = [ 
-      "vmwgfx" # VMWare SVGA
-      "modesetting"
-      "fbdev"
-    ];
+    videoDrivers = [ "vmware" ];
   };
   programs.xwayland.enable = true;
   xdg.portal = {
+    enable = true;
+    # xdgOpenUsePortal = true;
     wlr.enable = true;
-    extraPortals = with pkgs; [
+    config = {
+      dwl = {
+        default = [ "wlr" "gtk" ];
+      };
+      common = {
+        default = [ "gtk" ];
+      };
+    };
+    configPackages = with pkgs; [
+      xdg-desktop-portal-wlr
       xdg-desktop-portal-gtk
     ];
   };
   environment.sessionVariables = {
-    WLR_NO_HARDWARE_CURSORS = "1";  # To fix wlroots on VMs
-    NIXOS_OZONE_WL = "1";           # Tell electron apps to use Wayland
-    MOZ_ENABLE_WAYLAND = "1";       # Tell Firefox to use Wayland
-    BEMENU_BACKEND = "wayland";
-    GDK_BACKEND = "wayland";
+    WLR_NO_HARDWARE_CURSORS     = "1";        # To fix wlroots on VMs
+    NIXOS_OZONE_WL              = "1";        # Tell electron apps to use Wayland
+    MOZ_ENABLE_WAYLAND          = "1";        # Tell Firefox to use Wayland
+    BEMENU_BACKEND              = "wayland";
+    GDK_BACKEND                 = "wayland";
+    XDG_CURRENT_DESKTOP         = "dwl";
   };
   environment.interactiveShellInit = ''
     alias ranger='. ranger';
