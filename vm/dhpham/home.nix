@@ -1,12 +1,6 @@
 { config, pkgs, ... }:
 
-let
-  bibataCursorTheme = rec {
-    name = "Bibata-Modern-Classic";
-    size = 24;
-    package = pkgs.bibata-cursors;
-  };
-in {
+{
   # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;
 
@@ -15,16 +9,23 @@ in {
   home.username = "dhpham";
   home.homeDirectory = "/home/dhpham";
   home.stateVersion = "23.05"; # Please read the comment before changing.
-  home = {
-    file.".icons/default".source = "${bibataCursorTheme.package}/share/icons/${bibataCursorTheme.name}";
-    pointerCursor = {
-      gtk.enable = true;
-      inherit (bibataCursorTheme) name size package;
-    };
+  home.pointerCursor = {
+    gtk.enable = true;
+    name = "Bibata-Modern-Classic";
+    size = 24;
+    package = pkgs.bibata-cursors;
   };
   gtk = {
     enable = true;
-    cursorTheme = bibataCursorTheme;
+    cursorTheme = {
+      name = "Bibata-Modern-Classic";
+      size = 24;
+      package = pkgs.bibata-cursors;
+    };
+    theme = {
+      name = "Dracula";
+      package = pkgs.dracula-theme;
+    };
   };
 
   # Graphics
