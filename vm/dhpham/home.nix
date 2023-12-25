@@ -1,21 +1,10 @@
 { config, pkgs, ... }:
 
 let
-  getIconsFrom = url: hash: name:
-    # could abstract out $out/share/icons in the future
-    pkgs.runCommand "moveUp" {} ''
-      mkdir -p $out/share/icons
-      ln -s ${pkgs.fetchzip {
-        url = url;
-        hash = hash;
-      }} $out/share/icons/${name}
-    '';
   bibataCursorTheme = rec {
     name = "Bibata-Modern-Classic";
     size = 24;
-    package = getIconsFrom "https://github.com/ful1e5/bibata/archive/refs/tags/v1.0.0.beta.0.tar.gz"
-                           "sha256-pS0auKGpJpVFaJf1FeYi5Rcu3mH3CZZhj78LRRTjAOo="
-                           name;
+    package = pkgs.bibata-cursors;
   };
 in {
   # Let Home Manager install and manage itself.
@@ -26,15 +15,16 @@ in {
   home.username = "dhpham";
   home.homeDirectory = "/home/dhpham";
   home.stateVersion = "23.05"; # Please read the comment before changing.
-  home.pointerCursor = {
+  home = {
+    file.".icons/default".source = "${bibataCursorTheme.package}/share/icons/${bibataCursorTheme.name}";
+    pointerCursor = {
       gtk.enable = true;
       inherit (bibataCursorTheme) name size package;
+    };
   };
   gtk = {
     enable = true;
-    cursorTheme = {
-      inherit (bibataCursorTheme) name size package;
-    };
+    cursorTheme = bibataCursorTheme;
   };
 
   # Graphics
