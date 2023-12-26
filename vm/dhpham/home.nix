@@ -48,7 +48,15 @@
     firefox
     tree
     alacritty
-    dconf
+    dconf       # GTK theming/settings
+    # Wayland stuff
+    dwl           # Window Manager
+    bemenu        # launcher menu
+    alacritty     # terminal emulator
+    kanshi        # display settings daemon
+    wdisplays     # gui for display settings
+    wl-clipboard  # CLI clipboard utility
+    ranger
   ];
   programs.vim = {
     enable = true;
@@ -75,15 +83,20 @@
     '';
   };
 
-  # Enable nix-direnv for convenience
   programs = {
+    # Enable nix-direnv for convenience
     direnv = {
       enable = true;
       enableBashIntegration = true;
       nix-direnv.enable = true;
     };
-
     bash.enable = true;
+    # dwl = {
+    #   enable = true;
+    #   cmd = {
+    #     terminal = "${pkgs.alacritty}/bin/alacritty";
+    #   };
+    # };
   };
 
   # Env variables

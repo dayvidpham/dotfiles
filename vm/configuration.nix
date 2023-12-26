@@ -79,14 +79,6 @@
     git vim hwinfo file
     wget curl
     greetd.tuigreet
-    # Wayland stuff
-    dwl           # Window Manager
-    bemenu        # launcher menu
-    alacritty     # terminal emulator
-    kanshi        # display settings daemon
-    wdisplays     # gui for display settings
-    wl-clipboard  # CLI clipboard utility
-    ranger
   ];
   programs.vim.defaultEditor = true;
   programs.git = {
