@@ -1,6 +1,7 @@
 { config, pkgs, ... }:
 
 {
+  imports = [ ../../programs/dwl.nix ];
   # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;
 
@@ -50,7 +51,6 @@
     alacritty
     dconf       # GTK theming/settings
     # Wayland stuff
-    dwl           # Window Manager
     bemenu        # launcher menu
     alacritty     # terminal emulator
     kanshi        # display settings daemon
@@ -91,12 +91,14 @@
       nix-direnv.enable = true;
     };
     bash.enable = true;
-    # dwl = {
-    #   enable = true;
-    #   cmd = {
-    #     terminal = "${pkgs.alacritty}/bin/alacritty";
-    #   };
-    # };
+    dwl = {
+      enable = true;
+      conf = ./dwl/dwl-config.def.h;
+      cmd = {
+        terminal = "${pkgs.alacritty}/bin/alacritty";
+        # terminal = "alacritty";
+      };
+    };
   };
 
   # Env variables

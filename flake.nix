@@ -26,9 +26,20 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    # dwl-source = {
+    #   # url = "git+https://codeberg.org/dwl/dwl";
+    #   url = "github:djpohly/dwl";
+    #   flake = false;
+    # };
   };
 
-  outputs = inputs@{ self, nixpkgs, home-manager, ... }: 
+  outputs = inputs@{ 
+    self
+    , nixpkgs
+    , home-manager
+    #, dwl-source
+    , ... 
+  }: 
   let
     lib = nixpkgs.lib;
     system = "x86_64-linux";
@@ -48,6 +59,7 @@
         modules = [ 
           ./vm/dhpham/home.nix
         ];
+        # extraSpecialArgs = { inherit dwl-source; };
       };
     };
   };
