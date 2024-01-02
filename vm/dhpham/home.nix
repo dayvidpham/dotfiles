@@ -46,7 +46,6 @@
 
   # General package stuff
   home.packages = with pkgs; [
-    firefox
     tree
     alacritty
     dconf       # GTK theming/settings
@@ -60,6 +59,7 @@
   ];
   programs.vim = {
     enable = true;
+    defaultEditor = true;
     extraConfig = ''
       set re=0
       syntax on
@@ -83,27 +83,42 @@
     '';
   };
 
-  programs = {
-    # Enable nix-direnv for convenience
-    direnv = {
-      enable = true;
-      enableBashIntegration = true;
-      nix-direnv.enable = true;
+  programs.direnv = {
+    enable = true;
+    enableBashIntegration = true;
+    nix-direnv.enable = true;
+  };
+  programs.bash = {
+    enable = true;
+    shellAliases = {
+      ranger = '. ranger';
     };
-    bash.enable = true;
-    dwl = {
-      enable = true;
-      conf = ./dwl/dwl-config.def.h;
-      cmd = {
-        terminal = "${pkgs.alacritty}/bin/alacritty";
-        # terminal = "alacritty";
-      };
+  };
+  programs.firefox.enable = true;
+  programs.dwl = {
+    enable = true;
+    conf = ./dwl/dwl-config.def.h;
+    cmd = {
+      terminal = "${pkgs.alacritty}/bin/alacritty";
+      # terminal = "alacritty";
+    };
+  };
+  programs.git = {
+    enable = true;
+    config = {
+      init.defaultBranch = "main";
+      user.name = "dayvidpham";
+      user.email = "dayvidpham@gmail.com";
     };
   };
 
-  # Env variables
+
   home.sessionVariables = {
-    EDITOR = "vim";
-    VISUAL = "vim";
+    WLR_NO_HARDWARE_CURSORS     = "1";        # To fix wlroots on VMs
+    NIXOS_OZONE_WL              = "1";        # Tell electron apps to use Wayland
+    MOZ_ENABLE_WAYLAND          = "1";        # Tell Firefox to use Wayland
+    BEMENU_BACKEND              = "wayland";
+    GDK_BACKEND                 = "wayland";
+    XDG_CURRENT_DESKTOP         = "dwl";
   };
 }

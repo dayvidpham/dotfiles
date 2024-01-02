@@ -76,19 +76,12 @@
   # Package management
   nixpkgs.config.allowUnfree = true;
   environment.systemPackages = with pkgs; [
-    git vim hwinfo file
+    hwinfo
+    file
     wget curl
     greetd.tuigreet
   ];
   programs.vim.defaultEditor = true;
-  programs.git = {
-    enable = true;
-    config = {
-      init.defaultBranch = "main";
-      user.name = "dayvidpham";
-      user.email = "dayvidpham@gmail.com";
-    };
-  };
 
   ######################################
   # Window manager
@@ -120,17 +113,6 @@
       xdg-desktop-portal-gtk
     ];
   };
-  environment.sessionVariables = {
-    WLR_NO_HARDWARE_CURSORS     = "1";        # To fix wlroots on VMs
-    NIXOS_OZONE_WL              = "1";        # Tell electron apps to use Wayland
-    MOZ_ENABLE_WAYLAND          = "1";        # Tell Firefox to use Wayland
-    BEMENU_BACKEND              = "wayland";
-    GDK_BACKEND                 = "wayland";
-    XDG_CURRENT_DESKTOP         = "dwl";
-  };
-  environment.interactiveShellInit = ''
-    alias ranger='. ranger';
-  '';
 
   services.logind.extraConfig = ''
     # Don't shutdown when power button is short-pressed
