@@ -82,6 +82,14 @@
     greetd.tuigreet
   ];
   programs.vim.defaultEditor = true;
+  programs.git = {
+    enable = true;
+    config = {
+      init.defaultBranch = "main";
+      user.name = "dayvidpham";
+      user.email = "dayvidpham@gmail.com";
+    };
+  };
 
   ######################################
   # Window manager

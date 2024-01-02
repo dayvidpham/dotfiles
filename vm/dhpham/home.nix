@@ -82,7 +82,6 @@
       endif
     '';
   };
-
   programs.direnv = {
     enable = true;
     enableBashIntegration = true;
@@ -91,7 +90,7 @@
   programs.bash = {
     enable = true;
     shellAliases = {
-      ranger = '. ranger';
+      ranger = ". ranger";
     };
   };
   programs.firefox.enable = true;
@@ -103,20 +102,12 @@
       # terminal = "alacritty";
     };
   };
-  programs.git = {
-    enable = true;
-    config = {
-      init.defaultBranch = "main";
-      user.name = "dayvidpham";
-      user.email = "dayvidpham@gmail.com";
-    };
-  };
 
 
   home.sessionVariables = {
     WLR_NO_HARDWARE_CURSORS     = "1";        # To fix wlroots on VMs
     NIXOS_OZONE_WL              = "1";        # Tell electron apps to use Wayland
-    MOZ_ENABLE_WAYLAND          = "1";        # Tell Firefox to use Wayland
+    # MOZ_ENABLE_WAYLAND          = "1";        # Tell Firefox to use Wayland
     BEMENU_BACKEND              = "wayland";
     GDK_BACKEND                 = "wayland";
     XDG_CURRENT_DESKTOP         = "dwl";
