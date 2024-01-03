@@ -102,7 +102,7 @@
   services.xserver = {
     enable = true;
     xkb.layout = "us";
-    videoDrivers = [ "vmware" ];
+    videoDrivers = [ "vmware" "modesetting" "fbdev" ];
   };
   programs.xwayland.enable = true;
   xdg.portal = {
