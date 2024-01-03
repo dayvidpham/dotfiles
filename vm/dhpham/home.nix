@@ -93,7 +93,8 @@
       ranger = ". ranger";
     };
   };
-  programs.firefox.enable = true;
+  # programs.firefox.enable = true;
+  programs.chromium.enable = true;
   programs.dwl = {
     enable = true;
     conf = ./dwl/dwl-config.def.h;
