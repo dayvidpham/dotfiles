@@ -98,6 +98,7 @@
     driSupport = true;
     driSupport32Bit = true;
   };
+  hardware.enableRedistributableFirmware = pkgs.lib.mkDefault true;
   services.xserver = {
     enable = true;
     xkb.layout = "us";
