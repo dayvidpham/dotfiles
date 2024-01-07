@@ -93,8 +93,8 @@
       ranger = ". ranger";
     };
   };
-  # programs.firefox.enable = true;
-  programs.chromium.enable = true;
+  programs.firefox.enable = true;
+  # programs.chromium.enable = true;
   programs.dwl = {
     enable = true;
     conf = ./dwl/dwl-config.def.h;
@@ -108,6 +108,7 @@
   home.sessionVariables = {
     WLR_NO_HARDWARE_CURSORS     = "1";        # To fix wlroots on VMs
     NIXOS_OZONE_WL              = "1";        # Tell electron apps to use Wayland
+    MOZ_ENABLE_WAYLAND          = "1";        # Run Firefox on Wayland
     BEMENU_BACKEND              = "wayland";
     GDK_BACKEND                 = "wayland";
     XDG_CURRENT_DESKTOP         = "dwl";
