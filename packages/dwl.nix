@@ -3,15 +3,16 @@
   , conf
   , patches
   , cmd
-  # , dwl-source
+  , dwl-source
   , ... 
 }:
 pkgs.dwl.overrideAttrs
   (finalAttrs: previousAttrs: {
     inherit patches;
-    # src = dwl-source;
+    src = dwl-source;
     postPatch = 
-      let configFile = conf;
+      let 
+        configFile = conf;
       in ''
         cp ${configFile} config.def.h
         substituteInPlace ./config.def.h --replace "@TERMINAL" "${cmd.terminal}"

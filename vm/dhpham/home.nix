@@ -1,7 +1,16 @@
-{ config, pkgs, ... }:
+{ 
+  config
+  , pkgs
+  , nixvim
+  , dwl-source
+  , ... 
+}:
 
 {
-  imports = [ ../../programs/dwl.nix ];
+  imports = [ 
+    ../../programs/dwl.nix
+    # nixvim.homeManagerModules.nixvim
+  ];
   # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;
 
@@ -47,7 +56,6 @@
   # General package stuff
   home.packages = with pkgs; [
     tree
-    alacritty
     dconf       # GTK theming/settings
     # Wayland stuff
     bemenu        # launcher menu
@@ -103,6 +111,9 @@
       # terminal = "alacritty";
     };
   };
+  # programs.nixvim = {
+  #   enable = true;
+  # };
 
 
   home.sessionVariables = {

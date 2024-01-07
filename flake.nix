@@ -1,12 +1,6 @@
 {
   description = "Base configuration using flake to manage NixOS";
 
-  # Inputs
-  # https://nixos.org/manual/nix/unstable/command-ref/new-cli/nix3-flake.html#flake-inputs
-
-  # The master branch of the NixOS/nixpkgs repository on GitHub.
-  # inputs.unstable.url = "github:NixOS/nixpkgs/master";
-
   nixConfig = {
     # experimental-features = [ "nix-command" "flakes" ];
     substituters = [
@@ -20,24 +14,34 @@
     ];
   };
 
+  # Inputs
+  # https://nixos.org/manual/nix/unstable/command-ref/new-cli/nix3-flake.html#flake-inputs
   inputs = {
+    # The master branch of the NixOS/nixpkgs repository on GitHub.
+    # inputs.unstable.url = "github:NixOS/nixpkgs/master";
+
     nixpkgs.url = "github:NixOS/nixpkgs";
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    # dwl-source = {
-    #   # url = "git+https://codeberg.org/dwl/dwl";
-    #   url = "github:djpohly/dwl";
-    #   flake = false;
-    # };
+    nixvim = {
+      url = "github:nix-community/nixvim";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    dwl-source = {
+      url = "git+https://codeberg.org/dwl/dwl";
+      # url = "github:djpohly/dwl";
+      flake = false;
+    };
   };
 
   outputs = inputs@{ 
     self
     , nixpkgs
     , home-manager
-    #, dwl-source
+    , nixvim
+    , dwl-source
     , ... 
   }: 
   let
@@ -59,7 +63,10 @@
         modules = [ 
           ./vm/dhpham/home.nix
         ];
-        # extraSpecialArgs = { inherit dwl-source; };
+        extraSpecialArgs = {
+          inherit nixvim;
+          inherit dwl-source;
+        };
       };
     };
   };

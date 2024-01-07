@@ -2,7 +2,7 @@
   config
   , pkgs
   , lib
-  # , dwl-source
+  , dwl-source
   , ... 
 }:
 let
@@ -11,7 +11,7 @@ let
   dwlPackage = pkgs.callPackage ../packages/dwl.nix { 
     inherit pkgs;
     inherit (cfg) patches cmd conf;
-    # inherit dwl-source;
+    inherit dwl-source;
   };
 in
 {
