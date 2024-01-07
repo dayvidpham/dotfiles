@@ -59,7 +59,7 @@
     dconf       # GTK theming/settings
     # Wayland stuff
     bemenu        # launcher menu
-    alacritty     # terminal emulator
+    #foot          # terminal emulator
     kanshi        # display settings daemon
     wdisplays     # gui for display settings
     wl-clipboard  # CLI clipboard utility
@@ -107,9 +107,13 @@
     enable = true;
     conf = ./dwl/dwl-config.def.h;
     cmd = {
-      terminal = "${pkgs.alacritty}/bin/alacritty";
+      terminal = "${pkgs.foot}/bin/foot";
       # terminal = "alacritty";
     };
+  };
+  programs.foot = {
+    enable = true;
+    server.enable = true;
   };
   # programs.nixvim = {
   #   enable = true;
