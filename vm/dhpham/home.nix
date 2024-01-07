@@ -2,13 +2,11 @@
   config
   , pkgs
   , nixvim
-  , dwl-source
   , ... 
 }:
 
 {
   imports = [ 
-    ../../programs/dwl.nix
     # nixvim.homeManagerModules.nixvim
   ];
   # Let Home Manager install and manage itself.
@@ -51,6 +49,11 @@
         ];
       };
     };
+  };
+
+  # Sway config
+  wayland.windowManager.sway = {
+    enable = true;
   };
 
   # General package stuff
@@ -102,15 +105,6 @@
     };
   };
   programs.firefox.enable = true;
-  # programs.chromium.enable = true;
-  programs.dwl = {
-    enable = true;
-    conf = ./dwl/dwl-config.def.h;
-    cmd = {
-      terminal = "${pkgs.foot}/bin/foot";
-      # terminal = "alacritty";
-    };
-  };
   programs.foot = {
     enable = true;
     server.enable = true;

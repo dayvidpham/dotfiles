@@ -29,11 +29,6 @@
       url = "github:nix-community/nixvim";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    dwl-source = {
-      url = "git+https://codeberg.org/dwl/dwl";
-      # url = "github:djpohly/dwl";
-      flake = false;
-    };
   };
 
   outputs = inputs@{ 
@@ -41,7 +36,6 @@
     , nixpkgs
     , home-manager
     , nixvim
-    , dwl-source
     , ... 
   }: 
   let
@@ -65,7 +59,6 @@
         ];
         extraSpecialArgs = {
           inherit nixvim;
-          inherit dwl-source;
         };
       };
     };
