@@ -7,7 +7,7 @@
 
 {
   imports = [ 
-    # nixvim.homeManagerModules.nixvim
+    nixvim.homeManagerModules.nixvim
   ];
   # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;
@@ -62,7 +62,6 @@
     dconf       # GTK theming/settings
     # Wayland stuff
     bemenu        # launcher menu
-    #foot          # terminal emulator
     kanshi        # display settings daemon
     wdisplays     # gui for display settings
     wl-clipboard  # CLI clipboard utility
@@ -109,9 +108,9 @@
     enable = true;
     server.enable = true;
   };
-  # programs.nixvim = {
-  #   enable = true;
-  # };
+  programs.nixvim = {
+    enable = true;
+  };
 
 
   home.sessionVariables = {
