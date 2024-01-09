@@ -44,7 +44,8 @@
         outputs = [
           { 
             criteria = "Virtual-1";
-            mode = "2560x1440";
+            mode = "1920x1080";
+            scale = 1.25;
           }
         ];
       };
@@ -111,7 +112,6 @@
   programs.nixvim = {
     enable = true;
   };
-
 
   home.sessionVariables = {
     WLR_NO_HARDWARE_CURSORS     = "1";        # To fix wlroots on VMs
