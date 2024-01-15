@@ -5,7 +5,7 @@
   , ... 
 }:
 
-{
+rec {
   imports = [ 
     nixvim.homeManagerModules.nixvim
   ];
@@ -112,6 +112,28 @@
   programs.nixvim = {
     enable = true;
   };
+  home.file.".ssh/config".text = ''
+    Host csil-server
+        HostName csil-cpu2.csil.sfu.ca
+        User dhpham
+        Port 24
+        ControlPath ${home.homeDirectory}/.ssh/socket.%r@%h:%p
+        ControlMaster auto
+        ControlPersist 2h
+    Host csil-client
+        HostName csil-cpu6.csil.sfu.ca
+        User dhpham
+        Port 24
+        ControlPath ${home.homeDirectory}/.ssh/socket.%r@%h:%p
+        ControlMaster auto
+        ControlPersist 2h
+    Host *.csil.sfu.ca
+        User dhpham
+        Port 24
+        ControlPath ${home.homeDirectory}/.ssh/socket.%r@%h:%p
+        ControlMaster auto
+        ControlPersist 2h
+  '';
 
   home.sessionVariables = {
     WLR_NO_HARDWARE_CURSORS     = "1";        # To fix wlroots on VMs
