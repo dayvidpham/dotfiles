@@ -1,0 +1,12 @@
+[submodule "zsh/fzf-tab"]
+	path = zsh/fzf-tab
+	url = https://github.com/Aloxaf/fzf-tab
+[submodule "zsh/zsh-autosuggestions"]
+	path = zsh/zsh-autosuggestions
+	url = https://github.com/zsh-users/zsh-autosuggestions
+[submodule "zsh/fzf"]
+	path = zsh/fzf
+	url = https://github.com/junegunn/fzf.git
+[submodule "zsh/zsh-fast-syntax-highlighting"]
+	path = zsh/zsh-fast-syntax-highlighting
+	url = https://github.com/zdharma-continuum/fast-syntax-highlighting
