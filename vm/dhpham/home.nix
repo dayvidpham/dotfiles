@@ -55,6 +55,14 @@ rec {
   # Sway config
   wayland.windowManager.sway = {
     enable = true;
+    config = {
+      terminal = "${pkgs.alacritty}/bin/alacritty";
+      output = {
+        "Virtual-1" = {
+          mode = "1920x1080@60Hz";
+        };
+      };
+    };
   };
 
   # General package stuff
@@ -105,9 +113,8 @@ rec {
     };
   };
   programs.firefox.enable = true;
-  programs.foot = {
+  programs.alacritty = {
     enable = true;
-    server.enable = true;
   };
   programs.nixvim = {
     enable = true;
