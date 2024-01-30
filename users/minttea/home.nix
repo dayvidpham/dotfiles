@@ -54,21 +54,85 @@ rec {
   # Sway config
   programs.waybar = {
     enable = true;
-    settings = [
-      {
-        battery = {
-          format = "{capacity}% {icon}";
-          format-alt = "{time} {icon}";
-          format-charging = "{capacity}% ";
-          format-icons = [ "" "" "" "" "" ];
-          format-plugged = "{capacity}% ";
-          states = {
-            critical = 15;
-            warning = 30;
-          };
+    settings = [{
+      height = 30;
+      layer = "top";
+      position = "bottom";
+      tray = { spacing = 10; };
+      modules-center = [ "sway/window" ];
+      modules-left = [ "sway/workspaces" "sway/mode" ];
+      modules-right = [
+        "custom/pipewire"
+        "network"
+        "cpu"
+        "memory"
+        "temperature"
+        "battery"
+        "clock"
+        "tray"
+      ];
+      battery = {
+        format = "{capacity}% {icon}";
+        format-alt = "{time} {icon}";
+        format-charging = "{capacity}% ";
+        format-icons = [ "" "" "" "" "" ];
+        format-plugged = "{capacity}% ";
+        states = {
+          critical = 15;
+          warning = 30;
         };
-      }
-    ];
+      };
+      clock = {
+        format-alt = "{:%Y-%m-%d}";
+        tooltip-format = "{:%Y-%m-%d | %H:%M}";
+      };
+      cpu = {
+        format = "{usage}% ";
+        tooltip = false;
+      };
+      memory = { format = "{}% "; };
+      network = {
+        interval = 1;
+        format-alt = "{ifname}: {ipaddr}/{cidr}";
+        format-disconnected = "Disconnected ⚠";
+        format-ethernet = "{ifname}: {ipaddr}/{cidr}   up: {bandwidthUpBits} down: {bandwidthDownBits}";
+        format-linked = "{ifname} (No IP) ";
+        format-wifi = "{essid} ({signalStrength}%) ";
+      };
+      "custom/pipewire" = {
+        format = "{icon}";
+        return-type = "json";
+        signal = 8;
+        interval = "once";
+        format-icons = {
+          mute = "";
+          default = [ "" "" "" "" ];
+        };
+        exec = "pw-volume status";
+        #format = "{volume}% {icon} {format_source}";
+        #format-bluetooth = "{volume}% {icon} {format_source}";
+        #format-bluetooth-muted = " {icon} {format_source}";
+        #format-icons = {
+        #  car = "";
+        #  default = [ "" "" "" ];
+        #  handsfree = "";
+        #  headphones = "";
+        #  headset = "";
+        #  phone = "";
+        #  portable = "";
+        #};
+        #format-muted = " {format_source}";
+        #format-source = "{volume}% ";
+        #format-source-muted = "";
+        #on-click = "pavucontrol";
+      };
+      "sway/mode" = { format = ''<span style="italic">{}</span>''; };
+      temperature = {
+        critical-threshold = 80;
+        format = "{temperatureC}°C {icon}";
+        format-icons = [ "" "" "" ];
+      };
+    }];
   };
   wayland.windowManager.sway = {
     enable = true;
@@ -97,6 +161,7 @@ rec {
     wdisplays     # gui for display settings
     wl-clipboard  # CLI clipboard utility
     ranger
+    pw-volume
   ];
   programs.vim = {
     enable = true;
