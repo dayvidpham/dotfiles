@@ -52,6 +52,24 @@ rec {
   };
 
   # Sway config
+  programs.waybar = {
+    enable = true;
+    settings = [
+      {
+        battery = {
+          format = "{capacity}% {icon}";
+          format-alt = "{time} {icon}";
+          format-charging = "{capacity}% ";
+          format-icons = [ "" "" "" "" "" ];
+          format-plugged = "{capacity}% ";
+          states = {
+            critical = 15;
+            warning = 30;
+          };
+        };
+      }
+    ];
+  };
   wayland.windowManager.sway = {
     enable = true;
     config = {
@@ -61,6 +79,11 @@ rec {
           mode = "1920x1200@119.90Hz";
         };
       };
+      bars = [
+        {
+          command = "${pkgs.waybar}/bin/waybar";
+        }
+      ];
     };
   };
 
