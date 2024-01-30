@@ -63,7 +63,13 @@
   };
 
   # Enable touchpad support (enabled default in most desktopManager).
-  services.xserver.libinput.enable = true;
+  services.xserver.libinput = {
+    enable = true;
+    touchpad = {
+      tapping = true;
+      naturalScrolling = false;
+    };
+  };
 
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
@@ -95,7 +101,7 @@
   };
 
   ######################################
-  # Window manager
+  # Window manager & GPU
   programs.sway = {
     enable = true;
   };
@@ -105,9 +111,27 @@
     driSupport32Bit = true;
   };
   hardware.enableRedistributableFirmware = pkgs.lib.mkDefault true;
+  hardware.nvidia = {
+    package = config.boot.kernelPackages.nvidiaPackages.stable;
+    modesetting.enable = true;
+    nvidiaSettings = true;
+
+    powerManagement = {
+      enable = true;
+      #finegrained = true;
+    };
+    #prime = {
+    #  offload.enabled = true;
+    #  amdBusId = "PCI:0:0:8";
+    #}:
+
+    # Open kernel module, not nouveau
+    open = false;
+  };
   services.xserver = {
     enable = true;
-    xkbVariant = "";
+    videoDrivers = [ "nvidia" ];
+    xkb.variant = "";
     xkb.layout = "us";
   };
   programs.xwayland.enable = true;
@@ -117,6 +141,9 @@
     wlr.enable = true;
     config = {
       dwl = {
+        default = [ "wlr" "gtk" ];
+      };
+      sway = {
         default = [ "wlr" "gtk" ];
       };
       common = {
