@@ -86,6 +86,7 @@
   environment.systemPackages = with pkgs; [
     hwinfo
     file
+    lshw
     zip unzip
     wget curl
     greetd.tuigreet
