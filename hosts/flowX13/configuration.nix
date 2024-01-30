@@ -118,12 +118,13 @@
 
     powerManagement = {
       enable = true;
-      #finegrained = true;
+      finegrained = true;
     };
-    #prime = {
-    #  offload.enabled = true;
-    #  amdBusId = "PCI:0:0:8";
-    #}:
+    prime = {
+      offload.enable = true;
+      nvidiaBusId = "PCI:0:0:1";
+      amdgpuBusId = "PCI:0:0:8";
+    };
 
     # Open kernel module, not nouveau
     open = false;
