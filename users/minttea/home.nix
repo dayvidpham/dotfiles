@@ -57,7 +57,7 @@ rec {
     settings = [{
       height = 30;
       layer = "top";
-      position = "bottom";
+      position = "top";
       tray = { spacing = 10; };
       modules-center = [ "sway/window" ];
       modules-left = [ "sway/workspaces" "sway/mode" ];
@@ -149,6 +149,11 @@ rec {
         }
       ];
     };
+    extraConfig = ''
+        bindsym XF86AudioRaiseVolume exec "pw-volume change +2.5%; pkill -RTMIN+8 waybar"
+        bindsym XF86AudioLowerVolume exec "pw-volume change -2.5%; pkill -RTMIN+8 waybar"
+        bindsym XF86AudioMute exec "pw-volume mute toggle; pkill -RTMIN+8 waybar" 
+    '';
   };
 
   # General package stuff
