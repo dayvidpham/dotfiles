@@ -2,7 +2,7 @@
   description = "Base configuration using flake to manage NixOS";
 
   nixConfig = {
-    # experimental-features = [ "nix-command" "flakes" ];
+    experimental-features = [ "nix-command" "flakes" ];
     substituters = [
       "https://cache.nixos.org"
     ];
@@ -45,17 +45,35 @@
   in {
     # Used with `nixos-rebuild --flake .#<hostname>`
     # nixosConfigurations."<hostname>".config.system.build.toplevel must be a derivation
-    nixosConfigurations.nixos = nixpkgs.lib.nixosSystem {
-      inherit system; 
-      specialArgs = { inherit pkgs; };
-      modules = [ ./vm/configuration.nix ] ;
+    nixosConfigurations = {
+      nixos = nixpkgs.lib.nixosSystem {
+        inherit system; 
+        specialArgs = { inherit pkgs; };
+        modules = [ ./hosts/vm/configuration.nix ] ;
+      };
+      
+      flowX13 = nixpkgs.lib.nixosSystem {
+        inherit system; 
+        specialArgs = { inherit pkgs; };
+        modules = [ ./hosts/flowX13/configuration.nix ] ;
+      };
     };
     
     homeConfigurations = {
       "dhpham@nixos" = home-manager.lib.homeManagerConfiguration {
         inherit pkgs;
         modules = [ 
-          ./vm/dhpham/home.nix
+          ./users/dhpham/home.nix
+        ];
+        extraSpecialArgs = {
+          inherit nixvim;
+        };
+      };
+
+      "minttea@flowX13" = home-manager.lib.homeManagerConfiguration {
+        inherit pkgs;
+        modules = [ 
+          ./users/minttea/home.nix
         ];
         extraSpecialArgs = {
           inherit nixvim;

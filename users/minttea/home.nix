@@ -1,0 +1,162 @@
+{ 
+  config
+  , pkgs
+  , nixvim
+  , ... 
+}:
+
+rec {
+  imports = [ 
+    nixvim.homeManagerModules.nixvim
+  ];
+  # Let Home Manager install and manage itself.
+  programs.home-manager.enable = true;
+
+  # Home Manager needs a bit of information about you and the paths it should
+  # manage.
+  home.username = "minttea";
+  home.homeDirectory = "/home/minttea";
+  home.stateVersion = "23.11"; # Please read the comment before changing.
+  home.pointerCursor = {
+    gtk.enable = true;
+    name = "Bibata-Modern-Classic";
+    size = 24;
+    package = pkgs.bibata-cursors;
+  };
+  gtk = {
+    enable = true;
+    cursorTheme = {
+      name = "Bibata-Modern-Classic";
+      size = 24;
+      package = pkgs.bibata-cursors;
+    };
+    theme = {
+      name = "Dracula";
+      package = pkgs.dracula-theme;
+    };
+  };
+
+  # Graphics
+  services.kanshi = {
+    enable = true;
+    profiles = {
+      desktop = {
+        outputs = [
+          { 
+            criteria = "eDP-1";
+            mode = "1920x1200@119.90Hz";
+          }
+        ];
+      };
+    };
+  };
+
+  # Sway config
+  wayland.windowManager.sway = {
+    enable = true;
+    config = {
+      terminal = "${pkgs.alacritty}/bin/alacritty";
+      output = {
+        "eDP-1" = {
+          mode = "1920x1200@119.90Hz";
+        };
+      };
+    };
+  };
+
+  # General package stuff
+  home.packages = with pkgs; [
+    tree
+    dconf       # GTK theming/settings
+    # Wayland stuff
+    bemenu        # launcher menu
+    kanshi        # display settings daemon
+    wdisplays     # gui for display settings
+    wl-clipboard  # CLI clipboard utility
+    ranger
+  ];
+  programs.vim = {
+    enable = true;
+    defaultEditor = true;
+    extraConfig = ''
+      set re=0
+      syntax on
+      set number
+      set smartindent
+      set tabstop=4
+      set softtabstop=4
+      set shiftwidth=4
+      set expandtab
+      " Highlight all search matches
+      set hlsearch
+
+      " Don't copy line numbers
+      set mouse+=a
+
+      " Open files to last position
+      if has("autocmd")
+          au BufReadPost * if line("'\"") > 0 && line("'\"") <= line("$")
+              \| exe "normal! g`\"" | endif
+      endif
+    '';
+  };
+  programs.direnv = {
+    enable = true;
+    enableBashIntegration = true;
+    nix-direnv.enable = true;
+  };
+  programs.bash = {
+    enable = true;
+    shellAliases = {
+      ranger = ". ranger";
+    };
+  };
+  programs.firefox.enable = true;
+  programs.alacritty = {
+    enable = true;
+  };
+  programs.nixvim = {
+    enable = true;
+  };
+  home.file.".ssh/config".text = ''
+    Host csil-server
+        HostName csil-cpu2.csil.sfu.ca
+        User dhpham
+        Port 24
+        ControlPath ${home.homeDirectory}/.ssh/socket.%r@%h:%p
+        ControlMaster auto
+        ControlPersist 2h
+
+    Host csil-tunnel
+        HostName csil-cpu3.csil.sfu.ca
+        User dhpham
+        Port 24
+        ControlPath ${home.homeDirectory}/.ssh/socket.%r@%h:%p
+        ControlMaster auto
+        ControlPersist 2h
+
+    Host csil-client
+        HostName csil-cpu6.csil.sfu.ca
+        User dhpham
+        Port 24
+        ControlPath ${home.homeDirectory}/.ssh/socket.%r@%h:%p
+        ControlMaster auto
+        ControlPersist 2h
+
+    Host *.csil.sfu.ca
+        User dhpham
+        Port 24
+        ControlPath ${home.homeDirectory}/.ssh/socket.%r@%h:%p
+        ControlMaster auto
+        ControlPersist 2h
+  '';
+
+  home.sessionVariables = {
+    WLR_NO_HARDWARE_CURSORS     = "1";        # To fix wlroots on VMs
+    NIXOS_OZONE_WL              = "1";        # Tell electron apps to use Wayland
+    MOZ_ENABLE_WAYLAND          = "1";        # Run Firefox on Wayland
+    BEMENU_BACKEND              = "wayland";
+    GDK_BACKEND                 = "wayland";
+    XDG_CURRENT_DESKTOP         = "sway";
+  };
+}
