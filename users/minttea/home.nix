@@ -141,6 +141,7 @@ rec {
       output = {
         "eDP-1" = {
           mode = "1920x1200@119.90Hz";
+          scale = "1.15";
         };
       };
       bars = [
@@ -148,6 +149,23 @@ rec {
           command = "${pkgs.waybar}/bin/waybar";
         }
       ];
+      input = {
+        "Logitech G Pro" = {
+          accel_profile = "flat";
+          pointer_accel = "0.05";
+        };
+        "type:touchpad" = { 
+          tap = "enabled";
+          accel_profile = "flat";
+          pointer_accel = "0.25";
+          scroll_factor = "0.25";
+        };
+        "*" = {
+          accel_profile = "flat";
+          tap = "enabled";
+          natural_scroll = "false";
+        };
+      };
     };
     extraConfig = ''
         bindsym XF86AudioRaiseVolume exec "pw-volume change +2.5%; pkill -RTMIN+8 waybar"
