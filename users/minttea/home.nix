@@ -192,6 +192,7 @@ rec {
     extraConfig = ''
       set re=0
       syntax on
+      filetype on
       set number
       set smartindent
       set tabstop=4
