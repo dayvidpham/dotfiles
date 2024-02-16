@@ -177,14 +177,15 @@ rec {
   # General package stuff
   home.packages = with pkgs; [
     tree
-    dconf       # GTK theming/settings
+    dconf         # GTK theming/settings
     # Wayland stuff
     bemenu        # launcher menu
     kanshi        # display settings daemon
     wdisplays     # gui for display settings
     wl-clipboard  # CLI clipboard utility
-    ranger
-    pw-volume
+    pw-volume     # for volume control w/ sway
+    # Utils
+    ranger        # CLI file explorer
   ];
   programs.vim = {
     enable = true;
