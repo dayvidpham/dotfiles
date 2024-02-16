@@ -186,6 +186,7 @@ rec {
     pw-volume     # for volume control w/ sway
     # Utils
     ranger        # CLI file explorer
+    zathura       # pdf viewer
   ];
   programs.vim = {
     enable = true;
