@@ -33,6 +33,7 @@
   };
 
   # Virtualisation
+  programs.dconf.enable = true;
   virtualisation.libvirtd = {
     enable = true;
     qemu = {

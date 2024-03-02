@@ -36,6 +36,13 @@ rec {
     };
   };
 
+  dconf.settings = {
+    "org/virt-manager/virt-manager/connections" = {
+      autoconnect = [ "qemu:///system" ];
+      uri = [ "qemu:///system" ];
+    };
+  };
+
   # Graphics
   services.kanshi = {
     enable = true;
@@ -177,7 +184,6 @@ rec {
   # General package stuff
   home.packages = with pkgs; [
     tree
-    dconf         # GTK theming/settings
     # Wayland stuff
     bemenu        # launcher menu
     kanshi        # display settings daemon
