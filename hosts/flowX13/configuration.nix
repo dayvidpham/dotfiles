@@ -32,6 +32,29 @@
     networkmanager.enable = true;  # Easiest to use and most distros use this by default.
   };
 
+  # Virtualisation
+  virtualisation.libvirtd = {
+    enable = true;
+    qemu = {
+      package = pkgs.qemu_kvm;
+      runAsRoot = true;
+      swtpm.enable = true;
+      ovmf = {
+        # Use UEFI over traditional BIOS
+        enable = true;
+        packages = [ 
+          (pkgs.OVMF.override {
+            secureBoot = false;
+            tpmSupport = true;
+          }).fd 
+        ];
+      };
+    };
+  };
+  programs.virt-manager = {
+    enable = true;
+  };
+
   # Set time zone.
   time.timeZone = "America/Vancouver";
   # Select internationalisation properties.
@@ -127,6 +150,7 @@
       amdgpuBusId = "PCI:0:0:8";
     };
 
+
     # Open kernel module, not nouveau
     open = false;
   };
@@ -187,6 +211,6 @@
   users.users.minttea = {
     isNormalUser = true;
     description = "the guy";
-    extraGroups = [ "networkmanager" "wheel" ];
+    extraGroups = [ "networkmanager" "wheel" "libvirtd" ];
   };
 }
