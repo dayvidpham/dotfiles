@@ -39,7 +39,7 @@ rec {
   dconf.settings = {
     "org/virt-manager/virt-manager/connections" = {
       autoconnect = [ "qemu:///system" ];
-      uri = [ "qemu:///system" ];
+      uris = [ "qemu:///system" ];
     };
   };
 
