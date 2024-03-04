@@ -191,6 +191,7 @@ rec {
     wl-clipboard  # CLI clipboard utility
     pw-volume     # for volume control w/ sway
     grim          # screenshot
+    slurp         # region screenshot
     # Utils
     ranger        # CLI file explorer
     zathura       # pdf viewer
