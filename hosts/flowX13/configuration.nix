@@ -32,6 +32,14 @@
     networkmanager.enable = true;  # Easiest to use and most distros use this by default.
   };
 
+  # Bluetooth
+  hardware.bluetooth = {
+    enable = true;
+    powerOnBoot = true;
+  };
+  services.blueman.enable = true;
+
+
   # Virtualisation
   programs.dconf.enable = true;
   virtualisation.libvirtd = {
