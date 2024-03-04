@@ -192,6 +192,7 @@ rec {
     pw-volume     # for volume control w/ sway
     grim          # screenshot
     slurp         # region screenshot
+    swayimg       # image viewer
     # Utils
     ranger        # CLI file explorer
     zathura       # pdf viewer
