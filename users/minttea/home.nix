@@ -190,6 +190,7 @@ rec {
     wdisplays     # gui for display settings
     wl-clipboard  # CLI clipboard utility
     pw-volume     # for volume control w/ sway
+    grim          # screenshot
     # Utils
     ranger        # CLI file explorer
     zathura       # pdf viewer
