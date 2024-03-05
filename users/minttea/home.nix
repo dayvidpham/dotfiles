@@ -4,8 +4,19 @@
   , nixvim
   , ... 
 }:
-
-rec {
+let
+  rstudio-env = pkgs.rstudioWrapper.override { 
+    packages = with pkgs.rPackages; [
+      tidyverse
+      knitr
+      rmarkdown
+      markdown
+    ];
+  };
+  texlive-env = (pkgs.texlive.combine {
+    inherit (pkgs.texlive) scheme-full float;
+  });
+in rec {
   imports = [ 
     nixvim.homeManagerModules.nixvim
   ];
@@ -196,6 +207,10 @@ rec {
     # Utils
     ranger        # CLI file explorer
     zathura       # pdf viewer
+    # R
+    rstudio-env
+    pandoc
+    texlive-env
   ];
   programs.vim = {
     enable = true;
