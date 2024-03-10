@@ -45,7 +45,7 @@ rec {
           { 
             criteria = "Virtual-1";
             mode = "1920x1080";
-            scale = 1.25;
+            scale = 1.15;
           }
         ];
       };
