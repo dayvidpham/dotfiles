@@ -21,7 +21,34 @@
     loader.efi.canTouchEfiVariables = true;
     kernelPackages = pkgs.linuxPackages_latest;
   }; 
+
+  ###############################3
+  # Virtualisation stuff
   virtualisation.vmware.guest.enable = true;
+  programs.dconf.enable = true; # virt-manager requires dconf to be enabled
+  programs.virt-manager = {
+    # GUI for controlling QEMU/KVM VMs on libvirtd
+    enable = true;
+  };
+  virtualisation.libvirtd = {
+    enable = true;
+    qemu = {
+      package = pkgs.qemu_kvm;
+      runAsRoot = true;
+      swtpm.enable = true; # Software Trusted Platform Module: virtualized cryptoprocessor
+      ovmf = {
+        # Open Virtual Machine Firmware: enables UEFI support for VMs
+        # Use UEFI over traditional BIOS
+        enable = true;
+        packages = [ 
+          (pkgs.OVMF.override {
+            secureBoot = false;
+            tpmSupport = true;
+          }).fd 
+        ];
+      };
+    };
+  };
 
 
   # ################################
@@ -29,7 +56,7 @@
 
   # Networking
   networking = {
-    hostName = "nixos"; # Define your hostname.
+    hostName = "vmware"; # Define your hostname.
     networkmanager.enable = true;  # Easiest to use and most distros use this by default.
   };
 
@@ -138,7 +165,7 @@
     settings = {
       default_session = {
         command = ''
-          ${pkgs.greetd.tuigreet}/bin/tuigreet --remember-session --remember --time --asterisks --cmd "dwl -s 'kanshi& alacritty -e ranger' > /tmp/dwltags"
+          ${pkgs.greetd.tuigreet}/bin/tuigreet --remember-session --remember --time --asterisks --cmd "sway"
         '';
         user = "greeter";
       };
@@ -156,6 +183,6 @@
   users.users.dhpham = {
     isNormalUser = true;
     description = "dhpham";
-    extraGroups = [ "networkmanager" "wheel" ];
+    extraGroups = [ "networkmanager" "wheel" "libvirtd" ];
   };
 }
