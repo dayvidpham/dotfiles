@@ -49,10 +49,10 @@
     # Used with `nixos-rebuild --flake .#<hostname>`
     # nixosConfigurations."<hostname>".config.system.build.toplevel must be a derivation
     nixosConfigurations = {
-      nixos = nixpkgs.lib.nixosSystem {
+      vmware = nixpkgs.lib.nixosSystem {
         inherit system; 
         specialArgs = { inherit pkgs; };
-        modules = [ ./hosts/vm/configuration.nix ] ;
+        modules = [ ./hosts/vmware/configuration.nix ] ;
       };
       
       flowX13 = nixpkgs.lib.nixosSystem {
@@ -63,7 +63,7 @@
     };
     
     homeConfigurations = {
-      "dhpham@nixos" = home-manager.lib.homeManagerConfiguration {
+      "dhpham@vmware" = home-manager.lib.homeManagerConfiguration {
         inherit pkgs;
         modules = [ 
           ./users/dhpham/home.nix
