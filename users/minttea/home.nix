@@ -118,28 +118,35 @@ in rec {
         format-wifi = "{essid} ({signalStrength}%) ";
       };
       "custom/pipewire" = {
-        # format = "{icon}";
         return-type = "json";
         signal = 8;
         interval = "once";
         exec = "pw-volume status";
-        format = "{volume}% {icon} {format_source}";
-        format-bluetooth = "{volume}% {icon} {format_source}";
-        format-bluetooth-muted = " {icon} {format_source}";
+        format = "{icon}";
+        on-click = "qpwgraph";
         format-icons = {
-          car = "";
           mute = "";
           default = [ "" "" "" "" ];
-          handsfree = "";
           headphones = "";
           headset = "";
-          phone = "";
-          portable = "";
         };
-        format-muted = " {format_source}";
-        format-source = "{volume}% ";
-        format-source-muted = "";
-        on-click = "qpwgraph";
+        # format = "{volume}% {icon} {format_source}";
+        # format-bluetooth = "{volume}% {icon} {format_source}";
+        # format-bluetooth-muted = " {icon} {format_source}";
+        # format-icons = {
+        #   car = "";
+        #   # mute = "";
+        #   default = [ "" "" "" "" ];
+        #   # default = [ "" "" "" ];
+        #   handsfree = "";
+        #   headphones = "";
+        #   headset = "";
+        #   phone = "";
+        #   portable = "";
+        # };
+        # format-muted = " {format_source}";
+        # format-source = "{volume}% ";
+        # format-source-muted = "";
       };
       "sway/mode" = { format = ''<span style="italic">{}</span>''; };
       temperature = {
