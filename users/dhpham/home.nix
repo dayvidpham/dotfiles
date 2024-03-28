@@ -11,6 +11,7 @@ let
       knitr
       rmarkdown
       markdown
+      formatR   # used to style and format code chunks when rendered
     ];
   };
   texlive-env = (pkgs.texlive.combine {
