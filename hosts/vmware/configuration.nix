@@ -66,6 +66,9 @@
   i18n.defaultLocale = "en_CA.UTF-8";
 
   # Setup tty and fonts
+  environment.variables = {
+    FREETYPE_PROPERTIES="cff:no-stem-darkening=0 autofitter:no-stem-darkening=0";
+  };
   fonts = {
     enableDefaultPackages = true;
     packages = with pkgs; [
