@@ -111,6 +111,7 @@
   environment.systemPackages = with pkgs; [
     hwinfo
     gparted
+    polkit_gnome
     file
     zip unzip
     wget curl

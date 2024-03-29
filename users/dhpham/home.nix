@@ -187,6 +187,7 @@ in rec {
       };
     };
     extraConfig = ''
+        exec ${pkgs.polkit_gnome.outPath}/libexec/polkit-gnome-authentication-agent-1
         bindsym XF86AudioRaiseVolume exec "pw-volume change +2.5%; pkill -RTMIN+8 waybar"
         bindsym XF86AudioLowerVolume exec "pw-volume change -2.5%; pkill -RTMIN+8 waybar"
         bindsym XF86AudioMute exec "pw-volume mute toggle; pkill -RTMIN+8 waybar" 
