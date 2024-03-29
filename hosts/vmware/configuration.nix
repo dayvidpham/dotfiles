@@ -60,6 +60,9 @@
     networkmanager.enable = true;  # Easiest to use and most distros use this by default.
   };
 
+  # Many apps require polkit to configure security permissions
+  security.polkit.enable = true;
+
   # Set time zone.
   time.timeZone = "America/Vancouver";
   # Select internationalisation properties.
@@ -107,6 +110,7 @@
   nixpkgs.config.allowUnfree = true;
   environment.systemPackages = with pkgs; [
     hwinfo
+    gparted
     file
     zip unzip
     wget curl
