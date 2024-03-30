@@ -223,6 +223,6 @@
   users.users.minttea = {
     isNormalUser = true;
     description = "the guy";
-    extraGroups = [ "networkmanager" "wheel" "libvirtd" ];
+    extraGroups = [ "networkmanager" "wheel" "libvirtd" "video" ];
   };
 }

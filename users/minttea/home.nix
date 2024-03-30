@@ -74,7 +74,7 @@ in rec {
     enable = true;
     settings = [{
       height = 30;
-      layer = "top";
+      layer = "bottom";
       position = "top";
       tray = { spacing = 10; };
       modules-center = [ "sway/window" ];
@@ -190,6 +190,8 @@ in rec {
       };
     };
     extraConfig = ''
+        bindsym XF86MonBrightnessUp exec "light -A 2"
+        bindsym XF86MonBrightnessDown exec "light -U 2"
         bindsym XF86AudioRaiseVolume exec "pw-volume change +2.5%; pkill -RTMIN+8 waybar"
         bindsym XF86AudioLowerVolume exec "pw-volume change -2.5%; pkill -RTMIN+8 waybar"
         bindsym XF86AudioMute exec "pw-volume mute toggle; pkill -RTMIN+8 waybar" 
@@ -209,6 +211,7 @@ in rec {
     slurp         # region screenshot
     swayimg       # image viewer
     qpwgraph      # gui for audio
+    light         # backlight controller
     # Utils
     ranger        # CLI file explorer
     zathura       # pdf viewer
