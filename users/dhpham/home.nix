@@ -76,7 +76,7 @@ in rec {
     enable = true;
     settings = [{
       height = 30;
-      layer = "top";
+      layer = "bottom";
       position = "top";
       tray = { spacing = 10; };
       modules-center = [ "sway/window" ];
