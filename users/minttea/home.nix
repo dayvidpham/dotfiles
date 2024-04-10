@@ -11,6 +11,7 @@ let
       knitr
       rmarkdown
       markdown
+      reticulate
     ];
   };
   texlive-env = (pkgs.texlive.combine {
