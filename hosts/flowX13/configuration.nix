@@ -87,10 +87,11 @@
 
   # Enable sound.
   sound.enable = true;
-  hardware.pulseaudio.enable = false;
+  #hardware.pulseaudio.enable = false;  # Don't explicitly disable???
   services.pipewire = {
     enable = true;
     audio.enable = true;
+    wireplumber.enable = true;
     alsa.enable = true;
     alsa.support32Bit = true;
     pulse.enable = true;
@@ -125,6 +126,7 @@
     zip unzip
     wget curl
     greetd.tuigreet
+    bluez
   ];
   programs.vim.defaultEditor = true;
   programs.git = {

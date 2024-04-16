@@ -164,7 +164,7 @@ in rec {
       output = {
         "eDP-1" = {
           mode = "1920x1200@119.90Hz";
-          scale = "1.15";
+          scale = "1.25";
         };
       };
       bars = [
