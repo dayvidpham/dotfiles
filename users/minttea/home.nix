@@ -201,7 +201,6 @@ in rec {
 
   # General package stuff
   home.packages = with pkgs; [
-    tree
     # Wayland stuff
     bemenu        # launcher menu
     kanshi        # display settings daemon
@@ -214,12 +213,15 @@ in rec {
     qpwgraph      # gui for audio
     light         # backlight controller
     # Utils
+    tree          # fs vis
     ranger        # CLI file explorer
     zathura       # pdf viewer
     # R
     rstudio-env
     pandoc
     texlive-env
+    # Typical applications
+    google-chrome
   ];
   programs.vim = {
     enable = true;
