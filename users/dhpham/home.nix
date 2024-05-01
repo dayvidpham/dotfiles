@@ -17,6 +17,9 @@ let
   texlive-env = (pkgs.texlive.combine {
     inherit (pkgs.texlive) scheme-full float;
   });
+  run-cwd = with pkgs; callPackage ../../programs/run-cwd.nix {
+    inherit writeShellApplication runtimeShell sway jq;
+  };
 in rec {
   imports = [ 
     nixvim.homeManagerModules.nixvim
@@ -209,7 +212,8 @@ in rec {
     # Utils
     ranger        # CLI file explorer
     zathura       # pdf viewer
-    jq
+    jq            # CLI JSON processor
+    run-cwd       # get focused cwd from sway
     # R
     rstudio-env
     pandoc
