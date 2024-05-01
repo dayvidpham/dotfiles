@@ -157,10 +157,13 @@ in rec {
       };
     }];
   };
-  wayland.windowManager.sway = {
+  wayland.windowManager.sway = let
+    modifier = "Mod1";
+    terminal = "${pkgs.alacritty}/bin/alacritty";
+  in {
     enable = true;
     config = {
-      terminal = "${pkgs.alacritty}/bin/alacritty";
+      terminal = terminal;
       output = {
         "Virtual-1" = {
           mode = "1920x1080@119.90Hz";
@@ -188,12 +191,16 @@ in rec {
           natural_scroll = "false";
         };
       };
+      keybindings = pkgs.lib.mkOptionDefault {
+        "${modifier}+Return" = "exec \"run-cwd ${terminal}\"";
+        "${modifier}+Shift+Return" = "exec \"run-cwd ${terminal} -e ranger\"";
+        XF86AudioRaiseVolume = "exec 'pw-volume change +2.5%; pkill -RTMIN+8 waybar'";
+        XF86AudioLowerVolume = "exec 'pw-volume change -2.5%; pkill -RTMIN+8 waybar'";
+        XF86AudioMute = "exec 'pw-volume mute toggle; pkill -RTMIN+8 waybar'";
+      };
     };
     extraConfig = ''
         exec ${pkgs.polkit_gnome.outPath}/libexec/polkit-gnome-authentication-agent-1
-        bindsym XF86AudioRaiseVolume exec "pw-volume change +2.5%; pkill -RTMIN+8 waybar"
-        bindsym XF86AudioLowerVolume exec "pw-volume change -2.5%; pkill -RTMIN+8 waybar"
-        bindsym XF86AudioMute exec "pw-volume mute toggle; pkill -RTMIN+8 waybar" 
     '';
   };
 
