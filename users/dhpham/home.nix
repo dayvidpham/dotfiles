@@ -209,6 +209,7 @@ in rec {
     # Utils
     ranger        # CLI file explorer
     zathura       # pdf viewer
+    jq
     # R
     rstudio-env
     pandoc
