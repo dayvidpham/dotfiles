@@ -12,6 +12,7 @@
 
   system.stateVersion = "23.05";
   nix = {
+    package = pkgs.nixFlakes;
     settings.experimental-features = [ "nix-command" "flakes" ];
   };
 
@@ -129,9 +130,6 @@
 
   ######################################
   # Window manager
-  programs.sway = {
-    enable = true;
-  };
   hardware.opengl = {
     enable = true;
     driSupport = true;
