@@ -193,8 +193,8 @@ in rec {
       };
       modifier = modifier;
       keybindings = pkgs.lib.mkOptionDefault {
-        "${modifier}+Return" = "exec 'run-cwd ${terminal}'";
-        "${modifier}+Shift+Return" = "exec 'run-cwd ${terminal} -e ranger'";
+        "${modifier}+Return" = "exec '${terminal}'";
+        "${modifier}+Shift+Return" = "exec '${terminal} -e ranger'";
         XF86AudioRaiseVolume = "exec 'pw-volume change +2.5%; pkill -RTMIN+8 waybar'";
         XF86AudioLowerVolume = "exec 'pw-volume change -2.5%; pkill -RTMIN+8 waybar'";
         XF86AudioMute = "exec 'pw-volume mute toggle; pkill -RTMIN+8 waybar'";
