@@ -130,6 +130,9 @@
 
   ######################################
   # Window manager
+  programs.sway = {
+    enable = true;
+  };
   hardware.opengl = {
     enable = true;
     driSupport = true;
