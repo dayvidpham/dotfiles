@@ -19,7 +19,7 @@ let
   });
 in rec {
   imports = [ 
-    nixvim.homeManagerModules.nixvim
+    # nixvim.homeManagerModules.nixvim
     ../../programs/neovim
   ];
   # Let Home Manager install and manage itself.
@@ -265,9 +265,9 @@ in rec {
   programs.alacritty = {
     enable = true;
   };
-  programs.nixvim = {
-    enable = true;
-  };
+  #programs.nixvim = {
+  #  enable = true;
+  #};
   home.file.".ssh/config".text = ''
     Host csil-server
         HostName csil-cpu2.csil.sfu.ca
