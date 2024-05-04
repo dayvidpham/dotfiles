@@ -33,6 +33,7 @@ in
     lua-language-server
     rust-analyzer-unwrapped
     black
+    gcc
   ];
 
   programs.neovim = {

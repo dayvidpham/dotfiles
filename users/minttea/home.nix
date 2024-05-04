@@ -217,6 +217,7 @@ in rec {
     tree          # fs vis
     ranger        # CLI file explorer
     zathura       # pdf viewer
+    gcc
     # R
     rstudio-env
     pandoc
