@@ -37,7 +37,6 @@ in
 
   programs.neovim = {
     enable = true;
-    package = pkgs.neovim;
     vimAlias = true;
     coc.enable = false;
     withNodeJs = true;
