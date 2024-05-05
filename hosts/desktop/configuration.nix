@@ -93,15 +93,15 @@
     audio.enable = true;
     wireplumber = {
       enable = true;
-      #configPackages = [
-      #  (pkgs.writeTextDir "share/wireplumber/wireplumber.conf.d/10-bluez.conf" ''
-      #    monitor.bluez.properties = {
-      #      bluez5.roles = [ a2dp_sink a2dp_source bap_sink bap_source ]
-      #      bluez5.codecs = [ sbc sbc_xq aac ]
-      #      bluez5.enable-sbc-xq = true
-      #    }
-      #  '')
-      #];
+      configPackages = [
+        (pkgs.writeTextDir "share/wireplumber/wireplumber.conf.d/10-bluez.conf" ''
+          monitor.bluez.properties = {
+            bluez5.roles = [ a2dp_sink a2dp_source bap_sink bap_source ]
+            bluez5.codecs = [ sbc sbc_xq aac ]
+            bluez5.enable-sbc-xq = true
+          }
+        '')
+      ];
     };
 
     alsa.enable = true;
@@ -132,13 +132,23 @@
   # Package management
   nixpkgs.config.allowUnfree = true;
   environment.systemPackages = with pkgs; [
-    hwinfo
-    file
-    lshw
-    zip unzip
-    wget curl
+    ######## 
+    # HW utils
+    hwinfo        # lower-level hardware (cpu/pci/usb) info
+    file          # returns device/file type and info
+    lshw          # list connected hardware devices
+    bluez         # bluetooth
+    # disk
+    gparted
+    polkit_gnome
+    # cli
+    zip 
+    unzip
+    # getters
+    wget 
+    curl
+    # greeter
     greetd.tuigreet
-    bluez
   ];
   programs.vim.defaultEditor = true;
   programs.git = {
