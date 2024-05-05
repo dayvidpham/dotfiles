@@ -61,6 +61,12 @@
         specialArgs = { inherit pkgs; };
         modules = [ ./hosts/flowX13/configuration.nix ] ;
       };
+
+      desktop = nixpkgs.lib.nixosSystem {
+        inherit system; 
+        specialArgs = { inherit pkgs; };
+        modules = [ ./hosts/desktop/configuration.nix ] ;
+      };
     };
     
     homeConfigurations = {
@@ -77,6 +83,16 @@
       "minttea@flowX13" = home-manager.lib.homeManagerConfiguration {
         inherit pkgs;
         modules = [ 
+          ./users/minttea/home.nix
+        ];
+        extraSpecialArgs = {
+          inherit nixvim;
+        };
+      };
+
+      "minttea@desktop" = home-manager.lib.homeManagerConfiguration {
+        inherit pkgs;
+        modules = [
           ./users/minttea/home.nix
         ];
         extraSpecialArgs = {
