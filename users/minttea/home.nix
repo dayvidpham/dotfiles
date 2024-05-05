@@ -167,6 +167,27 @@ in rec {
           mode = "1920x1200@119.90Hz";
           scale = "1.25";
         };
+        # 3 monitor setup: |V|[ H ]|V|
+        "DP-2" = {
+          # left
+          mode = "2560x1440@169.831Hz";
+          scale = "1.5";
+          position = "0,0";
+          transform = "90";
+        };
+        "DP-3" = {
+          # center
+          mode = "2560x1440@169.831Hz";
+          scale = "1.5";
+          position = "960,300";
+        };
+        "DP-1" = {
+          # right
+          mode = "2560x1440@169.831Hz";
+          scale = "1.5";
+          position = "2666,0";
+          transform = "90";
+        };
       };
       bars = [
         {
@@ -217,7 +238,7 @@ in rec {
     tree          # fs vis
     ranger        # CLI file explorer
     zathura       # pdf viewer
-    gcc
+    gcc           # needed for neovim
     # R
     rstudio-env
     pandoc
@@ -303,7 +324,6 @@ in rec {
   '';
 
   home.sessionVariables = {
-    WLR_NO_HARDWARE_CURSORS     = "1";        # To fix wlroots on VMs
     NIXOS_OZONE_WL              = "1";        # Tell electron apps to use Wayland
     MOZ_ENABLE_WAYLAND          = "1";        # Run Firefox on Wayland
     BEMENU_BACKEND              = "wayland";
