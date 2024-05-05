@@ -17,6 +17,9 @@ let
   texlive-env = (pkgs.texlive.combine {
     inherit (pkgs.texlive) scheme-full float;
   });
+  run-cwd = with pkgs; callPackage ../../programs/run-cwd.nix {
+    inherit writeShellApplication runtimeShell sway jq;
+  };
 in rec {
   imports = [ 
     # nixvim.homeManagerModules.nixvim
@@ -158,10 +161,13 @@ in rec {
       };
     }];
   };
-  wayland.windowManager.sway = {
+  wayland.windowManager.sway = let
+    modifier = "Mod1";
+    terminal = "${pkgs.alacritty}/bin/alacritty";
+  in {
     enable = true;
     config = {
-      terminal = "${pkgs.alacritty}/bin/alacritty";
+      terminal = terminal;
       output = {
         "eDP-1" = {
           mode = "1920x1200@119.90Hz";
@@ -211,13 +217,17 @@ in rec {
           natural_scroll = "false";
         };
       };
+      modifier = modifier;
+      keybindings = pkgs.lib.mkOptionDefault {
+        "${modifier}+Return" = "exec 'run-cwd ${terminal}'";
+        "${modifier}+Shift+Return" = "exec 'run-cwd ${terminal} -e ranger'";
+        XF86AudioRaiseVolume = "exec 'pw-volume change +2.5%; pkill -RTMIN+8 waybar'";
+        XF86AudioLowerVolume = "exec 'pw-volume change -2.5%; pkill -RTMIN+8 waybar'";
+        XF86AudioMute = "exec 'pw-volume mute toggle; pkill -RTMIN+8 waybar'";
+      };
     };
     extraConfig = ''
-        bindsym XF86MonBrightnessUp exec "light -A 2"
-        bindsym XF86MonBrightnessDown exec "light -U 2"
-        bindsym XF86AudioRaiseVolume exec "pw-volume change +2.5%; pkill -RTMIN+8 waybar"
-        bindsym XF86AudioLowerVolume exec "pw-volume change -2.5%; pkill -RTMIN+8 waybar"
-        bindsym XF86AudioMute exec "pw-volume mute toggle; pkill -RTMIN+8 waybar" 
+        exec ${pkgs.polkit_gnome.outPath}/libexec/polkit-gnome-authentication-agent-1
     '';
   };
 
@@ -238,6 +248,8 @@ in rec {
     tree          # fs vis
     ranger        # CLI file explorer
     zathura       # pdf viewer
+    jq            # CLI json explorer
+    run-cwd       # script to open window from focused
     gcc           # needed for neovim
     # R
     rstudio-env
