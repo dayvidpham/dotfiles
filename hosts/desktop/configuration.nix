@@ -12,10 +12,13 @@
 
   system.stateVersion = "23.11";
   nix = {
+    # Enable flakes
     package = pkgs.nixFlakes;
     settings.experimental-features = [ "nix-command" "flakes" ];
   };
 
+  #########################
+  # Boot loader
   boot = {
     # Use the systemd-boot EFI boot loader.
     loader.systemd-boot.enable = true;
@@ -24,7 +27,7 @@
   }; 
 
 
-  # ################################
+  #########################
   # General system-config
 
   # Networking

@@ -44,7 +44,16 @@
     system = "x86_64-linux";
     pkgs = import nixpkgs {
       inherit system;
-      config.allowUnfree = true;
+      config = {
+        allowUnfree = true;
+        allowUnfreePredicate = (_: true);
+      };
+    };
+    config = {
+      nix.registry.nixpkgs.flake = nixpkgs;
+      nix.channel.enable = false;
+      environment.etc."nix/inputs/nixpkgs".source = "${nixpkgs}";
+      nix.settings.nix-path = lib.mkForce "nixpkgs=/etc/nix/inputs/nixpkgs";
     };
   in {
     # Used with `nixos-rebuild --flake .#<hostname>`
@@ -65,7 +74,10 @@
       desktop = nixpkgs.lib.nixosSystem {
         inherit system; 
         specialArgs = { inherit pkgs; };
-        modules = [ ./hosts/desktop/configuration.nix ] ;
+        modules = [ 
+          ./hosts/desktop/configuration.nix
+          config
+        ];
       };
     };
     
