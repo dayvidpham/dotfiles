@@ -52,6 +52,17 @@ in rec {
     };
   };
 
+  # Env vars
+  home.sessionVariables = {
+    WLR_NO_HARDWARE_CURSORS     = "1";        # Stop cursor from disappearing on NVIDIA GPU
+    NIXOS_OZONE_WL              = "1";        # Tell electron apps to use Wayland
+    MOZ_ENABLE_WAYLAND          = "1";        # Run Firefox on Wayland
+    BEMENU_BACKEND              = "wayland";
+    GDK_BACKEND                 = "wayland";
+    XDG_CURRENT_DESKTOP         = "sway";
+  };
+
+  # Virtualisation
   dconf.settings = {
     "org/virt-manager/virt-manager/connections" = {
       autoconnect = [ "qemu:///system" ];
@@ -244,6 +255,8 @@ in rec {
     texlive-env
     # Typical applications
     google-chrome
+    spotify
+    discord
   ];
   programs.vim = {
     enable = true;
@@ -286,9 +299,13 @@ in rec {
   programs.alacritty = {
     enable = true;
   };
-  #programs.nixvim = {
-  #  enable = true;
-  #};
+  programs.nheko.enable = true;
+
+
+
+
+
+  # SSH config
   home.file.".ssh/config".text = ''
     Host csil-server
         HostName csil-cpu2.csil.sfu.ca
@@ -321,13 +338,4 @@ in rec {
         ControlMaster auto
         ControlPersist 2h
   '';
-
-  home.sessionVariables = {
-    WLR_NO_HARDWARE_CURSORS     = "1";        # Stop cursor from disappearing on NVIDIA GPU
-    NIXOS_OZONE_WL              = "1";        # Tell electron apps to use Wayland
-    MOZ_ENABLE_WAYLAND          = "1";        # Run Firefox on Wayland
-    BEMENU_BACKEND              = "wayland";
-    GDK_BACKEND                 = "wayland";
-    XDG_CURRENT_DESKTOP         = "sway";
-  };
 }
