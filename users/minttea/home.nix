@@ -59,20 +59,8 @@ in rec {
     };
   };
 
+  #####################
   # Graphics
-  services.kanshi = {
-    enable = true;
-    profiles = {
-      desktop = {
-        outputs = [
-          { 
-            criteria = "eDP-1";
-            mode = "1920x1200@119.90Hz";
-          }
-        ];
-      };
-    };
-  };
 
   # Sway config
   programs.waybar = {
@@ -181,13 +169,13 @@ in rec {
           position = "0,0";
           transform = "90";
         };
-        "DP-3" = {
+        "DP-1" = {
           # center
           mode = "2560x1440@169.831Hz";
           scale = "1.5";
           position = "960,300";
         };
-        "DP-1" = {
+        "DP-3" = {
           # right
           mode = "2560x1440@169.831Hz";
           scale = "1.5";
@@ -235,7 +223,6 @@ in rec {
   home.packages = with pkgs; [
     # Wayland stuff
     bemenu        # launcher menu
-    kanshi        # display settings daemon
     wdisplays     # gui for display settings
     wl-clipboard  # CLI clipboard utility
     pw-volume     # for volume control w/ sway
