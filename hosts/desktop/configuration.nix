@@ -12,6 +12,7 @@
 
   system.stateVersion = "23.11";
   nix = {
+    package = pkgs.nixFlakes;
     settings.experimental-features = [ "nix-command" "flakes" ];
   };
 
@@ -19,7 +20,7 @@
     # Use the systemd-boot EFI boot loader.
     loader.systemd-boot.enable = true;
     loader.efi.canTouchEfiVariables = true;
-    kernelPackages = pkgs.linuxPackages_6_6; # SLTS: super long-term support
+    kernelPackages = pkgs.linuxPackages_latest;
   }; 
 
 
@@ -180,12 +181,13 @@
       enable = true;
     };
 
-    # Open kernel module, not nouveau
-    open = false;
+    # Open kernel module: this is not the nouveau driver
+    open = false; # GTX 10XX gen is unsupported
   };
   services.xserver = {
     enable = true;
-    videoDrivers = [ "nvidia" ];
+    # If commented, will use nouveau drivers
+    #videoDrivers = [ "nvidia" ];
     xkb.variant = "";
     xkb.layout = "us";
   };
