@@ -22,9 +22,17 @@
   boot = {
     # Use the systemd-boot EFI boot loader.
     loader.systemd-boot.enable = true;
+    loader.systemd-boot.extraFiles = {
+      "loader/loader.conf" = pkgs.writeText "loader.conf" ''
+          timeout 10
+          default @saved
+          console-mode keep
+        '';
+    };
+
     loader.efi.canTouchEfiVariables = true;
     kernelPackages = pkgs.linuxPackages_latest;
-  }; 
+  };
 
 
   #########################
