@@ -178,28 +178,45 @@
   programs.sway = {
     enable = true;
   };
+  # NOTE: Don't need with NVIDIA? Maybe need for iGPU
   hardware.opengl = {
     enable = true;
     driSupport = true;
     driSupport32Bit = true;
   };
+
+  # NOTE: Not sure why I set this option originally
   hardware.enableRedistributableFirmware = pkgs.lib.mkDefault true;
+
   hardware.nvidia = {
     package = config.boot.kernelPackages.nvidiaPackages.stable;
-    modesetting.enable = true;
+    modesetting.enable = true;    # NOTE: Sway will hang if not set
     nvidiaSettings = true;
 
+    # NOTE: Ryzen 9 7950X3D has iGPU too
+    #dynamicBoost.enable = true;   # Enable better balancing between CPU and iGPU
     powerManagement = {
-      enable = true;
+      enable = true;              # Enable dGPU systemd power management
+      #finegrained = true;         # Enable PRIME offload power management
+    };
+    # Balancing between iGPU and dGPU
+    prime = {
+      sync.enable = true;         # Use dGPU for everything
+      #offload.enable = true;            # Enable offloading to dGPU
+      #offload.enableOffloadCmd = true;  # convenience script to run on dGPU
+
+      nvidiaBusId = "PCI:1:0:0";
+      amdgpuBusId = "PCI:16:0:0";
     };
 
+    # NOTE: If screen tearing persists, might want to disable this
     # Open kernel module: this is not the nouveau driver
     open = false; # GTX 10XX gen is unsupported
+                  # we on the RTX 4090 now though!
   };
   services.xserver = {
     enable = true;
-    # If commented, will use nouveau drivers
-    #videoDrivers = [ "nvidia" ];
+    videoDrivers = [ "nvidia" "amdgpu" ];    # NOTE: If commented, will use nouveau drivers
     xkb.variant = "";
     xkb.layout = "us";
   };
@@ -239,6 +256,7 @@
       };
     };
   };
+  # NOTE: For GTK config, e.g. cursor configuration
   services.dbus.enable = true;
 
   ######################################
