@@ -179,20 +179,20 @@ in rec {
           scale = "1.25";
         };
         # 3 monitor setup: |V|[ H ]|V|
-        "DP-2" = {
+        "DP-6" = {
           # left
           mode = "2560x1440@169.831Hz";
           scale = "1.5";
           position = "0,0";
           transform = "90";
         };
-        "DP-1" = {
+        "DP-5" = {
           # center
           mode = "2560x1440@169.831Hz";
           scale = "1.5";
           position = "960,300";
         };
-        "DP-3" = {
+        "DP-4" = {
           # right
           mode = "2560x1440@169.831Hz";
           scale = "1.5";
