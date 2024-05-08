@@ -185,12 +185,14 @@ in rec {
           scale = "1.5";
           position = "0,0";
           transform = "90";
+          adaptive_sync = "on";
         };
         "DP-5" = {
           # center
           mode = "2560x1440@169.831Hz";
           scale = "1.5";
           position = "960,300";
+          adaptive_sync = "on";
         };
         "DP-4" = {
           # right
@@ -198,6 +200,7 @@ in rec {
           scale = "1.5";
           position = "2666,0";
           transform = "90";
+          adaptive_sync = "on";
         };
       };
       bars = [
@@ -265,6 +268,8 @@ in rec {
     google-chrome
     spotify
     discord
+    # Gaming
+    protonup
   ];
   programs.vim = {
     enable = true;
@@ -309,8 +314,11 @@ in rec {
   };
   programs.nheko.enable = true;
 
-
-
+  ######################################
+  # Gaming
+  home.sessionVariables = {
+    STEAM_EXTRA_COMPAT_TOOLS_PATHS = "${home.homeDirectory}/.steam/root/compatibilitytools.d";
+  };
 
 
   # SSH config
