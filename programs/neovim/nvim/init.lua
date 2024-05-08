@@ -117,7 +117,7 @@ vim.opt.clipboard = 'unnamedplus'
 
 -- Enable indenting of wrapped lines
 vim.opt.breakindent = true              -- line wrap match indentation level
-vim.opt.showbreak = '>>>'
+vim.opt.showbreak = '___'
 
 -- Save undo history
 vim.opt.undofile = true
