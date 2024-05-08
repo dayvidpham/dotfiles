@@ -239,6 +239,8 @@
     ];
   };
 
+  ######################################
+  # Greeter
   services.logind.extraConfig = ''
     # Don't shutdown when power button is short-pressed
     HandlePowerKey=ignore
