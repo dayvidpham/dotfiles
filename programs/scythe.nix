@@ -4,12 +4,13 @@
 , slurp
 , dmenu
 , swappy
+, wl-clipboard
 , output-dir ? "$GRIM_DFEAULT_DIR"
 }:
 writeShellApplication rec {
     # Metadata
     name = "scythe";
-    runtimeInputs = [ grim slurp dmenu swappy ];
+    runtimeInputs = [ grim slurp dmenu swappy wl-clipboard ];
 
     text = ''
         #!${runtimeShell}
@@ -25,10 +26,10 @@ writeShellApplication rec {
             mkdir -p "$OUT_DIR"
         fi
 
-        OUT_NAME=$(dmenu -p "[$OUT_DIR] filename: \$\{input\}-%date.png" < /dev/null)
+        OUT_NAME=$(dmenu -p "$OUT_DIR/{input}-%date.png: " < /dev/null)
 
         OUT_PATH="$OUT_DIR/$OUT_NAME"
 
-        grim -g "$(slurp)" - | swappy -f - -o "$OUT_PATH-$(date +%Y-%m-%dT%R:%S).png"
+        grim -g "$(slurp)" - | swappy -f - -o - | tee "$OUT_PATH-$(date +%Y-%m-%dT%R:%S).png" | wl-copy -t image/png
     '';
 }

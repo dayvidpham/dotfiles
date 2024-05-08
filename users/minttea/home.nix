@@ -23,6 +23,7 @@ let
   };
   scythe = with pkgs; callPackage ../../programs/scythe.nix {
     inherit writeShellApplication runtimeShell grim slurp dmenu swappy;
+    wl-clipboard = wl-clipboard-rs;
     output-dir = "$HOME/Pictures/scythe";
   };
 in rec {
@@ -240,7 +241,7 @@ in rec {
     # Wayland stuff
     bemenu        # launcher menu
     wdisplays     # gui for display settings
-    wl-clipboard  # CLI clipboard utility
+    wl-clipboard-rs # Rust CLI clipboard utility
     pw-volume     # for volume control w/ sway
     grim          # screenshot
     slurp         # select region on screen
