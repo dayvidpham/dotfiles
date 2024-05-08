@@ -5,6 +5,7 @@
   , ... 
 }:
 let
+  # maybe this stuff should be defined in Flake and passed to users
   rstudio-env = pkgs.rstudioWrapper.override { 
     packages = with pkgs.rPackages; [
       tidyverse
@@ -19,6 +20,10 @@ let
   });
   run-cwd = with pkgs; callPackage ../../programs/run-cwd.nix {
     inherit writeShellApplication runtimeShell sway jq;
+  };
+  scythe = with pkgs; callPackage ../../programs/scythe.nix {
+    inherit writeShellApplication runtimeShell grim slurp dmenu swappy;
+    output-dir = "$HOME/Pictures/scythe";
   };
 in rec {
   imports = [ 
@@ -238,7 +243,9 @@ in rec {
     wl-clipboard  # CLI clipboard utility
     pw-volume     # for volume control w/ sway
     grim          # screenshot
-    slurp         # region screenshot
+    slurp         # select region on screen
+    swappy        # draw on image, mostly for screenshots
+    scythe        # screenshot on dmenu, grim, slurp, swappy
     swayimg       # image viewer
     qpwgraph      # gui for audio
     light         # backlight controller
