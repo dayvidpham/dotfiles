@@ -75,7 +75,7 @@
         modules = [
           ./hosts/flowX13/configuration.nix
           config
-        ] ;
+        ];
       };
 
       desktop = nixpkgs.lib.nixosSystem {
@@ -83,6 +83,7 @@
         specialArgs = { inherit pkgs; };
         modules = [ 
           ./hosts/desktop/configuration.nix
+          ./modules
           config
         ];
       };

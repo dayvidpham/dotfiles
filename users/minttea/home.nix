@@ -34,8 +34,6 @@ in rec {
   # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;
 
-  # Home Manager needs a bit of information about you and the paths it should
-  # manage.
   home.username = "minttea";
   home.homeDirectory = "/home/minttea";
   home.stateVersion = "23.11"; # Please read the comment before changing.
@@ -77,7 +75,7 @@ in rec {
   };
 
   #####################
-  # Graphics
+  # NOTE: Graphics
 
   # Sway config
   programs.waybar = {
@@ -178,7 +176,33 @@ in rec {
           mode = "1920x1200@119.90Hz";
           scale = "1.25";
         };
-        # 3 monitor setup: |V|[ H ]|V|
+
+        # NOTE: 3 monitor setup: |V|[ H ]|V|
+        "DP-3" = {
+          # left
+          mode = "2560x1440@169.831Hz";
+          scale = "1.5";
+          position = "0,0";
+          transform = "90";
+          adaptive_sync = "on";
+        };
+        "DP-2" = {
+          # center
+          mode = "2560x1440@169.831Hz";
+          scale = "1.5";
+          position = "960,300";
+          adaptive_sync = "on";
+        };
+        "DP-1" = {
+          # right
+          mode = "2560x1440@169.831Hz";
+          scale = "1.5";
+          position = "2666,0";
+          transform = "90";
+          adaptive_sync = "on";
+        };
+
+        # NOTE: 3 monitor setup: |V|[ H ]|V|
         "DP-6" = {
           # left
           mode = "2560x1440@169.831Hz";
@@ -268,6 +292,7 @@ in rec {
     google-chrome
     spotify
     discord
+    discord-screenaudio
     # Gaming
     protonup
   ];
@@ -309,13 +334,13 @@ in rec {
     };
   };
   programs.firefox.enable = true;
-  programs.alacritty = {
-    enable = true;
-  };
+  programs.alacritty.enable = true;
   programs.nheko.enable = true;
 
+  programs.obs-studio.enable = true;    # Grab OBS 
+
   ######################################
-  # Gaming
+  # NOTE: Gaming
   home.sessionVariables = {
     STEAM_EXTRA_COMPAT_TOOLS_PATHS = "${home.homeDirectory}/.steam/root/compatibilitytools.d";
   };

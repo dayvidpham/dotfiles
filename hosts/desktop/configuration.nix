@@ -2,7 +2,11 @@
 # your system.  Help is available in the configuration.nix(5) man page
 # and in the NixOS manual (accessible by running `nixos-help`).
 
-{ config, pkgs, ... }:
+{ config
+  , pkgs
+  , home-manager
+  , ... 
+}:
 
 {
   imports =
@@ -34,6 +38,8 @@
     kernelPackages = pkgs.linuxPackages_latest;
   };
 
+  # For OBS and screen sharing/recording
+  CUSTOM.v4l2loopback.enable = true;
 
   #########################
   # General system-config
