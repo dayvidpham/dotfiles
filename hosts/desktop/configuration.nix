@@ -183,6 +183,7 @@
     enable = true;
     driSupport = true;
     driSupport32Bit = true;
+    extraPackages = with pkgs; [ vaapiVdpau ];
   };
 
   # NOTE: Not sure why I set this option originally
