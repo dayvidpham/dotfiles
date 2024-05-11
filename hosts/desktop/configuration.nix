@@ -169,6 +169,8 @@
     curl
     # greeter
     greetd.tuigreet
+    # remote wayland
+    waypipe
   ];
   programs.vim.defaultEditor = true;
   programs.git = {
