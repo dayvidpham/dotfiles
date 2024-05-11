@@ -262,6 +262,20 @@ in rec {
         "remote" = {
           "Ctrl+Alt+Tab" = "mode default";
         };
+        "resize" = let
+          cfg = config.wayland.windowManager.sway;
+        in {
+          "${cfg.config.left}" = "resize shrink width 10 px";
+          "${cfg.config.down}" = "resize grow height 10 px";
+          "${cfg.config.up}" = "resize shrink height 10 px";
+          "${cfg.config.right}" = "resize grow width 10 px";
+          "Left" = "resize shrink width 10 px";
+          "Down" = "resize grow height 10 px";
+          "Up" = "resize shrink height 10 px";
+          "Right" = "resize grow width 10 px";
+          "Escape" = "mode default";
+          "Return" = "mode default";
+        };
       };
     };
     # For remote desktop
