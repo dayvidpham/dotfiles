@@ -149,6 +149,7 @@
     wget curl
     greetd.tuigreet
     bluez
+    waypipe
   ];
   programs.vim.defaultEditor = true;
   programs.git = {
