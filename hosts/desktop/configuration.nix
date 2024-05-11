@@ -146,6 +146,7 @@
     enableSSHSupport = true;
   };
   services.gnome.gnome-keyring.enable = true;
+  CUSTOM.services.openssh.enable = true;
 
   #####################################################
   # Package management
