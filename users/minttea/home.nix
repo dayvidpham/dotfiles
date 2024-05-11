@@ -263,6 +263,10 @@ in rec {
     '';
   };
 
+  services.mako = {
+    enable = true;
+  };
+
   # General package stuff
   home.packages = with pkgs; [
     # Wayland stuff
