@@ -37,15 +37,17 @@ in {
         KbdInteractiveAuthentication = false;
         AuthenticationMethods = "publickey";
 
+        PermitRootLogin = "no";
+        DenyUsers = [ "root" ];
+        DenyGroups = [ "root" ];
+
         Ciphers = [
           "chacha20-poly1305@openssh.com"
           "aes256-gcm@openssh.com"
           "aes128-gcm@openssh.com"
         ];
 
-        PermitRootLogin = "no";
-        DenyUsers = [ "root" ];
-        DenyGroups = [ "root" ];
+        X11Forwarding = true;
       };
     };
   };
