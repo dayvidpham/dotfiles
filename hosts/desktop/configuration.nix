@@ -206,12 +206,14 @@
     # NOTE: Ryzen 9 7950X3D has iGPU too
     #dynamicBoost.enable = true;   # Enable better balancing between CPU and iGPU
     powerManagement = {
-      enable = true;              # Enable dGPU systemd power management
-      #finegrained = true;         # Enable PRIME offload power management
+      enable = false;              # Enable dGPU systemd power management
+      finegrained = false;         # Enable PRIME offload power management
     };
     # Balancing between iGPU and dGPU
     prime = {
       sync.enable = true;         # Use dGPU for everything
+
+      # NOTE: Sync and Offload mode cannot be used at the same time
       #offload.enable = true;            # Enable offloading to dGPU
       #offload.enableOffloadCmd = true;  # convenience script to run on dGPU
 
