@@ -192,7 +192,7 @@
     enable = true;
     driSupport = true;
     driSupport32Bit = true;
-    extraPackages = with pkgs; [ vaapiVdpau ];    # ???
+    extraPackages = with pkgs; [ nvidia-vaapi-driver ];    # ???
   };
 
   # NOTE: Not sure why I set this option originally
@@ -232,6 +232,13 @@
     xkb.variant = "";
     xkb.layout = "us";
   };
+
+  # NOTE: To load nvidia drivers first
+  boot.initrd.kernelModules = [ "nvidia" ];
+  boot.extraModulePackages = [ config.boot.kernelPackages.nvidia_x11 ];
+  # NOTE: Maybe fixes white screen flickering with AMD iGPU
+  boot.kernelParams = [ "amdgpu.sg_display=0" ];
+
   programs.xwayland.enable = true;
   xdg.portal = {
     enable = true;
