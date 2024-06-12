@@ -69,18 +69,18 @@
     qemu = {
       package = pkgs.qemu_kvm;
       runAsRoot = true;
-      swtpm.enable = true; # Software Trusted Platform Module: virtualized cryptoprocessor
-      ovmf = {
-        # Open Virtual Machine Firmware: enables UEFI support for VMs
-        # Use UEFI over traditional BIOS
-        enable = true;
-        packages = [ 
-          (pkgs.OVMF.override {
-            secureBoot = false;
-            tpmSupport = true;
-          }).fd 
-        ];
-      };
+      # swtpm.enable = true; # Software Trusted Platform Module: virtualized cryptoprocessor
+      # ovmf = {
+      #   # Open Virtual Machine Firmware: enables UEFI support for VMs
+      #   # Use UEFI over traditional BIOS
+      #   enable = true;
+      #   # packages = [ 
+      #   #   (pkgs.OVMF.override {
+      #   #     secureBoot = false;
+      #   #     tpmSupport = true;
+      #   #   }).fd 
+      #   # ];
+      # };
     };
   };
 
@@ -187,12 +187,12 @@
   programs.sway = {
     enable = true;
   };
-  # NOTE: Don't need with NVIDIA? Maybe need for iGPU
+  # NOTE: Needed for graphics acceleration
   hardware.opengl = {
     enable = true;
     driSupport = true;
     driSupport32Bit = true;
-    extraPackages = with pkgs; [ vaapiVdpau ];
+    extraPackages = with pkgs; [ vaapiVdpau ];    # ???
   };
 
   # NOTE: Not sure why I set this option originally
