@@ -5,7 +5,7 @@
   , ... 
 }:
 let
-  cfg = config.CUSTOM.v4l2loopback;
+  cfg = config.CUSTOM.sway;
 
   inherit (lib) 
     mkIf
@@ -13,21 +13,13 @@ let
     mkPackageOption
   ;
 in {
-  #options = {
-  #  CUSTOM.v4l2loopback = {
-  #    enable = mkEnableOption "v4l2loopback";
-  #    kernelPackage = mkPackageOption config.boot.kernelPackages "v4l2loopback" {};
-  #    utilsPackage = mkPackageOption pkgs "v4l-utils" {};
-  #  };
-  #};
+  options = {
+    CUSTOM.sway = {
+      enable = mkEnableOption "sway";
+    };
+  };
 
-  #config = mkIf cfg.enable {
-  #  boot.kernelModules = [ "v4l2loopback" ];
-  #  boot.extraModulePackages = [ 
-  #    cfg.kernelPackage
-  #  ];
-  #  environment.systemPackages = [ 
-  #    cfg.utilsPackage
-  #  ];
-  #};
+  config = mkIf cfg.enable {
+
+  };
 }
