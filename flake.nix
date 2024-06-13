@@ -42,6 +42,7 @@
   let
     lib = nixpkgs.lib;
     system = "x86_64-linux";
+
     pkgs = import nixpkgs {
       inherit system;
       config = {
@@ -49,7 +50,9 @@
         allowUnfreePredicate = (_: true);
       };
     };
-    config = {
+
+    # NOTE: Needs to be defined here to have access to nixpkgs and home-manager inputs
+    noChannelModule = {
       nix.channel.enable = false;
 
       nix.registry.nixpkgs.flake = nixpkgs;
@@ -57,34 +60,40 @@
       environment.etc."nix/inputs/nixpkgs".source = "${nixpkgs}";
       environment.etc."nix/inputs/home-manager".source = "${home-manager}";
 
-      nix.settings.nix-path = lib.mkForce "nixpkgs=/etc/nix/inputs/nixpkgs:home-manager=/etc/nix/inputs/home-manager";
+      nix.settings.nix-path =
+        lib.mkForce "nixpkgs=/etc/nix/inputs/nixpkgs:home-manager=/etc/nix/inputs/home-manager";
     };
+
+    # NOTE: Utils
+    libmint = 
+      import ./modules/libmint.nix { inherit lib; };
+
   in {
     # Used with `nixos-rebuild --flake .#<hostname>`
     # nixosConfigurations."<hostname>".config.system.build.toplevel must be a derivation
     nixosConfigurations = {
       vmware = nixpkgs.lib.nixosSystem {
         inherit system; 
-        specialArgs = { inherit pkgs; };
+        specialArgs = { inherit pkgs libmint; };
         modules = [ ./hosts/vmware/configuration.nix ] ;
       };
       
       flowX13 = nixpkgs.lib.nixosSystem {
         inherit system; 
-        specialArgs = { inherit pkgs; };
+        specialArgs = { inherit pkgs libmint; };
         modules = [
           ./hosts/flowX13/configuration.nix
-          config
+          noChannelModule
         ];
       };
 
       desktop = nixpkgs.lib.nixosSystem {
         inherit system; 
-        specialArgs = { inherit pkgs; };
+        specialArgs = { inherit pkgs libmint; };
         modules = [ 
           ./hosts/desktop/configuration.nix
           ./modules
-          config
+          noChannelModule
         ];
       };
     };

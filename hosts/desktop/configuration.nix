@@ -7,8 +7,9 @@
   , home-manager
   , ... 
 }:
-
-{
+let 
+  nvidiaDriver = config.boot.kernelPackages.nvidia_x11_beta;
+in {
   imports =
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
@@ -187,59 +188,57 @@
   programs.sway = {
     enable = true;
   };
-  # NOTE: Needed for graphics acceleration
-  hardware.opengl = {
+  #CUSTOM.hardware.nvidia.enable = true;
+  #CUSTOM.hardware.nvidia.proprietaryDrivers.enable = true;
+  services.xserver = {
     enable = true;
-    driSupport = true;
+    videoDrivers = # NOTE: If not set, will use nouveau drivers
+      [ "nvidia" ];
+    xkb.layout = "us";
+  };
+  hardware.opengl = {
+    enable          = true;
+    driSupport      = true;
     driSupport32Bit = true;
-    extraPackages = with pkgs; [ nvidia-vaapi-driver ];    # ???
+    extraPackages   = with pkgs; [
+      nvidia-vaapi-driver
+    ];
   };
 
-  # NOTE: Not sure why I set this option originally
-  hardware.enableRedistributableFirmware = pkgs.lib.mkDefault true;
-
   hardware.nvidia = {
-    package = config.boot.kernelPackages.nvidiaPackages.stable;
-    modesetting.enable = true;    # NOTE: Sway will hang if not set
-    nvidiaSettings = true;
+    package             = nvidiaDriver;
+    modesetting.enable  = true;    # NOTE: Sway will hang if not set
+    nvidiaSettings      = true;
 
-    # NOTE: Ryzen 9 7950X3D has iGPU too
-    #dynamicBoost.enable = true;   # Enable better balancing between CPU and iGPU
     powerManagement = {
-      enable = false;              # Enable dGPU systemd power management
-      finegrained = false;         # Enable PRIME offload power management
+      enable      = true;
+      finegrained = false;
     };
-    # Balancing between iGPU and dGPU
+
     prime = {
       sync.enable = true;         # Use dGPU for everything
-
-      # NOTE: Sync and Offload mode cannot be used at the same time
-      #offload.enable = true;            # Enable offloading to dGPU
-      #offload.enableOffloadCmd = true;  # convenience script to run on dGPU
-
       nvidiaBusId = "PCI:1:0:0";
       amdgpuBusId = "PCI:16:0:0";
     };
 
-    # NOTE: If screen tearing persists, might want to disable this
-    # Open kernel module: this is not the nouveau driver
+    # NOTE: Open kernel module: this is not the nouveau driver
     open = false; # GTX 10XX gen is unsupported
                   # we on the RTX 4090 now though!
-  };
-  services.xserver = {
-    enable = true;
-    xkb.layout = "us";
-
-    # NOTE: If commented, will use nouveau drivers
-    videoDrivers = [
-      "nvidia"
-      #"amdgpu"
-    ];
+    
+    # NOTE: Persists driver state across CUDA job runs, reduces setups/teardowns
+    nvidiaPersistenced = true;
   };
 
-  # NOTE: To load nvidia drivers first
-  boot.initrd.kernelModules = [ "nvidia" ];
-  boot.extraModulePackages = [ config.boot.kernelPackages.nvidia_x11 ];
+  boot = # NOTE: To load nvidia drivers first
+    {
+      initrd.kernelModules = [ "nvidia" ];
+      extraModulePackages = [ nvidiaDriver ];
+    };
+
+
+  # NOTE: Not sure why I set this option originally
+  hardware.enableRedistributableFirmware = pkgs.lib.mkDefault true;
+
   # NOTE: Maybe fixes white screen flickering with AMD iGPU
   boot.kernelParams = [ "amdgpu.sg_display=0" ];
 

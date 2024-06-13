@@ -2,32 +2,24 @@
   config
   , pkgs
   , lib ? pkgs.lib
-  , builtins
+  , libmint
   , ... 
 }:
 let
   cfg = config.CUSTOM.hardware.nvidia;
 
-  # NOTE: Utils
-  configureHost = 
-    let
-      getHostConfig = hostName: options:
-        if   (builtins.hasAttr hostName options)
-        then options.${hostName}
-        else options.default;
-    in
-      hostName: optionsSet:
-        mapAttrs (optionKey: optionValueSet: getHostConfig hostName optionValueSet) 
-        optionsSet;
-
+  nvidiaDriver = config.boot.kernelPackages.nvidia_x11_beta;
+  #nvidiaDriver = pkgs.linuxPackages_latest.nvidia_x11_beta;
 
   # NOTE: Config
   nvidia = {
-    powerManagement = rec {
+    powerManagement = let
       default = {
         enable      = true;         # Enable dGPU systemd power management
         finegrained = true;         # Enable PRIME offload power management
       };
+    in {
+      inherit default;
 
       desktop = default // {
         enable      = false;
@@ -38,7 +30,9 @@ let
     };
 
     # NOTE: Balancing between iGPU and dGPU
-    prime = rec {
+    prime = let 
+      default = config.hardware.nvidia.prime;
+    in {
       # NOTE: For laptops: enable better balancing between CPU and iGPU
       #dynamicBoost.enable = true;   
 
@@ -46,7 +40,7 @@ let
       #offload.enable = true;            # Enable offloading to dGPU
       #offload.enableOffloadCmd = true;  # convenience script to run on dGPU
 
-      default = config.nvidia.hardware.prime;
+      inherit default;
 
       desktop = default // {
         sync.enable = true;         # Use dGPU for everything
@@ -71,23 +65,38 @@ let
     mkIf
     mkEnableOption
     mkPackageOption
+    mkOption
+    mkDefault
+    mkBefore
+    mkAfter
   ;
+
+  inherit (libmint)
+    configureHost
+  ;
+
 in {
   options = {
     CUSTOM.hardware.nvidia = {
       enable = 
         mkEnableOption "NVIDIA GPU settings for various hosts";
 
-      proprietaryDrivers.enable = 
-        mkEnableOption "proprietary NVIDIA drivers" // { 
-          default = true;
-        };
+      proprietaryDrivers = {
+        enable = 
+          mkEnableOption "proprietary NVIDIA drivers" // { 
+            default = true;
+          };
+        package = 
+          mkPackageOption config.boot.kernelPackages "nvidia_x11_beta" {
+            example = [ "nvidia_x11" "nvidia_x11_beta" "nvidia_x11_production" ];
+          };
+      };
 
-      hostName =
-        mkDefaultOption config.networking.hostName {};
-
-      package = 
-        mkPackageOption config.boot.kernelPackages.nvidiaPackages "stable" {};
+      hostName = mkOption {
+        default = config.networking.hostName;
+        example = "desktop";
+        description = "used to select host-specific configuration";
+      };
     };
   };
 
@@ -102,26 +111,27 @@ in {
     };
 
     hardware.nvidia = {
-      package             = cfg.package;
+      package             = nvidiaDriver;
       modesetting.enable  = true;    # NOTE: Sway will hang if not set
       nvidiaSettings      = true;
-    } // configureHost cfg.hostName cfg.nvidia;
+    } // (configureHost cfg.hostName nvidia);
 
     programs.xwayland.enable = true;
     services.xserver = {
       enable = true;
-      videoDrivers = # NOTE: If not set, will use nouveau drivers
-        mkIf cfg.proprietaryDrivers.enable [ "nvidia" ];
+      # TODO: Fix infinite recursion on this?
+      #videoDrivers = # NOTE: If not set, will use nouveau drivers
+      #  mkBefore [ "nvidia" ];
+        #mkIf cfg.proprietaryDrivers.enable [ "nvidia" ];
     };
 
     boot = # NOTE: To load nvidia drivers first
-      mkIf cfg.proprietaryDrivers.enable {
+      {
         initrd.kernelModules = [ "nvidia" ];
-        extraModulePackages = [ config.boot.kernelPackages.nvidia_x11 ];
+        extraModulePackages = [ nvidiaDriver ];
       };
 
     # NOTE: Maybe fixes white screen flickering with AMD iGPU
-    # videoDrivers = [ "amdgpu" ];    # NOTE: If commented, will use nouveau drivers
     # boot.kernelParams = [ "amdgpu.sg_display=0" ];
   };
 }
