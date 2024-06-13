@@ -228,9 +228,13 @@
   };
   services.xserver = {
     enable = true;
-    videoDrivers = [ "nvidia" "amdgpu" ];    # NOTE: If commented, will use nouveau drivers
-    xkb.variant = "";
     xkb.layout = "us";
+
+    # NOTE: If commented, will use nouveau drivers
+    videoDrivers = [
+      "nvidia"
+      #"amdgpu"
+    ];
   };
 
   # NOTE: To load nvidia drivers first
