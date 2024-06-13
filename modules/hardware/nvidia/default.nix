@@ -9,14 +9,16 @@ let
   cfg = config.CUSTOM.hardware.nvidia;
 
   # NOTE: Utils
-  configureHost = let
-    getHostConfig = hostName: options:
-      if   (builtins.hasAttr hostName options)
-      then options.${hostName}
-      else options.default;
-  in hostName: optionsSet:
-    mapAttrs (optionKey: optionValueSet: getHostConfig hostName optionValueSet) 
-    optionsSet;
+  configureHost = 
+    let
+      getHostConfig = hostName: options:
+        if   (builtins.hasAttr hostName options)
+        then options.${hostName}
+        else options.default;
+    in
+      hostName: optionsSet:
+        mapAttrs (optionKey: optionValueSet: getHostConfig hostName optionValueSet) 
+        optionsSet;
 
 
   # NOTE: Config
@@ -58,7 +60,11 @@ let
       default = false; # GTX 10XX gen is unsupported
                        # we on the RTX 4090 now though!
     };
-
+    
+    # NOTE: Persists driver state across CUDA job runs, reduces setups/teardowns
+    nvidiaPersistenced = {
+      default = true;
+    };
   };
 
   inherit (lib) 
