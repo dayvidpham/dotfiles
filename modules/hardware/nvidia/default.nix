@@ -37,7 +37,7 @@ let
 
     # NOTE: Balancing between iGPU and dGPU
     prime = rec {
-      # NOTE: Enable better balancing between CPU and iGPU
+      # NOTE: For laptops: enable better balancing between CPU and iGPU
       #dynamicBoost.enable = true;   
 
       # NOTE: Sync and Offload mode cannot be used at the same time
@@ -58,6 +58,7 @@ let
       default = false; # GTX 10XX gen is unsupported
                        # we on the RTX 4090 now though!
     };
+
   };
 
   inherit (lib) 
