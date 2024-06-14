@@ -370,7 +370,6 @@ in rec {
   };
   programs.firefox.enable = true;
   programs.alacritty.enable = true;
-  programs.kitty.enable = true;
   programs.nheko.enable = true;
 
   programs.obs-studio.enable = true;    # Grab OBS 
