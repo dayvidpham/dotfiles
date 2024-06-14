@@ -63,7 +63,9 @@ in rec {
     MOZ_ENABLE_WAYLAND          = "1";        # Run Firefox on Wayland
     BEMENU_BACKEND              = "wayland";
     GDK_BACKEND                 = "wayland";
-    XDG_CURRENT_DESKTOP         = "sway";
+    XDG_CURRENT_DESKTOP         = "hyprland";
+    # NOTE: Use iGPU on desktop: will need to change for laptop
+    WLR_DRM_BACKEND             = "/dev/dri/card2";
   };
 
   # Virtualisation
@@ -77,9 +79,9 @@ in rec {
   #####################
   # NOTE: Graphics
 
-  # Sway config
+  # NOTE: Sway config
   programs.waybar = {
-    enable = true;
+    enable = false;
     settings = [{
       height = 30;
       layer = "bottom";
@@ -168,7 +170,7 @@ in rec {
     modifier = "Mod1";
     terminal = "${pkgs.alacritty}/bin/alacritty";
   in {
-    enable = true;
+    enable = false;
     config = {
       terminal = terminal;
       output = {
@@ -284,6 +286,14 @@ in rec {
     '';
   };
 
+  # NOTE: Hyprland
+  wayland.windowManager.hyprland = {
+    enable = true;
+    extraConfig = ''
+      ${builtins.readFile config/hyprland/hyprland.conf}
+    '';
+  };
+
   services.mako = {
     enable = true;
   };
@@ -360,6 +370,7 @@ in rec {
   };
   programs.firefox.enable = true;
   programs.alacritty.enable = true;
+  programs.kitty.enable = true;
   programs.nheko.enable = true;
 
   programs.obs-studio.enable = true;    # Grab OBS 

@@ -185,8 +185,11 @@ in {
 
   ######################################
   # Window manager & GPU
-  programs.sway = {
+  programs.hyprland = {
     enable = true;
+  };
+  programs.sway = {
+    enable = false;
   };
   #CUSTOM.hardware.nvidia.enable = true;
   #CUSTOM.hardware.nvidia.proprietaryDrivers.enable = true;
@@ -246,8 +249,11 @@ in {
   xdg.portal = {
     enable = true;
     # xdgOpenUsePortal = true;
-    wlr.enable = true;
+    wlr.enable = false;
     config = {
+      hyprland = {
+        default = [ "hyprland" ];
+      };
       sway = {
         default = [ "wlr" "gtk" ];
       };
@@ -256,6 +262,7 @@ in {
       };
     };
     configPackages = with pkgs; [
+      xdg-desktop-portal-hyprland
       xdg-desktop-portal-wlr
       xdg-desktop-portal-gtk
     ];
@@ -281,7 +288,7 @@ in {
     settings = {
       default_session = {
         command = ''
-          ${pkgs.greetd.tuigreet}/bin/tuigreet --remember-session --remember --time --asterisks --cmd "sway"
+          ${pkgs.greetd.tuigreet}/bin/tuigreet --remember-session --remember --time --asterisks --cmd "Hyprland"
         '';
         user = "greeter";
       };
