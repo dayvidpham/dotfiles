@@ -65,7 +65,7 @@ in rec {
     GDK_BACKEND                 = "wayland";
     XDG_CURRENT_DESKTOP         = "hyprland";
     # NOTE: Use iGPU on desktop: will need to change for laptop
-    WLR_DRM_BACKEND             = "/dev/dri/card2";
+    WLR_DRM_DEVICES             = "/dev/dri/card2:/dev/dri/card1";
   };
 
   # Virtualisation
