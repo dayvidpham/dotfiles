@@ -16,8 +16,9 @@
 in {
 
   options.CUSTOM.wayland.windowManager.hyprland = {
-    enable = 
-      mkEnableOption "complete, personal Hyprland setup";
+
+    enable = mkEnableOption "complete, personal Hyprland setup";
+
   };
 
   config = mkIf cfg.enable {

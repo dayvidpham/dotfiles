@@ -66,7 +66,7 @@
 
     # NOTE: Utils
     libmint = 
-      import ./modules/libmint.nix { inherit lib; };
+      import ./modules/nixos/libmint.nix { inherit lib; };
 
   in {
     # Used with `nixos-rebuild --flake .#<hostname>`
@@ -92,7 +92,7 @@
         specialArgs = { inherit pkgs libmint; };
         modules = [ 
           ./hosts/desktop/configuration.nix
-          ./modules
+          ./modules/nixos
           noChannelModule
         ];
       };
@@ -123,6 +123,7 @@
         inherit pkgs;
         modules = [
           ./users/minttea/home.nix
+          ./modules/home-manager
         ];
         extraSpecialArgs = {
           inherit nixvim;

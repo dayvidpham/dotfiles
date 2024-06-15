@@ -30,7 +30,6 @@ in rec {
   imports = [ 
     # nixvim.homeManagerModules.nixvim
     ../../programs/neovim
-    ./config
   ];
   # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;
