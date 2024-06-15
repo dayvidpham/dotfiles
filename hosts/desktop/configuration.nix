@@ -207,23 +207,14 @@ in {
 
   xdg.portal = {
     enable = true;
-    wlr.enable = false;
 
     config = {
-      hyprland = {
-        default = [ "hyprland" ];
-      };
-      sway = {
-        default = [ "wlr" "gtk" ];
-      };
       common = {
         default = [ "gtk" ];
       };
     };
 
     configPackages = with pkgs; [
-      xdg-desktop-portal-hyprland
-      xdg-desktop-portal-wlr
       xdg-desktop-portal-gtk
     ];
   };

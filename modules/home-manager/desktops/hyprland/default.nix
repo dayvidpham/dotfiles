@@ -30,6 +30,21 @@ in {
       '';
     };
 
+    xdg.portal = {
+      enable = true;
+      config = {
+        hyprland = {
+          default = [ "hyprland" "gtk" ];
+        };
+      };
+
+      configPackages = with pkgs; [
+        xdg-desktop-portal-hyprland
+        xdg-desktop-portal-gtk
+      ];
+    };
+
+
     home.sessionVariables = {
       XDG_CURRENT_DESKTOP         = "hyprland";
       # NOTE: Use iGPU on desktop: will need to change for laptop
