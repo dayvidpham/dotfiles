@@ -48,7 +48,7 @@ in {
               criteria      = "DP-2";
               mode          = "2560x1440@169.831Hz";
               #scale         = 1.5;
-              position      = "1440,560";
+              position      = "1440,374";
               adaptiveSync  = true;
             }
             {
@@ -82,7 +82,7 @@ in {
               criteria      = "DP-5";
               mode          = "2560x1440@169.831Hz";
               #scale         = 1.5;
-              position      = "1440,560";
+              position      = "1440,374";
               adaptiveSync  = true;
             }
             {
