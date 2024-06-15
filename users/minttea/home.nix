@@ -30,6 +30,7 @@ in rec {
   imports = [ 
     # nixvim.homeManagerModules.nixvim
     ../../programs/neovim
+    ./config
   ];
   # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;
@@ -287,12 +288,8 @@ in rec {
   };
 
   # NOTE: Hyprland
-  wayland.windowManager.hyprland = {
-    enable = true;
-    extraConfig = ''
-      ${builtins.readFile config/hyprland/hyprland.conf}
-    '';
-  };
+  CUSTOM.wayland.windowManager.hyprland.enable = true;
+  CUSTOM.services.kanshi.enable = true;
 
   services.mako = {
     enable = true;
