@@ -11,10 +11,10 @@
 let 
   nvidiaDriver = config.boot.kernelPackages.nvidia_x11_beta;
 in {
-  imports =
-    [ # Include the results of the hardware scan.
-      ./hardware-configuration.nix
-    ];
+  imports = [
+    # Include the results of the hardware scan.
+    ./hardware-configuration.nix
+  ];
 
   system.stateVersion = "23.11";
   nix = {
@@ -186,71 +186,29 @@ in {
 
   ######################################
   # Window manager & GPU
-  programs.hyprland = {
+  programs = {
+    hyprland.enable = true;
+    sway.enable = false;
+  };
+  programs.xwayland.enable = true;
+
+  CUSTOM.hardware.nvidia = {
     enable = true;
+    proprietaryDrivers.enable = true;
   };
-  programs.sway = {
-    enable = false;
-  };
-  #CUSTOM.hardware.nvidia.enable = true;
-  #CUSTOM.hardware.nvidia.proprietaryDrivers.enable = true;
+
   services.xserver = {
     enable = true;
-    videoDrivers = # NOTE: If not set, will use nouveau drivers
-      [ "nvidia" ];
     xkb.layout = "us";
   };
-  hardware.opengl = {
-    enable          = true;
-    driSupport      = true;
-    driSupport32Bit = true;
-    extraPackages   = with pkgs; [
-      nvidia-vaapi-driver
-    ];
-  };
-
-  hardware.nvidia = {
-    package             = nvidiaDriver;
-    modesetting.enable  = true;    # NOTE: Sway will hang if not set
-    nvidiaSettings      = true;
-
-    powerManagement = {
-      enable      = true;
-      finegrained = false;
-    };
-
-    prime = {
-      sync.enable = true;         # Use dGPU for everything
-      nvidiaBusId = "PCI:1:0:0";
-      amdgpuBusId = "PCI:16:0:0";
-    };
-
-    # NOTE: Open kernel module: this is not the nouveau driver
-    open = false; # GTX 10XX gen is unsupported
-                  # we on the RTX 4090 now though!
-    
-    # NOTE: Persists driver state across CUDA job runs, reduces setups/teardowns
-    nvidiaPersistenced = true;
-  };
-
-  boot = # NOTE: To load nvidia drivers first
-    {
-      initrd.kernelModules = [ "nvidia" ];
-      extraModulePackages = [ nvidiaDriver ];
-    };
-
 
   # NOTE: Not sure why I set this option originally
   hardware.enableRedistributableFirmware = pkgs.lib.mkDefault true;
 
-  # NOTE: Maybe fixes white screen flickering with AMD iGPU
-  boot.kernelParams = [ "amdgpu.sg_display=0" ];
-
-  programs.xwayland.enable = true;
   xdg.portal = {
     enable = true;
-    # xdgOpenUsePortal = true;
     wlr.enable = false;
+
     config = {
       hyprland = {
         default = [ "hyprland" ];
@@ -262,6 +220,7 @@ in {
         default = [ "gtk" ];
       };
     };
+
     configPackages = with pkgs; [
       xdg-desktop-portal-hyprland
       xdg-desktop-portal-wlr

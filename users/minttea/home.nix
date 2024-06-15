@@ -58,7 +58,6 @@ in rec {
 
   # Env vars
   home.sessionVariables = {
-    WLR_NO_HARDWARE_CURSORS     = "1";        # Stop cursor from disappearing on NVIDIA GPU
     NIXOS_OZONE_WL              = "1";        # Tell electron apps to use Wayland
     MOZ_ENABLE_WAYLAND          = "1";        # Run Firefox on Wayland
     BEMENU_BACKEND              = "wayland";
