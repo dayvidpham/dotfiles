@@ -58,11 +58,7 @@ in rec {
 
   # Env vars
   home.sessionVariables = {
-    NIXOS_OZONE_WL              = "1";        # Tell electron apps to use Wayland
-    MOZ_ENABLE_WAYLAND          = "1";        # Run Firefox on Wayland
     BEMENU_BACKEND              = "wayland";
-    GDK_BACKEND                 = "wayland";
-    XDG_CURRENT_DESKTOP         = "hyprland";
     # NOTE: Use iGPU on desktop: will need to change for laptop
     WLR_DRM_DEVICES             = "/dev/dri/card2:/dev/dri/card1";
   };
@@ -286,7 +282,12 @@ in rec {
   };
 
   # NOTE: Hyprland
-  CUSTOM.wayland.windowManager.hyprland.enable = true;
+  CUSTOM.wayland.windowManager.hyprland = {
+    enable = true;
+    sessionVariables = {
+      WLR_DRM_DEVICES = "/dev/dri/card2:/dev/dri/card1";
+    };
+  };
   CUSTOM.services.kanshi.enable = true;
 
   services.mako = {
@@ -314,11 +315,13 @@ in rec {
     jq            # CLI json explorer
     run-cwd       # script to open window from focused
     gcc           # needed for neovim
+    fastfetch     # C implmentation of neofetch
+    nvtopPackages.full  # htop but for GPUs
     # R
     rstudio-env
     pandoc
     texlive-env
-    # Typical applications
+    # Typical user applications
     google-chrome
     spotify
     discord

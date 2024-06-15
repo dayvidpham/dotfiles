@@ -190,7 +190,6 @@ in {
     hyprland.enable = true;
     sway.enable = false;
   };
-  programs.xwayland.enable = true;
 
   CUSTOM.hardware.nvidia = {
     enable = true;
@@ -204,20 +203,6 @@ in {
 
   # NOTE: Not sure why I set this option originally
   hardware.enableRedistributableFirmware = pkgs.lib.mkDefault true;
-
-  xdg.portal = {
-    enable = true;
-
-    config = {
-      common = {
-        default = [ "gtk" ];
-      };
-    };
-
-    configPackages = with pkgs; [
-      xdg-desktop-portal-gtk
-    ];
-  };
 
 
   ######################################
