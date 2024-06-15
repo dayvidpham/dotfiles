@@ -34,7 +34,10 @@ in {
       enable = true;
       config = {
         hyprland = {
-          default = [ "hyprland" "gtk" ];
+          default = [ "hyprland" ];
+        };
+        common = {
+          default = [ "gtk" ];
         };
       };
 
