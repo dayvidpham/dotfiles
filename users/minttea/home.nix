@@ -288,7 +288,15 @@ in rec {
       WLR_DRM_DEVICES = "/dev/dri/card2:/dev/dri/card1";
     };
   };
-  CUSTOM.services.kanshi.enable = true;
+
+  CUSTOM.services.kanshi.enable = true;   # Display configuration
+
+  programs.eww = {
+    enable = true;
+    package = pkgs.eww-wayland;
+    configDir = ../../programs/eww/bar;
+  };
+
 
   services.mako = {
     enable = true;
