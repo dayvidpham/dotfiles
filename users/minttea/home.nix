@@ -293,7 +293,7 @@ in rec {
 
   programs.eww = {
     enable = true;
-    package = pkgs.eww-wayland;
+    package = pkgs.eww;
     configDir = ../../programs/eww/bar;
   };
 
