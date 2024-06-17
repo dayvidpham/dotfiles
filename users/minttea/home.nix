@@ -289,8 +289,6 @@ in rec {
     };
   };
 
-  CUSTOM.services.kanshi.enable = true;   # Display configuration
-
   programs.eww = {
     enable = true;
     package = pkgs.eww;

@@ -78,6 +78,8 @@ in {
 
     ];
 
+    CUSTOM.services.kanshi.enable = true;
+
   };
 
 }
