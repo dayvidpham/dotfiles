@@ -96,6 +96,8 @@ in {
     enableDefaultPackages = true;
     packages = with pkgs; [
       (nerdfonts.override { fonts = [ "iA-Writer" ]; })
+      noto-fonts
+      noto-fonts-emoji
     ];
   };
   console = {
