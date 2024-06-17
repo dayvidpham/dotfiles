@@ -41,10 +41,15 @@ in {
 
   config = mkIf cfg.enable {
 
+    home.packages = with pkgs; [ 
+      polkit_gnome
+    ];
+
     wayland.windowManager.hyprland = {
       enable = true;
       extraConfig = ''
         ${builtins.readFile ./hyprland.conf}
+        exec-once = ${pkgs.polkit_gnome.outPath}/libexec/polkit-gnome-authentication-agent-1
       '';
     };
 
