@@ -26,9 +26,10 @@ in {
     ];
 
     services.kanshi = {
-      enable    = true;
+      enable = true;
 
-      settings  = [
+      settings = [
+
         {
           profile.name    = "desktop-1";
           profile.outputs = [
@@ -62,7 +63,6 @@ in {
             }
 
           ];
-
         }
 
         {
@@ -96,6 +96,7 @@ in {
               adaptiveSync  = true;
               transform     = "270";
             }
+
           ];
         }
         
