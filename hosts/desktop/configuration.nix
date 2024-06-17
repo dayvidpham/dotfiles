@@ -92,14 +92,7 @@ in {
   i18n.defaultLocale = "en_CA.UTF-8";
 
   # Setup tty and fonts
-  fonts = {
-    enableDefaultPackages = true;
-    packages = with pkgs; [
-      (nerdfonts.override { fonts = [ "iA-Writer" ]; })
-      noto-fonts
-      noto-fonts-emoji
-    ];
-  };
+  CUSTOM.fonts.enable = true;
   console = {
     keyMap = "us";
   };

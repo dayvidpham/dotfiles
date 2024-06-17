@@ -9,5 +9,6 @@
     ./services
     ./desktops
     ./hardware
+    ./fonts
   ];
 }
