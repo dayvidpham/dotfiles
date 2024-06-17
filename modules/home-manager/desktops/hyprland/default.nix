@@ -66,13 +66,16 @@ in {
     };
 
     home.sessionVariables = mkMerge [
+
       {
         XDG_CURRENT_DESKTOP = "hyprland";
         GDK_BACKEND         = "wayland";
         NIXOS_OZONE_WL      = "1";        # Tell electron apps to use Wayland
         MOZ_ENABLE_WAYLAND  = "1";        # Run Firefox on Wayland
       }
+
       cfg.sessionVariables
+
     ];
 
   };

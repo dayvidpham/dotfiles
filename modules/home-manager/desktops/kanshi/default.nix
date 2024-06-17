@@ -60,7 +60,9 @@ in {
               adaptiveSync  = true;
               transform     = "270";
             }
+
           ];
+
         }
 
         {
@@ -94,7 +96,6 @@ in {
               adaptiveSync  = true;
               transform     = "270";
             }
-
           ];
         }
         
