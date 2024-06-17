@@ -4,7 +4,6 @@
 
 {
   imports = [
-    ./desktops
-    ./themes
+    ./gtk
   ];
 }

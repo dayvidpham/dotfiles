@@ -37,24 +37,22 @@ in rec {
   home.username = "minttea";
   home.homeDirectory = "/home/minttea";
   home.stateVersion = "23.11"; # Please read the comment before changing.
-  home.pointerCursor = {
-    gtk.enable = true;
-    name = "Bibata-Modern-Classic";
-    size = 24;
-    package = pkgs.bibata-cursors;
-  };
-  gtk = {
-    enable = true;
-    cursorTheme = {
-      name = "Bibata-Modern-Classic";
-      size = 24;
-      package = pkgs.bibata-cursors;
-    };
-    theme = {
-      name = "Dracula";
-      package = pkgs.dracula-theme;
-    };
-  };
+
+  CUSTOM.themes.enable = true;
+
+  #home.pointerCursor = {
+  #  gtk.enable = true;
+  #  name = "Bibata-Modern-Classic";
+  #  size = 24;
+  #  package = pkgs.bibata-cursors;
+  #};
+  #gtk = {
+  #  enable = true;
+  #  theme = {
+  #    name = "Dracula";
+  #    package = pkgs.dracula-theme;
+  #  };
+  #};
 
   # Env vars
   home.sessionVariables = {
