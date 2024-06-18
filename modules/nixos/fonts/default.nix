@@ -13,7 +13,7 @@
 in {
   options.CUSTOM.fonts = {
 
-    enable = mkEnableOption "default fonts and fontconfig"
+    enable = mkEnableOption "default fonts and fontconfig";
 
   };
 
