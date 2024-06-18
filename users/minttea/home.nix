@@ -40,20 +40,6 @@ in rec {
 
   CUSTOM.themes.enable = true;
 
-  #home.pointerCursor = {
-  #  gtk.enable = true;
-  #  name = "Bibata-Modern-Classic";
-  #  size = 24;
-  #  package = pkgs.bibata-cursors;
-  #};
-  #gtk = {
-  #  enable = true;
-  #  theme = {
-  #    name = "Dracula";
-  #    package = pkgs.dracula-theme;
-  #  };
-  #};
-
   # Env vars
   home.sessionVariables = {
     BEMENU_BACKEND              = "wayland";

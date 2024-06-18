@@ -2,9 +2,6 @@
   config
   , pkgs
   , lib ? pkgs.lib
-  , pointerCursor ? null
-  , theme ? null
-
   , ...
 }:
 
@@ -47,6 +44,34 @@
 
     cfg = config.CUSTOM.themes;
 
+    fonts = {
+      noto-sans = {
+        name = "Noto Sans";
+        package = pkgs.noto-fonts;
+        size = 12;
+      };
+
+      dejavu-sans = {
+        name = "DejaVu Sans";
+        package = pkgs.dejavu_fonts;
+        size = 12;
+      };
+    };
+
+    gtk.themes = {
+      dracula = {
+        name = "Dracula";
+        package = pkgs.dracula-theme;
+      };
+    };
+
+    gtkNonNull = (builtins.any (attr: attr != null) (
+      lib.concatLists [
+        (lib.attrsets.attrVals [ "theme" "iconTheme" "font" "pointerCursor" ] cfg.gtk)
+        (lib.attrsets.attrVals [ "pointerCursor" ] cfg)
+      ]
+    ));
+
   in lib.mkIf cfg.enable {
 
     CUSTOM.themes = {
@@ -59,32 +84,11 @@
       };
 
       gtk = lib.mkDefault rec {
-        enable = lib.mkIf (builtins.any (attr: attr != null) (
-          (lib.attrsets.attrVals [ "theme" "iconTheme" "font" "pointerCursor" ] cfg.gtk)
-          ++ (lib.attrsets.attrVals [ "pointerCursor" ] cfg)
-        ));
+        enable = if gtkNonNull then true else false;
 
-        font = lib.mkDefault {
-          name = "Noto Sans";
-          package = pkgs.noto-fonts;
-          size = 12;
-        };
-
-        theme = lib.mkDefault {
-          name = "Dracula";
-          package = pkgs.dracula-theme;
-        };
+        font = lib.mkDefault fonts.dejavu-sans;
+        theme = lib.mkDefault gtk.themes.dracula;
       };
     };
-
-    gtk = lib.mkIf (
-      builtins.any (attr: attr != null) (
-        (lib.attrsets.attrVals [ "theme" "iconTheme" "font" "pointerCursor" ] cfg.gtk)
-        ++ (lib.attrsets.attrVals [ "pointerCursor" ] cfg)
-      )
-    ) {
-      enable = true;
-    };
-
   };
 }
