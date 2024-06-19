@@ -61,18 +61,18 @@
     qemu = {
       package = pkgs.qemu_kvm;
       runAsRoot = true;
-      swtpm.enable = true; # Software Trusted Platform Module: virtualized cryptoprocessor
-      ovmf = {
-        # Open Virtual Machine Firmware: enables UEFI support for VMs
-        # Use UEFI over traditional BIOS
-        enable = true;
-        packages = [ 
-          (pkgs.OVMF.override {
-            secureBoot = false;
-            tpmSupport = true;
-          }).fd 
-        ];
-      };
+      #swtpm.enable = true; # Software Trusted Platform Module: virtualized cryptoprocessor
+      #ovmf = {
+      #  # Open Virtual Machine Firmware: enables UEFI support for VMs
+      #  # Use UEFI over traditional BIOS
+      #  enable = true;
+      #  packages = [ 
+      #    (pkgs.OVMF.override {
+      #      secureBoot = false;
+      #      tpmSupport = true;
+      #    }).fd 
+      #  ];
+      #};
     };
   };
 
