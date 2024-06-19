@@ -1,0 +1,15 @@
+#!/bin/sh
+
+if command -v wpctl &>/dev/null; then
+    wpctl get-volume @DEFAULT_AUDIO_SINK@ | awk -F '[^0-9]+' '
+{
+    if (/MUTED/)
+        print "MUTED"
+    else
+        print ($2*100 + $3)
+}'
+else
+    echo "N/A"
+    exit 1
+fi
+

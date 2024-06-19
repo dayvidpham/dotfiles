@@ -1,3 +1,4 @@
-(include "./bar/eww.yuck")
+(include "./eww-bar/eww.yuck")
+;(include "./bar/eww.yuck")
 ;(include "./leftbar/eww.yuck")
 ;(include "./example/eww.yuck")
