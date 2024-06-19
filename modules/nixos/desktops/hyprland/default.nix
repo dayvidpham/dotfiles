@@ -5,8 +5,7 @@
   , ... 
 }:
 let
-  cfg = config.CUSTOM.v4l2loopback;
-
+  # cfg = ;
   inherit (lib) 
     mkIf
     mkEnableOption
