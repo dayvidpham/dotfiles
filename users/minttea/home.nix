@@ -42,9 +42,14 @@ in rec {
 
   # Env vars
   home.sessionVariables = {
-    BEMENU_BACKEND              = "wayland";
+    XDG_CONFIG_HOME = "${xdg.configHome}";
+    XDG_CACHE_HOME  = "${xdg.cacheHome}";
+    XDG_DATA_HOME   = "${xdg.dataHome}";
+    XDG_STATE_HOME  = "${xdg.stateHome}";
+
+    BEMENU_BACKEND  = "wayland";
     # NOTE: Use iGPU on desktop: will need to change for laptop
-    WLR_DRM_DEVICES             = "/dev/dri/card2:/dev/dri/card1";
+    WLR_DRM_DEVICES = "/dev/dri/card2:/dev/dri/card1";
   };
 
   # Virtualisation
