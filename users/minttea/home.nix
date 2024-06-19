@@ -280,7 +280,7 @@ in rec {
 
   programs.eww = {
     enable = true;
-    configDir = ../../programs/eww/bar;
+    configDir = ../../programs/eww;
   };
 
   services.mako = {
