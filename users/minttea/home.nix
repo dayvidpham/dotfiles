@@ -275,10 +275,8 @@ in rec {
 
   programs.eww = {
     enable = true;
-    package = pkgs.eww;
     configDir = ../../programs/eww/bar;
   };
-
 
   services.mako = {
     enable = true;

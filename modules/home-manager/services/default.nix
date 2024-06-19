@@ -4,6 +4,6 @@
 
 {
   imports = [
-    ./hyprland
+    ./kanshi
   ];
 }
