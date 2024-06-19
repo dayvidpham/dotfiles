@@ -82,12 +82,7 @@
   i18n.defaultLocale = "en_CA.UTF-8";
 
   # Setup tty and fonts
-  fonts = {
-    enableDefaultPackages = true;
-    packages = with pkgs; [
-      (nerdfonts.override { fonts = [ "iA-Writer" ]; })
-    ];
-  };
+  CUSTOM.fonts.enable = true;
   console = {
     keyMap = "us";
   };
@@ -163,60 +158,20 @@
 
   ######################################
   # Window manager & GPU
-  programs.sway = {
-    enable = true;
-  };
-  hardware.opengl = {
-    enable = true;
-    driSupport = true;
-    driSupport32Bit = true;
-  };
+  programs.hyprland.enable = true;
+
   hardware.enableRedistributableFirmware = pkgs.lib.mkDefault true;
-  hardware.nvidia = {
-    package = config.boot.kernelPackages.nvidiaPackages.stable;
-    modesetting.enable = true;
-    nvidiaSettings = true;
 
-    powerManagement = {
-      enable = true;
-      finegrained = true;
-    };
-    prime = {
-      offload.enable = true;
-      nvidiaBusId = "PCI:0:0:1";
-      amdgpuBusId = "PCI:0:0:8";
-    };
-
-
-    # Open kernel module, not nouveau
-    open = false;
+  CUSTOM.hardware.nvidia = {
+    enable = true;
+    proprietaryDrivers.enable = true;
   };
+
+
   services.xserver = {
     enable = true;
-    videoDrivers = [ "nvidia" ];
     xkb.variant = "";
     xkb.layout = "us";
-  };
-  programs.xwayland.enable = true;
-  xdg.portal = {
-    enable = true;
-    # xdgOpenUsePortal = true;
-    wlr.enable = true;
-    config = {
-      dwl = {
-        default = [ "wlr" "gtk" ];
-      };
-      sway = {
-        default = [ "wlr" "gtk" ];
-      };
-      common = {
-        default = [ "gtk" ];
-      };
-    };
-    configPackages = with pkgs; [
-      xdg-desktop-portal-wlr
-      xdg-desktop-portal-gtk
-    ];
   };
 
   services.logind.extraConfig = ''
@@ -242,6 +197,9 @@
   #     dwl = prev.dwl.override { conf = ./dwl-config.h; };
   #   })
   # ];
+
+  # Screen-sharing
+  CUSTOM.v4l2loopback.enable = true;
 
   ######################################
   # Some user setup: Most user-stuff will be in home-manager

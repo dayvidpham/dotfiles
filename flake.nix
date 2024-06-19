@@ -83,6 +83,7 @@
         specialArgs = { inherit pkgs libmint; };
         modules = [
           ./hosts/flowX13/configuration.nix
+          ./modules/nixos
           noChannelModule
         ];
       };
@@ -113,6 +114,7 @@
         inherit pkgs;
         modules = [ 
           ./users/minttea/home.nix
+          ./modules/home-manager
         ];
         extraSpecialArgs = {
           inherit nixvim;

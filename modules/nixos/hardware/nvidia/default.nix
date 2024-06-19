@@ -9,7 +9,6 @@ let
   cfg = config.CUSTOM.hardware.nvidia;
 
   nvidiaDriver = config.boot.kernelPackages.nvidia_x11_beta;
-  #nvidiaDriver = pkgs.linuxPackages_latest.nvidia_x11_beta;
 
   # NOTE: Config
   nvidia = {
@@ -40,6 +39,9 @@ let
 
       laptop = default // {
         offload.enable = true;
+        offload.enableOffloadCmd = true;
+        nvidiaBusId = "PCI:0:0:1";
+        amdgpuBusId = "PCI:0:0:8";
       };
     };
 
