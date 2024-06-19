@@ -10,5 +10,6 @@
     ./desktops
     ./hardware
     ./fonts
+    ./programs
   ];
 }

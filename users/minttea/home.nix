@@ -42,10 +42,10 @@ in rec {
 
   # Env vars
   home.sessionVariables = {
-    XDG_CONFIG_HOME = "${xdg.configHome}";
-    XDG_CACHE_HOME  = "${xdg.cacheHome}";
-    XDG_DATA_HOME   = "${xdg.dataHome}";
-    XDG_STATE_HOME  = "${xdg.stateHome}";
+    XDG_CONFIG_HOME = "${config.xdg.configHome}";
+    XDG_CACHE_HOME  = "${config.xdg.cacheHome}";
+    XDG_DATA_HOME   = "${config.xdg.dataHome}";
+    XDG_STATE_HOME  = "${config.xdg.stateHome}";
 
     BEMENU_BACKEND  = "wayland";
     # NOTE: Use iGPU on desktop: will need to change for laptop
@@ -277,11 +277,7 @@ in rec {
       WLR_DRM_DEVICES = "/dev/dri/card2:/dev/dri/card1";
     };
   };
-
-  programs.eww = {
-    enable = true;
-    configDir = ../../programs/eww;
-  };
+  CUSTOM.programs.eww.enable = true;
 
   services.mako = {
     enable = true;

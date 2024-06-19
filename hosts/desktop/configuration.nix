@@ -181,10 +181,8 @@ in {
 
   ######################################
   # Window manager & GPU
-  programs = {
-    hyprland.enable = true;
-    sway.enable = false;
-  };
+  programs.hyprland.enable = true;
+  CUSTOM.programs.eww.enable = true;
 
   CUSTOM.hardware.nvidia = {
     enable = true;
