@@ -60,8 +60,10 @@
       environment.etc."nix/inputs/nixpkgs".source = "${nixpkgs}";
       environment.etc."nix/inputs/home-manager".source = "${home-manager}";
 
-      nix.settings.nix-path =
-        lib.mkForce "nixpkgs=/etc/nix/inputs/nixpkgs:home-manager=/etc/nix/inputs/home-manager";
+      nix.settings.nix-path = lib.mkForce [ 
+        "nixpkgs=/etc/nix/inputs/nixpkgs"
+        "home-manager=/etc/nix/inputs/home-manager"
+      ];
     };
 
     # NOTE: Utils
