@@ -1,9 +1,9 @@
-{
-  ...
+{ ...
 }:
 
 {
   imports = [
     ./eww
+    ./waybar
   ];
 }

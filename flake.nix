@@ -69,6 +69,31 @@
       libmint =
         import ./modules/nixos/libmint.nix { inherit lib; };
 
+      # NOTE: My own packages and programs
+      run-cwd = with pkgs; callPackage ./programs/run-cwd.nix {
+        inherit writeShellApplication runtimeShell sway jq;
+      };
+      scythe = with pkgs; callPackage ./programs/scythe.nix {
+        inherit writeShellApplication runtimeShell grim slurp dmenu swappy;
+        wl-clipboard = wl-clipboard-rs;
+        output-dir = "$HOME/Pictures/scythe";
+      };
+
+      # NOTE: Common args to be passed to nixosConfigs and homeConfigurations
+      specialArgs = {
+        inherit
+          pkgs
+          libmint
+          ;
+      };
+
+      extraSpecialArgs = {
+        inherit
+          nil-lsp
+          run-cwd
+          scythe
+          ;
+      };
     in
     {
       # Used with `nixos-rebuild --flake .#<hostname>`
@@ -76,13 +101,13 @@
       nixosConfigurations = {
         vmware = nixpkgs.lib.nixosSystem {
           inherit system;
-          specialArgs = { inherit pkgs libmint; };
+          specialArgs = specialArgs;
           modules = [ ./hosts/vmware/configuration.nix ];
         };
 
         flowX13 = nixpkgs.lib.nixosSystem {
           inherit system;
-          specialArgs = { inherit pkgs libmint; };
+          specialArgs = specialArgs;
           modules = [
             ./hosts/flowX13/configuration.nix
             ./modules/nixos
@@ -92,7 +117,7 @@
 
         desktop = nixpkgs.lib.nixosSystem {
           inherit system;
-          specialArgs = { inherit pkgs libmint; };
+          specialArgs = specialArgs;
           modules = [
             ./hosts/desktop/configuration.nix
             ./modules/nixos
@@ -116,9 +141,7 @@
             ./modules/home-manager
             ./programs/neovim
           ];
-          extraSpecialArgs = {
-            inherit nil-lsp;
-          };
+          extraSpecialArgs = extraSpecialArgs;
         };
 
         "minttea@desktop" = home-manager.lib.homeManagerConfiguration {
@@ -128,9 +151,7 @@
             ./modules/home-manager
             ./programs/neovim
           ];
-          extraSpecialArgs = {
-            inherit nil-lsp;
-          };
+          extraSpecialArgs = extraSpecialArgs;
         };
       };
     };

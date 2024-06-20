@@ -1,11 +1,13 @@
-{
-  config
-  , pkgs
-  , lib ? pkgs.lib
-  , terminal
-  , menu
-  , ...
-}: let
+{ config
+, pkgs
+, lib ? pkgs.lib
+, terminal
+, menu
+, run-cwd
+, scythe
+, ...
+}:
+let
   cfg = config.CUSTOM.wayland.windowManager.hyprland;
 
   inherit (lib)
@@ -14,14 +16,16 @@
     mkEnableOption
     mkMerge
     types
-  ;
+    ;
 
-in {
+in
+{
 
   options.CUSTOM.wayland.windowManager.hyprland = {
 
     enable = mkEnableOption "complete, personal Hyprland setup";
 
+    # TODO: Move this to the NixOS hyprland module
     sessionVariables.WLR_DRM_DEVICES = mkOption {
       type = types.str;
       description = ''
@@ -41,10 +45,6 @@ in {
 
   config = mkIf cfg.enable {
 
-    home.packages = with pkgs; [ 
-      polkit_gnome
-    ];
-
     wayland.windowManager.hyprland = {
       enable = true;
       extraConfig = ''
@@ -54,37 +54,48 @@ in {
     };
 
     xdg.portal = {
-
       enable = true;
       config = {
-
         hyprland = {
           default = [ "hyprland" ];
         };
-
       };
 
       extraPortals = with pkgs; [
         xdg-desktop-portal-hyprland
       ];
-
     };
 
     home.sessionVariables = mkMerge [
-
       {
         XDG_CURRENT_DESKTOP = "hyprland";
-        GDK_BACKEND         = "wayland";
-        NIXOS_OZONE_WL      = "1";        # Tell electron apps to use Wayland
-        MOZ_ENABLE_WAYLAND  = "1";        # Run Firefox on Wayland
+        GDK_BACKEND = "wayland";
+        NIXOS_OZONE_WL = "1"; # Tell electron apps to use Wayland
+        MOZ_ENABLE_WAYLAND = "1"; # Run Firefox on Wayland
       }
 
       cfg.sessionVariables
-
     ];
 
     CUSTOM.services.kanshi.enable = true;
+    CUSTOM.services.playerctld.enable = true;
+
+    # GUI elements: widgets and status bars
+    CUSTOM.programs.eww.enable = true;
+    CUSTOM.programs.waybar = {
+      enable = true;
+      windowManager = "hyprland";
+    };
+    # Notification daemon
+    services.mako = {
+      enable = true;
+    };
+
+    home.packages = with pkgs; [
+      run-cwd
+      scythe
+      polkit_gnome
+    ];
 
   };
-
 }
