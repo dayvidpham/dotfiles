@@ -13,6 +13,8 @@ NixOS dotfiles directory: my experimental descent into madness
   - python3
   - swaylock/hyprlock
   - hyprpapr, colour dependent on bg too
+  - spicetify: GTK themed spotify
+  - betterdiscord?
 
 ### TODO: 
   - convert to pulseaudio to pipewire/wireplumber, use wpctl?

@@ -1,9 +1,8 @@
-{
-  config
-  , pkgs
-  , lib ? pkgs.lib
-  , libmint
-  , ... 
+{ config
+, pkgs
+, lib ? pkgs.lib
+, libmint
+, ...
 }:
 let
   cfg = config.CUSTOM.hardware.nvidia;
@@ -14,8 +13,8 @@ let
   nvidia = {
     powerManagement = rec {
       default = {
-        enable      = true;         # Enable dGPU systemd power management
-        finegrained = false;        # Enable PRIME offload power management
+        enable = true; # Enable dGPU systemd power management
+        finegrained = false; # Enable PRIME offload power management
       };
 
       laptop = {
@@ -27,12 +26,12 @@ let
     prime = rec {
       default = {
         # NOTE: Sync and Offload mode cannot be used at the same time
-        sync.enable = false;      # Enable offloading to dGPU
-        offload.enable = false;   # convenience script to run on dGPU
+        sync.enable = false; # Enable offloading to dGPU
+        offload.enable = false; # convenience script to run on dGPU
       };
 
       desktop = default // {
-        sync.enable = true;         # Use dGPU for everything
+        sync.enable = true; # Use dGPU for everything
         nvidiaBusId = "PCI:1:0:0";
         amdgpuBusId = "PCI:16:0:0";
       };
@@ -48,9 +47,9 @@ let
     # NOTE: Open kernel module: this is not the nouveau driver
     open = {
       default = false; # GTX 10XX gen is unsupported
-                       # we on the RTX 4090 now though!
+      # we on the RTX 4090 now though!
     };
-    
+
     # NOTE: Persists driver state across CUDA job runs, reduces setups/teardowns
     nvidiaPersistenced = {
       default = false;
@@ -66,7 +65,7 @@ let
 
   };
 
-  inherit (lib) 
+  inherit (lib)
     mkIf
     mkEnableOption
     mkPackageOption
@@ -74,24 +73,25 @@ let
     mkDefault
     mkBefore
     mkAfter
-  ;
+    ;
 
   inherit (libmint)
     configureHost
-  ;
+    ;
 
-in {
+in
+{
 
   options.CUSTOM.hardware.nvidia = {
 
     enable = mkEnableOption "NVIDIA GPU settings for various hosts";
 
     proprietaryDrivers = {
-      enable = 
-        mkEnableOption "proprietary NVIDIA drivers" // { 
+      enable =
+        mkEnableOption "proprietary NVIDIA drivers" // {
           default = true;
         };
-      package = 
+      package =
         mkPackageOption config.boot.kernelPackages "nvidia_x11_beta" {
           example = [ "nvidia_x11" "nvidia_x11_beta" "nvidia_x11_production" ];
         };
@@ -108,18 +108,18 @@ in {
   config = mkIf cfg.enable {
 
     hardware.opengl = {
-      enable          = true;
-      driSupport      = true;
+      enable = true;
+      driSupport = true;
       driSupport32Bit = true;
-      extraPackages   = mkIf cfg.proprietaryDrivers.enable (with pkgs; [
+      extraPackages = mkIf cfg.proprietaryDrivers.enable (with pkgs; [
         nvidia-vaapi-driver
       ]);
     };
 
     hardware.nvidia = {
-      package             = nvidiaDriver;
-      modesetting.enable  = true;    # NOTE: Sway will hang if not set
-      nvidiaSettings      = true;
+      package = nvidiaDriver;
+      modesetting.enable = true; # NOTE: Wayland requires this to be true
+      nvidiaSettings = true;
     } // (configureHost cfg.hostName nvidia);
 
     programs.xwayland.enable = true;
@@ -134,6 +134,12 @@ in {
       # NOTE: To load nvidia drivers first 
       initrd.kernelModules = [ "nvidia" ];
       extraModulePackages = [ nvidiaDriver ];
+    };
+
+    environment.variables = {
+      GBM_BACKEND = "nvidia-drm";
+      __GLX_VENDOR_LIBRARY_NAME = "nvidia";
+      __GL_GSYNC_ALLOWED = "1";
     };
 
   };

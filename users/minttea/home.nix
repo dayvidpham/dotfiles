@@ -34,10 +34,6 @@ rec {
     XDG_CACHE_HOME = "${config.xdg.cacheHome}";
     XDG_DATA_HOME = "${config.xdg.dataHome}";
     XDG_STATE_HOME = "${config.xdg.stateHome}";
-
-    BEMENU_BACKEND = "wayland";
-    # NOTE: Use iGPU on desktop: will need to change for laptop
-    WLR_DRM_DEVICES = "/dev/dri/card2:/dev/dri/card1";
   };
 
   # Virtualisation
@@ -54,9 +50,6 @@ rec {
   # NOTE: Hyprland
   CUSTOM.wayland.windowManager.hyprland = {
     enable = true;
-    sessionVariables = {
-      WLR_DRM_DEVICES = "/dev/dri/card2:/dev/dri/card1";
-    };
   };
 
   # NOTE: General package stuff

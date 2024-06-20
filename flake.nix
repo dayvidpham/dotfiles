@@ -65,7 +65,7 @@
         ];
       };
 
-      # NOTE: Utils
+      # NOTE: Utils and enum types
       libmint =
         import ./modules/nixos/libmint.nix { inherit lib; };
 
@@ -137,21 +137,25 @@
         "minttea@flowX13" = home-manager.lib.homeManagerConfiguration {
           inherit pkgs;
           modules = [
-            ./users/minttea/home.nix
             ./modules/home-manager
             ./programs/neovim
+            ./users/minttea/home.nix
           ];
-          extraSpecialArgs = extraSpecialArgs;
+          extraSpecialArgs = extraSpecialArgs // {
+            GLOBALS.hostName = "flowX13";
+          };
         };
 
         "minttea@desktop" = home-manager.lib.homeManagerConfiguration {
           inherit pkgs;
           modules = [
-            ./users/minttea/home.nix
             ./modules/home-manager
             ./programs/neovim
+            ./users/minttea/home.nix
           ];
-          extraSpecialArgs = extraSpecialArgs;
+          extraSpecialArgs = extraSpecialArgs // {
+            GLOBALS.hostName = "desktop";
+          };
         };
       };
     };

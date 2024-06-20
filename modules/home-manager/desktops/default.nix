@@ -1,9 +1,8 @@
-{
-  ...
+{ ...
 }:
 
 {
   imports = [
-    ./hyprland
+    ./wayland
   ];
 }

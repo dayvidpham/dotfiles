@@ -28,7 +28,7 @@ in
     mkIf cfg.enable {
       CUSTOM.programs.waybar = {
         enable = true;
-        windowMannager = "sway";
+        windowManager = "sway";
       };
 
       wayland.windowManager.sway =
