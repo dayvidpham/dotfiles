@@ -3,10 +3,19 @@
 }
 
 //Global Styles
+
+window {
+  background-color: #121212;
+  color: #ffd5cd;
+  font-family: Iosevka NF;
+  //padding: 10px;
+}
+
 .bar {
-  background-color: #3a3a3a;
-  color: #b0b4bc;
-  padding: 100px;
+  //background-color: #3a3a3a;
+  //color: #b0b4bc;
+  font-family: Iosevka NF;
+  padding: 10px;
 }
 
 // Styles on classes (see eww.yuck for more information)
