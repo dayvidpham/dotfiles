@@ -81,7 +81,7 @@ in {
       #   #     secureBoot = false;
       #   #     tpmSupport = true;
       #   #   }).fd 
-      #   # ];
+    #   # ];
       # };
     };
   };
@@ -169,7 +169,11 @@ in {
     # remote wayland
     waypipe
   ];
-  programs.vim.defaultEditor = true;
+  #programs.nix-ld.enable = true;
+  #programs.nix-ld.libraries = with pkgs; [
+  #  lua-language-server
+  #];
+
   programs.git = {
     enable = true;
     config = {

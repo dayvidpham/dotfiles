@@ -25,114 +25,113 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    nixvim = {
-      url = "github:nix-community/nixvim";
+    nil-lsp = {
+      url = "github:oxalica/nil";
       inputs.nixpkgs.follows = "nixpkgs";
-      inputs.home-manager.follows = "home-manager";
     };
   };
 
-  outputs = inputs@{ 
-    self
+  outputs =
+    inputs@{ self
     , nixpkgs
     , home-manager
-    , nixvim
-    , ... 
-  }: 
-  let
-    lib = nixpkgs.lib;
-    system = "x86_64-linux";
+    , nil-lsp
+    , ...
+    }:
+    let
+      lib = nixpkgs.lib;
+      system = "x86_64-linux";
 
-    pkgs = import nixpkgs {
-      inherit system;
-      config = {
-        allowUnfree = true;
-        allowUnfreePredicate = (_: true);
-      };
-    };
-
-    # NOTE: Needs to be defined here to have access to nixpkgs and home-manager inputs
-    noChannelModule = {
-      nix.channel.enable = false;
-
-      nix.registry.nixpkgs.flake = nixpkgs;
-      nix.registry.home-manager.flake = home-manager;
-      environment.etc."nix/inputs/nixpkgs".source = "${nixpkgs}";
-      environment.etc."nix/inputs/home-manager".source = "${home-manager}";
-
-      nix.settings.nix-path = lib.mkForce [ 
-        "nixpkgs=/etc/nix/inputs/nixpkgs"
-        "home-manager=/etc/nix/inputs/home-manager"
-      ];
-    };
-
-    # NOTE: Utils
-    libmint = 
-      import ./modules/nixos/libmint.nix { inherit lib; };
-
-  in {
-    # Used with `nixos-rebuild --flake .#<hostname>`
-    # nixosConfigurations."<hostname>".config.system.build.toplevel must be a derivation
-    nixosConfigurations = {
-      vmware = nixpkgs.lib.nixosSystem {
-        inherit system; 
-        specialArgs = { inherit pkgs libmint; };
-        modules = [ ./hosts/vmware/configuration.nix ] ;
-      };
-      
-      flowX13 = nixpkgs.lib.nixosSystem {
-        inherit system; 
-        specialArgs = { inherit pkgs libmint; };
-        modules = [
-          ./hosts/flowX13/configuration.nix
-          ./modules/nixos
-          noChannelModule
-        ];
-      };
-
-      desktop = nixpkgs.lib.nixosSystem {
-        inherit system; 
-        specialArgs = { inherit pkgs libmint; };
-        modules = [ 
-          ./hosts/desktop/configuration.nix
-          ./modules/nixos
-          noChannelModule
-        ];
-      };
-    };
-    
-    homeConfigurations = {
-      "dhpham@vmware" = home-manager.lib.homeManagerConfiguration {
-        inherit pkgs;
-        modules = [ 
-          ./users/dhpham/home.nix
-        ];
-        extraSpecialArgs = {
-          inherit nixvim;
+      pkgs = import nixpkgs {
+        inherit system;
+        config = {
+          allowUnfree = true;
+          allowUnfreePredicate = (_: true);
         };
       };
 
-      "minttea@flowX13" = home-manager.lib.homeManagerConfiguration {
-        inherit pkgs;
-        modules = [ 
-          ./users/minttea/home.nix
-          ./modules/home-manager
+      # NOTE: Needs to be defined here to have access to nixpkgs and home-manager inputs
+      noChannelModule = {
+        nix.channel.enable = false;
+
+        nix.registry.nixpkgs.flake = nixpkgs;
+        nix.registry.home-manager.flake = home-manager;
+        environment.etc."nix/inputs/nixpkgs".source = "${nixpkgs}";
+        environment.etc."nix/inputs/home-manager".source = "${home-manager}";
+
+        nix.settings.nix-path = lib.mkForce [
+          "nixpkgs=/etc/nix/inputs/nixpkgs"
+          "home-manager=/etc/nix/inputs/home-manager"
         ];
-        extraSpecialArgs = {
-          inherit nixvim;
+      };
+
+      # NOTE: Utils
+      libmint =
+        import ./modules/nixos/libmint.nix { inherit lib; };
+
+    in
+    {
+      # Used with `nixos-rebuild --flake .#<hostname>`
+      # nixosConfigurations."<hostname>".config.system.build.toplevel must be a derivation
+      nixosConfigurations = {
+        vmware = nixpkgs.lib.nixosSystem {
+          inherit system;
+          specialArgs = { inherit pkgs libmint; };
+          modules = [ ./hosts/vmware/configuration.nix ];
+        };
+
+        flowX13 = nixpkgs.lib.nixosSystem {
+          inherit system;
+          specialArgs = { inherit pkgs libmint; };
+          modules = [
+            ./hosts/flowX13/configuration.nix
+            ./modules/nixos
+            noChannelModule
+          ];
+        };
+
+        desktop = nixpkgs.lib.nixosSystem {
+          inherit system;
+          specialArgs = { inherit pkgs libmint; };
+          modules = [
+            ./hosts/desktop/configuration.nix
+            ./modules/nixos
+            noChannelModule
+          ];
         };
       };
 
-      "minttea@desktop" = home-manager.lib.homeManagerConfiguration {
-        inherit pkgs;
-        modules = [
-          ./users/minttea/home.nix
-          ./modules/home-manager
-        ];
-        extraSpecialArgs = {
-          inherit nixvim;
+      homeConfigurations = {
+        "dhpham@vmware" = home-manager.lib.homeManagerConfiguration {
+          inherit pkgs;
+          modules = [
+            ./users/dhpham/home.nix
+          ];
+        };
+
+        "minttea@flowX13" = home-manager.lib.homeManagerConfiguration {
+          inherit pkgs;
+          modules = [
+            ./users/minttea/home.nix
+            ./modules/home-manager
+            ./programs/neovim
+          ];
+          extraSpecialArgs = {
+            inherit nil-lsp;
+          };
+        };
+
+        "minttea@desktop" = home-manager.lib.homeManagerConfiguration {
+          inherit pkgs;
+          modules = [
+            ./users/minttea/home.nix
+            ./modules/home-manager
+            ./programs/neovim
+          ];
+          extraSpecialArgs = {
+            inherit nil-lsp;
+          };
         };
       };
     };
-  };
 }

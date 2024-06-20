@@ -1,12 +1,10 @@
-{ 
-  config
-  , pkgs
-  , nixvim
-  , ... 
+{ config
+, pkgs
+, ...
 }:
 let
   # maybe this stuff should be defined in Flake and passed to users
-  rstudio-env = pkgs.rstudioWrapper.override { 
+  rstudio-env = pkgs.rstudioWrapper.override {
     packages = with pkgs.rPackages; [
       tidyverse
       knitr
@@ -26,11 +24,8 @@ let
     wl-clipboard = wl-clipboard-rs;
     output-dir = "$HOME/Pictures/scythe";
   };
-in rec {
-  imports = [ 
-    # nixvim.homeManagerModules.nixvim
-    ../../programs/neovim
-  ];
+in
+rec {
   # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;
 
@@ -43,11 +38,11 @@ in rec {
   # Env vars
   home.sessionVariables = {
     XDG_CONFIG_HOME = "${config.xdg.configHome}";
-    XDG_CACHE_HOME  = "${config.xdg.cacheHome}";
-    XDG_DATA_HOME   = "${config.xdg.dataHome}";
-    XDG_STATE_HOME  = "${config.xdg.stateHome}";
+    XDG_CACHE_HOME = "${config.xdg.cacheHome}";
+    XDG_DATA_HOME = "${config.xdg.dataHome}";
+    XDG_STATE_HOME = "${config.xdg.stateHome}";
 
-    BEMENU_BACKEND  = "wayland";
+    BEMENU_BACKEND = "wayland";
     # NOTE: Use iGPU on desktop: will need to change for laptop
     WLR_DRM_DEVICES = "/dev/dri/card2:/dev/dri/card1";
   };
@@ -150,125 +145,129 @@ in rec {
       };
     }];
   };
-  wayland.windowManager.sway = let
-    modifier = "Mod1";
-    terminal = "${pkgs.alacritty}/bin/alacritty";
-  in {
-    enable = false;
-    config = {
-      terminal = terminal;
-      output = {
-        "eDP-1" = {
-          mode = "1920x1200@119.90Hz";
-          scale = "1.25";
-        };
+  wayland.windowManager.sway =
+    let
+      modifier = "Mod1";
+      terminal = "${pkgs.alacritty}/bin/alacritty";
+    in
+    {
+      enable = false;
+      config = {
+        terminal = terminal;
+        output = {
+          "eDP-1" = {
+            mode = "1920x1200@119.90Hz";
+            scale = "1.25";
+          };
 
-        # NOTE: 3 monitor setup: |V|[ H ]|V|
-        "DP-3" = {
-          # left
-          mode = "2560x1440@169.831Hz";
-          scale = "1.5";
-          position = "0,0";
-          transform = "90";
-          adaptive_sync = "on";
-        };
-        "DP-2" = {
-          # center
-          mode = "2560x1440@169.831Hz";
-          scale = "1.5";
-          position = "960,300";
-          adaptive_sync = "on";
-        };
-        "DP-1" = {
-          # right
-          mode = "2560x1440@169.831Hz";
-          scale = "1.5";
-          position = "2666,0";
-          transform = "90";
-          adaptive_sync = "on";
-        };
+          # NOTE: 3 monitor setup: |V|[ H ]|V|
+          "DP-3" = {
+            # left
+            mode = "2560x1440@169.831Hz";
+            scale = "1.5";
+            position = "0,0";
+            transform = "90";
+            adaptive_sync = "on";
+          };
+          "DP-2" = {
+            # center
+            mode = "2560x1440@169.831Hz";
+            scale = "1.5";
+            position = "960,300";
+            adaptive_sync = "on";
+          };
+          "DP-1" = {
+            # right
+            mode = "2560x1440@169.831Hz";
+            scale = "1.5";
+            position = "2666,0";
+            transform = "90";
+            adaptive_sync = "on";
+          };
 
-        # NOTE: 3 monitor setup: |V|[ H ]|V|
-        "DP-6" = {
-          # left
-          mode = "2560x1440@169.831Hz";
-          scale = "1.5";
-          position = "0,0";
-          transform = "90";
-          adaptive_sync = "on";
+          # NOTE: 3 monitor setup: |V|[ H ]|V|
+          "DP-6" = {
+            # left
+            mode = "2560x1440@169.831Hz";
+            scale = "1.5";
+            position = "0,0";
+            transform = "90";
+            adaptive_sync = "on";
+          };
+          "DP-5" = {
+            # center
+            mode = "2560x1440@169.831Hz";
+            scale = "1.5";
+            position = "960,300";
+            adaptive_sync = "on";
+          };
+          "DP-4" = {
+            # right
+            mode = "2560x1440@169.831Hz";
+            scale = "1.5";
+            position = "2666,0";
+            transform = "90";
+            adaptive_sync = "on";
+          };
         };
-        "DP-5" = {
-          # center
-          mode = "2560x1440@169.831Hz";
-          scale = "1.5";
-          position = "960,300";
-          adaptive_sync = "on";
+        bars = [
+          {
+            command = "${pkgs.waybar}/bin/waybar";
+          }
+        ];
+        input = {
+          "Logitech G Pro" = {
+            accel_profile = "flat";
+            pointer_accel = "0.05";
+          };
+          "type:touchpad" = {
+            tap = "enabled";
+            accel_profile = "flat";
+            pointer_accel = "0.25";
+            scroll_factor = "0.25";
+          };
+          "*" = {
+            accel_profile = "flat";
+            tap = "enabled";
+            natural_scroll = "false";
+          };
         };
-        "DP-4" = {
-          # right
-          mode = "2560x1440@169.831Hz";
-          scale = "1.5";
-          position = "2666,0";
-          transform = "90";
-          adaptive_sync = "on";
+        modifier = modifier;
+        keybindings = pkgs.lib.mkOptionDefault {
+          "${modifier}+Return" = "exec 'run-cwd ${terminal}'";
+          "${modifier}+Shift+Return" = "exec 'run-cwd ${terminal} -e ranger'";
+          XF86AudioRaiseVolume = "exec 'pw-volume change +2.5%; pkill -RTMIN+8 waybar'";
+          XF86AudioLowerVolume = "exec 'pw-volume change -2.5%; pkill -RTMIN+8 waybar'";
+          XF86AudioMute = "exec 'pw-volume mute toggle; pkill -RTMIN+8 waybar'";
+          "Ctrl+Alt+Tab" = "mode remote";
+        };
+        modes = {
+          "remote" = {
+            "Ctrl+Alt+Tab" = "mode default";
+          };
+          "resize" =
+            let
+              cfg = config.wayland.windowManager.sway;
+            in
+            {
+              "${cfg.config.left}" = "resize shrink width 10 px";
+              "${cfg.config.down}" = "resize grow height 10 px";
+              "${cfg.config.up}" = "resize shrink height 10 px";
+              "${cfg.config.right}" = "resize grow width 10 px";
+              "Left" = "resize shrink width 10 px";
+              "Down" = "resize grow height 10 px";
+              "Up" = "resize shrink height 10 px";
+              "Right" = "resize grow width 10 px";
+              "Escape" = "mode default";
+              "Return" = "mode default";
+            };
         };
       };
-      bars = [
-        {
-          command = "${pkgs.waybar}/bin/waybar";
-        }
-      ];
-      input = {
-        "Logitech G Pro" = {
-          accel_profile = "flat";
-          pointer_accel = "0.05";
-        };
-        "type:touchpad" = { 
-          tap = "enabled";
-          accel_profile = "flat";
-          pointer_accel = "0.25";
-          scroll_factor = "0.25";
-        };
-        "*" = {
-          accel_profile = "flat";
-          tap = "enabled";
-          natural_scroll = "false";
-        };
-      };
-      modifier = modifier;
-      keybindings = pkgs.lib.mkOptionDefault {
-        "${modifier}+Return" = "exec 'run-cwd ${terminal}'";
-        "${modifier}+Shift+Return" = "exec 'run-cwd ${terminal} -e ranger'";
-        XF86AudioRaiseVolume = "exec 'pw-volume change +2.5%; pkill -RTMIN+8 waybar'";
-        XF86AudioLowerVolume = "exec 'pw-volume change -2.5%; pkill -RTMIN+8 waybar'";
-        XF86AudioMute = "exec 'pw-volume mute toggle; pkill -RTMIN+8 waybar'";
-        "Ctrl+Alt+Tab" = "mode remote";
-      };
-      modes = {
-        "remote" = {
-          "Ctrl+Alt+Tab" = "mode default";
-        };
-        "resize" = let
-          cfg = config.wayland.windowManager.sway;
-        in {
-          "${cfg.config.left}" = "resize shrink width 10 px";
-          "${cfg.config.down}" = "resize grow height 10 px";
-          "${cfg.config.up}" = "resize shrink height 10 px";
-          "${cfg.config.right}" = "resize grow width 10 px";
-          "Left" = "resize shrink width 10 px";
-          "Down" = "resize grow height 10 px";
-          "Up" = "resize shrink height 10 px";
-          "Right" = "resize grow width 10 px";
-          "Escape" = "mode default";
-          "Return" = "mode default";
-        };
-      };
-    };
-    # For remote desktop
-    extraConfig = ''
+      # For remote desktop
+      extraConfig = ''
         exec ${pkgs.polkit_gnome.outPath}/libexec/polkit-gnome-authentication-agent-1
-    '';
-  };
+      '';
+    };
 
   # NOTE: Hyprland
   CUSTOM.wayland.windowManager.hyprland = {
@@ -286,26 +285,26 @@ in rec {
   # General package stuff
   home.packages = with pkgs; [
     # Wayland stuff
-    bemenu        # launcher menu
-    wdisplays     # gui for display settings
+    bemenu # launcher menu
+    wdisplays # gui for display settings
     wl-clipboard-rs # Rust CLI clipboard utility
-    pw-volume     # for volume control w/ sway
-    grim          # screenshot
-    slurp         # select region on screen
-    swappy        # draw on image, mostly for screenshots
-    scythe        # screenshot on dmenu, grim, slurp, swappy
-    swayimg       # image viewer
-    qpwgraph      # gui for audio
-    light         # backlight controller
+    pw-volume # for volume control w/ sway
+    grim # screenshot
+    slurp # select region on screen
+    swappy # draw on image, mostly for screenshots
+    scythe # screenshot on dmenu, grim, slurp, swappy
+    swayimg # image viewer
+    qpwgraph # gui for audio
+    light # backlight controller
     # Utils
-    tree          # fs vis
-    ranger        # CLI file explorer
-    zathura       # pdf viewer
-    jq            # CLI json explorer
-    run-cwd       # script to open window from focused
-    gcc           # needed for neovim
-    fastfetch     # C implmentation of neofetch
-    nvtopPackages.full  # htop but for GPUs
+    tree # fs vis
+    ranger # CLI file explorer
+    zathura # pdf viewer
+    jq # CLI json explorer
+    run-cwd # script to open window from focused
+    gcc # needed for neovim
+    fastfetch # C implmentation of neofetch
+    nvtopPackages.full # htop but for GPUs
     # R
     rstudio-env
     pandoc
@@ -320,7 +319,7 @@ in rec {
   ];
   programs.vim = {
     enable = true;
-    defaultEditor = true;
+    defaultEditor = false;
     extraConfig = ''
       set re=0
       syntax on
@@ -359,7 +358,7 @@ in rec {
   programs.alacritty.enable = true;
   programs.nheko.enable = true;
 
-  programs.obs-studio.enable = true;    # Grab OBS 
+  programs.obs-studio.enable = true; # Grab OBS 
 
   ######################################
   # NOTE: Gaming
