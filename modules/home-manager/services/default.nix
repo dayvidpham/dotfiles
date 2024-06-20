@@ -1,9 +1,9 @@
-{
-  ...
+{ ...
 }:
 
 {
   imports = [
     ./kanshi
+    ./playerctld
   ];
 }
