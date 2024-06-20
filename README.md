@@ -5,11 +5,13 @@ NixOS dotfiles directory: my experimental descent into madness
 
 ### DEPS:
   - playerctl: hm module, use playerctld
-  - rofi-wayland-unwrapped: hm module
-  - rofi-bluetooth
+  - rofi in general
+    - rofi-wayland-unwrapped: hm module
+    - rofi-bluetooth
+    - investigate ML4W dope ass Rofi customization???
   - waybar: hm module
   - python3
-  - swaylock
+  - swaylock/hyprlock
   - hyprpapr, colour dependent on bg too
 
 ### TODO: 
