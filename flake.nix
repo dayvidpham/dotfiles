@@ -70,11 +70,11 @@
         import ./modules/nixos/libmint.nix { inherit lib; };
 
       # NOTE: My own packages and programs
-      run-cwd = with pkgs; callPackage ./programs/run-cwd.nix {
-        inherit writeShellApplication runtimeShell sway jq;
+      run-cwd = with pkgs; callPackage ./packages/run-cwd.nix {
+        inherit pkgs;
       };
-      scythe = with pkgs; callPackage ./programs/scythe.nix {
-        inherit writeShellApplication runtimeShell grim slurp dmenu swappy;
+      scythe = with pkgs; callPackage ./packages/scythe.nix {
+        inherit pkgs;
         wl-clipboard = wl-clipboard-rs;
         output-dir = "$HOME/Pictures/scythe";
       };
