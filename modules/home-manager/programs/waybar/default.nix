@@ -38,6 +38,15 @@ in
   config = mkMerge [
     (mkIf (cfg.enable && cfg.windowManager == "hyprland") {
       # TODO: Fill this out!
+      #programs.waybar.package = with pkgs; callPackage (./themes + "/${cfg.theme}/configs/waybar/default.nix") { };
+      home.packages =
+        let
+          waybar-themed = with pkgs;
+            callPackage (./themes + "/${cfg.theme}/configs/waybar/default.nix") { };
+        in
+        [
+          waybar-themed
+        ];
     })
 
 
