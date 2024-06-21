@@ -24,12 +24,24 @@ in
       description = "Which Wayland window manager is enabled";
       example = "hyprland";
     };
+    theme = mkOption {
+      type = lib.types.enum [ "balcony" ];
+      default = "balcony";
+      description = "preconfigured Waybar themes";
+      example = ''
+        balcony
+        tokyo
+      '';
+    };
   };
 
   config = mkMerge [
     (mkIf (cfg.enable && cfg.windowManager == "hyprland") {
       # TODO: Fill this out!
     })
+
+
+    # NOTE: DEPRECATED
     (mkIf (cfg.enable && cfg.windowManager == "sway") {
       programs.waybar = {
         enable = true;
