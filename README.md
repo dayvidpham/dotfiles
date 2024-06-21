@@ -17,5 +17,12 @@ NixOS dotfiles directory: my experimental descent into madness
   - betterdiscord?
 
 ### TODO: 
+  - improve the Hyprland keybindings
   - convert to pulseaudio to pipewire/wireplumber, use wpctl?
   - any GUI for pipewire?
+  - create overlay for my own packages
+    - waybar-wayland-balcony
+    - rofi-bluetooth-balcony
+    - scythe
+    - run-cwd(-sway)
+  - implement: run-cwd-hyprland
