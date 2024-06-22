@@ -76,11 +76,12 @@ let
         finalAttrs = finalAttrs;
         original = pkg;
 
+        scripts = outPath + "/share/waybar/scripts";
+        style = fileContents (outPath + "/config/waybar/style.css");
         config = (import (outPath + "/config/waybar/config.nix") {
+          waybar-balcony = finalAttrs.finalPackage;
           scriptsDir = finalAttrs.finalPackage.passthru.scripts;
         });
-        style = fileContents (outPath + "/config/waybar/style.css");
-        scripts = outPath + "/share/waybar/scripts";
       };
   });
 in

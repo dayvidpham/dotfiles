@@ -1,4 +1,5 @@
-{ scriptsDir ? "~/.local/share/waybar/scripts"
+{ waybar-balcony
+, scriptsDir ? "~/.local/share/waybar/scripts"
 , ...
 }:
 
@@ -93,7 +94,7 @@
     "format" = "";
   };
   "custom/spotify" = {
-    "exec" = "waybar-mediaplayer.py --player spotify";
+    "exec" = "${waybar-balcony}/bin/waybar-mediaplayer.py --player spotify";
     "format" = " {}";
     "return-type" = "json";
     "on-click" = "playerctl play-pause";

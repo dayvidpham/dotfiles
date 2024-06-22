@@ -46,6 +46,7 @@ in
         {
           programs.waybar = {
             enable = true;
+            systemd.enable = true;
             package = waybar-themed;
             inherit settings style;
           };
@@ -54,6 +55,10 @@ in
           programs.rofi = {
             enable = true;
           };
+
+          #wayland.windowManager.hyprland = config.wayland.windowManager.hyprland + ''
+          #  exec-once = ${pkgs.waybar-balcony}/bin/waybar
+          #'';
         }
       ))
 
