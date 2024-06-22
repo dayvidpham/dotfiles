@@ -10,3 +10,6 @@
 [submodule "zsh/zsh-fast-syntax-highlighting"]
 	path = zsh/zsh-fast-syntax-highlighting
 	url = https://github.com/zdharma-continuum/fast-syntax-highlighting
+[submodule "packages/rofi-network-manager"]
+	path = packages/rofi-network-manager
+	url = git@github.com:P3rf/rofi-network-manager.git
