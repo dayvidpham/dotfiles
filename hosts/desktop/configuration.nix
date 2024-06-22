@@ -2,15 +2,15 @@
 # your system.  Help is available in the configuration.nix(5) man page
 # and in the NixOS manual (accessible by running `nixos-help`).
 
-{ 
-  config
-  , pkgs
-  , home-manager
-  , ... 
+{ config
+, pkgs
+, home-manager
+, ...
 }:
-let 
+let
   nvidiaDriver = config.boot.kernelPackages.nvidia_x11_beta;
-in {
+in
+{
   imports = [
     # Include the results of the hardware scan.
     ./hardware-configuration.nix
@@ -21,7 +21,16 @@ in {
     # Enable flakes
     package = pkgs.nixFlakes;
     settings.experimental-features = [ "nix-command" "flakes" ];
+
   };
+
+  # NOTE: Nix store gc, optimisation
+  nix.gc = {
+    automatic = true;
+    persistent = true;
+    dates = "4 days";
+  };
+  nix.settings.auto-optimise-store = true;
 
   #########################
   # Boot loader
@@ -49,7 +58,7 @@ in {
   # Networking
   networking = {
     hostName = "desktop"; # Define your hostname.
-    networkmanager.enable = true;  # Easiest to use and most distros use this by default.
+    networkmanager.enable = true; # Easiest to use and most distros use this by default.
   };
 
   # Bluetooth
@@ -81,7 +90,7 @@ in {
       #   #     secureBoot = false;
       #   #     tpmSupport = true;
       #   #   }).fd 
-    #   # ];
+      #   # ];
       # };
     };
   };
@@ -151,18 +160,18 @@ in {
   environment.systemPackages = with pkgs; [
     ######## 
     # HW utils
-    hwinfo        # lower-level hardware (cpu/pci/usb) info
-    file          # returns device/file type and info
-    lshw          # list connected hardware devices
-    bluez         # bluetooth
+    hwinfo # lower-level hardware (cpu/pci/usb) info
+    file # returns device/file type and info
+    lshw # list connected hardware devices
+    bluez # bluetooth
     # disk
     gparted
     polkit_gnome
     # cli
-    zip 
+    zip
     unzip
     # getters
-    wget 
+    wget
     curl
     # greeter
     greetd.tuigreet

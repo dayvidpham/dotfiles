@@ -21,6 +21,12 @@ rec {
   # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;
 
+  nix.gc = {
+    automatic = true;
+    persistent = true;
+    frequency = "4 days";
+  };
+
   home.username = "minttea";
   home.homeDirectory = "/home/minttea";
   home.stateVersion = "23.11"; # Please read the comment before changing.
