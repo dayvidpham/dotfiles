@@ -1,5 +1,7 @@
 { waybar-balcony
 , scriptsDir ? "~/.local/share/waybar/scripts"
+, rofi
+, playerctl
 , ...
 }:
 
@@ -97,16 +99,16 @@
     "exec" = "${waybar-balcony}/bin/waybar-mediaplayer.py --player spotify";
     "format" = " {}";
     "return-type" = "json";
-    "on-click" = "playerctl play-pause";
-    "on-double-click-right" = "playerctl next";
-    "on-scroll-down" = "playerctl previous";
+    "on-click" = "${playerctl}/bin/playerctl play-pause";
+    "on-double-click-right" = "${playerctl}/bin/playerctl next";
+    "on-scroll-down" = "${playerctl}/bin/playerctl previous";
   };
   "custom/power-menu" = {
     "format" = "⏻ ";
     "on-click" = "bash ${scriptsDir}/power-menu/powermenu.sh &";
   };
   "custom/launcher" = {
-    "format" = "";
-    "on-click" = "rofi -show drun &";
+    "format" = "";
+    "on-click" = "${rofi}/bin/rofi -show drun &";
   };
 }

@@ -25,13 +25,12 @@ let
     ];
 
     buildInputs = [
-      rofi
-      rofi-bluetooth
-      #rofi-network-manager
-      networkmanager
-      waybar-mediaPlayer
-      playerctl
       python3-deps
+      #rofi-bluetooth
+      #rofi-network-manager
+      #networkmanager
+      #waybar-mediaPlayer
+      #playerctl
     ];
 
     # NOTE: The dest dir is needed in cp, else will copy as <store-path>-scripts
@@ -52,6 +51,7 @@ let
       mkdir -p $out/config/waybar
       cp ./config $out/config/waybar/config
       cp ./config.nix $out/config/waybar/config.nix
+      cp ./nixos-icon.svg $out/config/waybar/nixos-icon.svg
       cp ./style.css $out/config/waybar/style.css
 
       runHook postInstall
@@ -64,8 +64,6 @@ let
       wrapProgram $out/share/waybar/scripts/weather.py \
         --set PYTHONPATH "${python3-deps}/${python3-deps.sitePackages}"
     '';
-    #--prefix PYTHONPATH : "$out/${python3-deps.sitePackages}"
-
 
     passthru =
       let
@@ -81,6 +79,10 @@ let
         config = (import (outPath + "/config/waybar/config.nix") {
           waybar-balcony = finalAttrs.finalPackage;
           scriptsDir = finalAttrs.finalPackage.passthru.scripts;
+          inherit
+            rofi
+            playerctl
+            ;
         });
       };
   });
