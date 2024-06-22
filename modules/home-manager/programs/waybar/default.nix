@@ -36,18 +36,26 @@ in
   };
 
   config = mkMerge [
-    (mkIf (cfg.enable && cfg.windowManager == "hyprland") {
-      # TODO: Fill this out!
-      #programs.waybar.package = with pkgs; callPackage (./themes + "/${cfg.theme}/configs/waybar/default.nix") { };
-      home.packages =
+    (mkIf (cfg.enable && cfg.windowManager == "hyprland")
+      (
         let
-          waybar-themed = with pkgs;
-            callPackage (./themes + "/${cfg.theme}/configs/waybar/default.nix") { };
+          waybar-themed = pkgs."waybar-${cfg.theme}";
+          settings = [ waybar-themed.passthru.config ];
+          style = waybar-themed.passthru.style;
         in
-        [
-          waybar-themed
-        ];
-    })
+        {
+          programs.waybar = {
+            enable = true;
+            package = waybar-themed;
+            inherit settings style;
+          };
+
+          # TODO: Place in the theme property?
+          programs.rofi = {
+            enable = true;
+          };
+        }
+      ))
 
 
     # NOTE: DEPRECATED

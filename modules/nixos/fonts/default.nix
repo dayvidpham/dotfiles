@@ -51,6 +51,7 @@ in
       fonts.fontconfig = {
 
         enable = true;
+        hinting.style = "none";
 
       };
 

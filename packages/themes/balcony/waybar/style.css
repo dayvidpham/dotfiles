@@ -1,4 +1,5 @@
 * {
+  all: unset;
   /* `otf-font-awesome` is required to be installed for icons */
   font-family: Material Design Icons, JetBrainsMono Nerd Font, Iosevka Nerd Font;
   font-size: 19px;
@@ -111,7 +112,7 @@ window#waybar.hidden {
 
 #backlight,
 #battery,
-#pulseaudio,
+#wireplumber,
 #network {
   background-color: #252733;
   padding: 0em 2em;
@@ -130,16 +131,16 @@ window#waybar.hidden {
   font-size: 20px;
 }
 
-#pulseaudio {
+#wireplumber {
   color: #81A1C1;
-  padding-left: 9px;
+  border-radius: 0px 8px 8px 0px;
+  padding-left: 6px;
+  padding-right: 1.0rem;
   font-size: 22px;
 }
 
-#pulseaudio.muted {
+#wireplumber.muted {
   color: #fb958b;
-  padding-left: 9px;
-  font-size: 22px;
 }
 
 #backlight {
@@ -150,11 +151,10 @@ window#waybar.hidden {
 }
 
 #network {
-  padding-left: 0.2em;
+  padding-left: 0.75rem;
   color: #5E81AC;
   border-radius: 8px 0px 0px 8px;
-  padding-left: 12px;
-  padding-right: 14px;
+  padding-right: 8px;
   font-size: 20px;
 }
 
@@ -162,33 +162,15 @@ window#waybar.hidden {
   color: #fb958b;
 }
 
-#battery {
-  color: #8fbcbb;
-  border-radius: 0px 8px 8px 0px;
-  padding-right: 2px;
-  font-size: 22px;
-}
-
+#battery,
 #battery.critical,
 #battery.warning,
 #battery.full,
 #battery.plugged {
   color: #8fbcbb;
   padding-left: 6px;
-  padding-right: 12px;
+  padding-right: 6px;
   font-size: 22px;
-}
-
-#battery.charging { 
-  font-size: 18px;
-  padding-right: 13px;
-  padding-left: 4px;
-}
-
-#battery.full,
-#battery.plugged {
-  font-size: 22.5px;
-  padding-right: 10px;
 }
 
 @keyframes blink {
@@ -208,7 +190,7 @@ window#waybar.hidden {
 
 #custom-lock {
   color: #ecd3a0;
-  padding: 0 15px 0 15px;
+  padding: 0 0.75rem 0 1.0rem;
   margin-left: 7px;
   margin-top: 7px;
   margin-bottom: 7px;

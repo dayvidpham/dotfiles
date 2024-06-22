@@ -48,6 +48,17 @@
           allowUnfree = true;
           allowUnfreePredicate = (_: true);
         };
+        overlays = [
+          (final: prev: {
+            # NOTE: My own packages and programs
+            run-cwd = with final; callPackage ./packages/run-cwd.nix { };
+            scythe = with final; callPackage ./packages/scythe.nix {
+              wl-clipboard = wl-clipboard-rs;
+              output-dir = "$HOME/Pictures/scythe";
+            };
+            waybar-balcony = with final; callPackage ./packages/themes/balcony/waybar { };
+          })
+        ];
       };
 
       # NOTE: Needs to be defined here to have access to nixpkgs and home-manager inputs
@@ -69,16 +80,6 @@
       libmint =
         import ./modules/nixos/libmint.nix { inherit lib; };
 
-      # NOTE: My own packages and programs
-      run-cwd = with pkgs; callPackage ./packages/run-cwd.nix {
-        inherit pkgs;
-      };
-      scythe = with pkgs; callPackage ./packages/scythe.nix {
-        inherit pkgs;
-        wl-clipboard = wl-clipboard-rs;
-        output-dir = "$HOME/Pictures/scythe";
-      };
-
       # NOTE: Common args to be passed to nixosConfigs and homeConfigurations
       specialArgs = {
         inherit
@@ -90,6 +91,8 @@
       extraSpecialArgs = {
         inherit
           nil-lsp
+          ;
+        inherit (pkgs)
           run-cwd
           scythe
           ;

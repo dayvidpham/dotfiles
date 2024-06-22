@@ -7,7 +7,7 @@
       "format": "{icon}",
       "on-click": "activate",
       "format-icons": {
-        "active": " 󰮯",
+        "active": "󰮯",
         "default": "",
       }
     },
@@ -27,7 +27,7 @@
       "interval": 10,
       "format": " {}%",
       "max-length": 10,
-      "on-click": "",
+      "on-click": "pwd",
     },
     "memory": {
         "interval": 30,
@@ -47,7 +47,7 @@
         "format-ethernet": "", //  
         "format-disconnected": "",
         "tooltip-format": "{essid}",
-        "on-click": "~/.config/waybar/scripts/network/rofi-network-manager.sh",
+        "on-click": "bash ./share/waybar/scripts/network/rofi-network-manager.sh",
         "format-icons": ["󰤯","󰤟","󰤢","󰤥","󰤨"],
     },
 
@@ -80,7 +80,7 @@
       "format-icons": ["󱊡", "󱊢", "󱊣"]
     },
     "custom/weather": {
-      "exec": "python3 ~/.config/waybar/scripts/weather.py",
+      "exec": "python3 ./share/waybar/scripts/weather.py",
       "restart-interval": 300,
       "return-type": "json",
     },   
@@ -90,7 +90,7 @@
        "format" : "",
     },
    "custom/spotify": {
-        "exec": "python3 ~/.config/waybar/scripts/mediaplayer.py --player spotify",
+        "exec": "waybar-mediaplayer.py --player spotify",
         "format": " {}",
         "return-type": "json",
         "on-click": "playerctl play-pause",
@@ -99,7 +99,7 @@
     },
     "custom/power-menu": {
         "format": " ⏻ ",
-        "on-click": "bash ~/.config/waybar/scripts/power-menu/powermenu.sh &",
+        "on-click": "bash ./share/waybar/scripts/power-menu/powermenu.sh &",
     }, 
     "custom/launcher": {
         "format": "",
