@@ -21,6 +21,7 @@ NixOS dotfiles directory: my experimental descent into madness
   - get swaync
   - swaylock/hyprlock
   - hyprpapr, colour dependent on bg too
+  - hypridle
   - improve the Hyprland keybindings
   - convert to pulseaudio to pipewire/wireplumber, use wpctl?
   - any GUI for pipewire? wqpatchbay, pavucontrol
