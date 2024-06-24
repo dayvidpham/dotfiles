@@ -1,25 +1,23 @@
-{
-  config
-  , pkgs
-  , lib ? pkgs.lib
-  , ...
-}: let
-  
+{ config
+, pkgs
+, lib ? pkgs.lib
+, ...
+}:
+let
+  cfg = config.CUSTOM.MODULE;
+
   inherit (lib)
     mkIf
     mkOption
     mkDefault
     mkEnableOption
-  ;
+    ;
 
-in {
-  options.CUSTOM."my module path" = {
+in
+{
+  options.CUSTOM.MODULE = {
     enable = mkEnableOption "my module description";
   };
 
-  config = let 
-    cfg = config.CUSTOM."my module path";
-  in mkIf cfg.enable {
-
-  };
+  config = mkIf cfg.enable { };
 }
