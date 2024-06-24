@@ -5,5 +5,6 @@
   imports = [
     ./eww
     ./waybar
+    ./hyprlock
   ];
 }

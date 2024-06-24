@@ -5,5 +5,6 @@
   imports = [
     ./kanshi
     ./playerctld
+    ./hypridle
   ];
 }

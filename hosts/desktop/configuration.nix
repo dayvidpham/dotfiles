@@ -192,6 +192,7 @@
   ######################################
   # Window manager & GPU
   programs.hyprland.enable = true;
+  CUSTOM.programs.hyprlock.enable = true;
   CUSTOM.programs.eww.enable = true;
 
   CUSTOM.hardware.nvidia = {

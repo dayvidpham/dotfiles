@@ -76,6 +76,10 @@ in
     CUSTOM.services.kanshi.enable = true;
     CUSTOM.services.playerctld.enable = true;
 
+    CUSTOM.services.hypridle.enable = true;
+    CUSTOM.programs.hyprlock.enable = true;
+    #CUSTOM.services.hyprpaper.enable = true;
+
     # GUI elements: widgets and status bars
     CUSTOM.programs.eww.enable = true;
     CUSTOM.programs.waybar = {
