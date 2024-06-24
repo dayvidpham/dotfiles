@@ -39,7 +39,6 @@
     , ...
     }:
     let
-      lib = nixpkgs.lib;
       system = "x86_64-linux";
 
       pkgs = import nixpkgs {
@@ -60,6 +59,8 @@
           })
         ];
       };
+
+      lib = pkgs.lib;
 
       # NOTE: Needs to be defined here to have access to nixpkgs and home-manager inputs
       noChannelModule = {
@@ -103,14 +104,18 @@
       # nixosConfigurations."<hostname>".config.system.build.toplevel must be a derivation
       nixosConfigurations = {
         vmware = nixpkgs.lib.nixosSystem {
-          inherit system;
-          specialArgs = specialArgs;
+          inherit
+            system
+            specialArgs
+            ;
           modules = [ ./hosts/vmware/configuration.nix ];
         };
 
         flowX13 = nixpkgs.lib.nixosSystem {
-          inherit system;
-          specialArgs = specialArgs;
+          inherit
+            system
+            specialArgs
+            ;
           modules = [
             ./hosts/flowX13/configuration.nix
             ./modules/nixos
@@ -119,8 +124,10 @@
         };
 
         desktop = nixpkgs.lib.nixosSystem {
-          inherit system;
-          specialArgs = specialArgs;
+          inherit
+            system
+            specialArgs
+            ;
           modules = [
             ./hosts/desktop/configuration.nix
             ./modules/nixos

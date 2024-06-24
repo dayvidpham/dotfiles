@@ -7,9 +7,7 @@
 , home-manager
 , ...
 }:
-let
-  nvidiaDriver = config.boot.kernelPackages.nvidia_x11_beta;
-in
+
 {
   imports = [
     # Include the results of the hardware scan.
@@ -18,19 +16,18 @@ in
 
   system.stateVersion = "23.11";
   nix = {
-    # Enable flakes
+    # NOTE: Enable Flakes
     package = pkgs.nixFlakes;
     settings.experimental-features = [ "nix-command" "flakes" ];
 
+    # NOTE: Nix store gc, optimisation
+    gc = {
+      automatic = true;
+      persistent = true;
+      dates = "4 days";
+    };
+    settings.auto-optimise-store = true;
   };
-
-  # NOTE: Nix store gc, optimisation
-  nix.gc = {
-    automatic = true;
-    persistent = true;
-    dates = "4 days";
-  };
-  nix.settings.auto-optimise-store = true;
 
   #########################
   # Boot loader
