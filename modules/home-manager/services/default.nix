@@ -6,5 +6,6 @@
     ./kanshi
     ./playerctld
     ./hypridle
+    ./swww
   ];
 }
