@@ -1,4 +1,5 @@
 { config
+, osConfig
 , pkgs
 , lib ? pkgs.lib
 , terminal
@@ -18,6 +19,27 @@ let
     mkMerge
     types
     ;
+
+  inherit (config.lib.file)
+    mkOutOfStoreSymlink
+    ;
+
+  inherit (builtins)
+    hasAttr
+    ;
+
+  hosts = {
+    desktop = {
+      card-igpu = "/dev/dri/by-path/pci-0000:16:00.0-card";
+      card-dgpu = "/dev/dri/by-path/pci-0000:01:00.0-card";
+    };
+    flowX13 = {
+      card-igpu = "/dev/dri/by-path/pci-0000:08:00.0-card";
+      card-dgpu = "/dev/dri/by-path/pci-0000:01:00.0-card";
+    };
+  };
+
+  hyprHome = "${config.xdg.configHome}/hypr";
 
 in
 {
@@ -72,33 +94,32 @@ in
       polkit_gnome
     ];
 
+    # NOTE: For multi-gpu systems
+    # https://wiki.hyprland.org/Configuring/Multi-GPU/
+    xdg.configFile = (mkIf (hasAttr GLOBALS.hostName hosts) {
+      "hypr/card-dgpu".source =
+        mkOutOfStoreSymlink hosts."${GLOBALS.hostName}".card-dgpu;
+
+      "hypr/card-igpu".source =
+        mkOutOfStoreSymlink hosts."${GLOBALS.hostName}".card-igpu;
+    });
+
     home.sessionVariables = mkMerge [
       {
         XDG_CURRENT_DESKTOP = "hyprland";
+        NIXOS_OZONE_WL = "1"; # Tell electron apps to use Wayland
+        MOZ_ENABLE_WAYLAND = "1"; # Run Firefox on Wayland
       }
 
       (mkIf (GLOBALS.hostName == "desktop") {
         # Fuck it: use dGPU for everything
-        WLR_DRM_DEVICES = "/dev/dri/card1";
+        WLR_DRM_DEVICES = "${hyprHome}/card-dgpu";
       })
       (mkIf (GLOBALS.hostName == "flowX13") {
         # TODO: Must test which value is correct for laptop
         # Use iGPU for everything
-        WLR_DRM_DEVICES = "/dev/dri/card0";
+        WLR_DRM_DEVICES = "${hyprHome}/card-igpu";
       })
-      /*
-      description = ''
-        An environment variable that tells wlroots where the DRM devices are. This is necessary if on a multi-GPU system.
-
-        Colon-separated list of Direct Rendering Manager (DRM) devices that the Wayland compositor will use for rendering (GPUs).
-
-        These can be found in /dev/dri/, which contain the Direct Rendering Infrastructure (DRI) devices that provide hardware acceleration for the Mesa implementation of OpenGL.
-      '';
-      example = ''
-        "/dev/dri/card2:/dev/dri/card1"
-        "/dev/dri/card0"
-      '';
-      */
     ];
 
   };

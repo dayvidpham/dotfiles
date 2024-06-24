@@ -39,8 +39,8 @@ let
       laptop = default // {
         offload.enable = true;
         offload.enableOffloadCmd = true;
-        nvidiaBusId = "PCI:0:0:1";
-        amdgpuBusId = "PCI:0:0:8";
+        nvidiaBusId = "PCI:1:0:0";
+        amdgpuBusId = "PCI:8:0:0";
       };
     };
 
@@ -107,15 +107,6 @@ in
 
   config = mkIf cfg.enable {
 
-    hardware.opengl = {
-      enable = true;
-      driSupport = true;
-      driSupport32Bit = true;
-      extraPackages = mkIf cfg.proprietaryDrivers.enable (with pkgs; [
-        nvidia-vaapi-driver
-      ]);
-    };
-
     hardware.nvidia = {
       package = nvidiaDriver;
       modesetting.enable = true; # NOTE: Wayland requires this to be true
@@ -130,16 +121,15 @@ in
       videoDrivers = mkIf cfg.proprietaryDrivers.enable [ "nvidia" ];
     };
 
-    boot = mkIf cfg.proprietaryDrivers.enable {
-      # NOTE: To load nvidia drivers first 
-      initrd.kernelModules = [ "nvidia" ];
-      extraModulePackages = [ nvidiaDriver ];
-    };
-
     environment.variables = {
+      # https://wiki.hyprland.org/Nvidia/#environment-variables
+      LIBVA_DRIVER_NAME = "nvidia";
       GBM_BACKEND = "nvidia-drm";
       __GLX_VENDOR_LIBRARY_NAME = "nvidia";
       __GL_GSYNC_ALLOWED = "1";
+
+      # https://wiki.hyprland.org/Nvidia/#va-api-hardware-video-acceleration
+      NVD_BACKEND = "direct";
     };
 
   };
