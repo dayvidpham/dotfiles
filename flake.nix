@@ -21,6 +21,10 @@
     # inputs.unstable.url = "github:NixOS/nixpkgs/master";
 
     nixpkgs.url = "github:NixOS/nixpkgs";
+    flake-registry = {
+      url = "github:nixos/flake-registry";
+      flake = false;
+    };
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -34,6 +38,7 @@
   outputs =
     inputs@{ self
     , nixpkgs
+    , flake-registry
     , home-manager
     , nil-lsp
     , ...
@@ -75,6 +80,7 @@
           "nixpkgs=/etc/nix/inputs/nixpkgs"
           "home-manager=/etc/nix/inputs/home-manager"
         ];
+        nix.settings.flake-registry = "${flake-registry}/flake-registry.json";
       };
 
       # NOTE: Utils and enum types
