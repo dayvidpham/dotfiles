@@ -58,6 +58,7 @@ in
           # TODO: Place in the theme property?
           programs.rofi = {
             enable = true;
+            package = pkgs.rofi-wayland-unwrapped;
           };
         }
       ))

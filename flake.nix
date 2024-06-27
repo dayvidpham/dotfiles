@@ -60,7 +60,9 @@
               wl-clipboard = wl-clipboard-rs;
               output-dir = "$HOME/Pictures/scythe";
             };
-            waybar-balcony = with final; callPackage ./packages/themes/balcony/waybar { };
+            waybar-balcony = with final; callPackage ./packages/themes/balcony/waybar {
+              rofi = rofi-wayland-unwrapped;
+            };
           })
         ];
       };
