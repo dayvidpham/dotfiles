@@ -108,7 +108,7 @@
 
   # Enable sound.
   sound.enable = true;
-  #hardware.pulseaudio.enable = false;  # Don't explicitly disable???
+  #hardware.pulseaudio.enable = false; # Don't explicitly disable???
   services.pipewire = {
     enable = true;
     audio.enable = true;
