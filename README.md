@@ -17,17 +17,23 @@ NixOS dotfiles directory: my experimental descent into madness
   - betterdiscord?
 
 ### TODO: 
-  - rice out rofi
-  - get swaync
-  - swaylock/hyprlock
-  - hyprpapr, colour dependent on bg too
-  - hypridle
-  - improve the Hyprland keybindings
-  - convert to pulseaudio to pipewire/wireplumber, use wpctl?
-  - any GUI for pipewire? wqpatchbay, pavucontrol
-  - create overlay for my own packages
-    - waybar-wayland-balcony
-    - rofi-bluetooth-balcony
+  - [ ] rice out rofi
+  - [ ] get swaync
+  - [x] swaylock/hyprlock
+    - [ ] rice it out
+  - [x] ~hyprpapr~ swww
+    - [ ] set layer to black
+    - [ ] colour dependent on bg too
+  - [x] hypridle
+    - [ ] post-wake fixes: set background
+    - [ ] kanshi on wake
+  - [ ] improve the Hyprland keybindings
+  - [ ] convert to pulseaudio to pipewire/wireplumber, use wpctl?
+  - [x] any GUI for pipewire? qpwgraph, pavucontrol
+    - pavucontrol!
+  - [x] create overlay for my own packages
+    - waybar-balcony
+    - ~rofi-bluetooth-balcony~
     - scythe
-    - run-cwd(-sway)
-  - implement: run-cwd-hyprland
+    - [ ] run-cwd(-sway)
+  - [ ] implement: run-cwd-hyprland
