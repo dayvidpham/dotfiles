@@ -2,7 +2,9 @@
 , scriptsDir ? "~/.local/share/waybar/scripts"
 , rofi
 , playerctl
-, ...
+, hyprlock
+, pavucontrol
+, getExe
 }:
 
 {
@@ -63,7 +65,7 @@
     "format-icons" = {
       "default" = [ "" "" "" ];
     };
-    "on-click" = "pavucontrol &";
+    "on-click" = "${getExe pavucontrol} &";
   };
 
   "battery" = {
@@ -92,16 +94,16 @@
   };
   "custom/lock" = {
     "tooltip" = false;
-    "on-click" = "swaylock";
-    "format" = "";
+    "on-click" = "${getExe hyprlock}";
+    "format" = " ";
   };
   "custom/spotify" = {
     "exec" = "${waybar-balcony}/bin/waybar-mediaplayer.py --player spotify";
     "format" = " {}";
     "return-type" = "json";
-    "on-click" = "${playerctl}/bin/playerctl play-pause";
-    "on-double-click-right" = "${playerctl}/bin/playerctl next";
-    "on-scroll-down" = "${playerctl}/bin/playerctl previous";
+    "on-click" = "${getExe playerctl} play-pause";
+    "on-double-click-right" = "${getExe playerctl} next";
+    "on-scroll-down" = "${getExe playerctl} previous";
   };
   "custom/power-menu" = {
     "format" = "⏻ ";
@@ -109,6 +111,6 @@
   };
   "custom/launcher" = {
     "format" = "";
-    "on-click" = "${rofi}/bin/rofi -show drun &";
+    "on-click" = "${getExe rofi} -show drun &";
   };
 }

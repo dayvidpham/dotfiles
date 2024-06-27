@@ -8,7 +8,8 @@
 , networkmanager
 , playerctl
 , python3
-, ...
+, pavucontrol
+, hyprlock
 }@inputs:
 let
   waybar-mediaPlayer = (waybar.override { withMediaPlayer = true; });
@@ -17,7 +18,7 @@ let
   ]));
   pkg = stdenv.mkDerivation (finalAttrs: {
     pname = "waybar-balcony";
-    version = "0.0.1";
+    version = "0.0.2";
     src = ./.;
 
     nativeBuildInputs = [
@@ -79,9 +80,12 @@ let
         config = (import (outPath + "/config/waybar/config.nix") {
           waybar-balcony = finalAttrs.finalPackage;
           scriptsDir = finalAttrs.finalPackage.passthru.scripts;
+          getExe = lib.getExe;
           inherit
             rofi
             playerctl
+            pavucontrol
+            hyprlock
             ;
         });
       };

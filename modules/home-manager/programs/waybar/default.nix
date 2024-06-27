@@ -55,10 +55,6 @@ in
           programs.rofi = {
             enable = true;
           };
-
-          #wayland.windowManager.hyprland = config.wayland.windowManager.hyprland + ''
-          #  exec-once = ${pkgs.waybar-balcony}/bin/waybar
-          #'';
         }
       ))
 
