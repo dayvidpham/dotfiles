@@ -22,8 +22,9 @@ NixOS dotfiles directory: my experimental descent into madness
   - [x] swaylock/hyprlock
     - [ ] rice it out
   - [x] ~hyprpapr~ swww
-    - [ ] set layer to black
+    - [x] set layer to black: done through hyprland disabling default layer
     - [ ] colour dependent on bg too
+    - [ ] contribute: cache the dims/scale of the last img too
   - [x] hypridle
     - [ ] post-wake fixes: set background
     - [ ] kanshi on wake
