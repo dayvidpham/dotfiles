@@ -34,6 +34,10 @@ in
       pkgs.kanshi
     ];
 
+    # Not enabled by default
+    systemd.user.services.kanshi.Unit.X-Restart-Triggers = [
+      "${config.xdg.configFile."kanshi/config".source}"
+    ];
     services.kanshi = {
       enable = true;
       systemdTarget = cfg.systemdTarget;

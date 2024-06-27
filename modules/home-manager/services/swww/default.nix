@@ -43,8 +43,6 @@ in
         Description = "swww-daemon";
         After = [ "graphical-session-pre.target" ];
         PartOf = [ "graphical-session.target" ];
-        #X-Restart-Triggers =
-        #  [ "${config.xdg.configFile."hypr/hypridle.conf".source}" ];
       };
 
       Service = {
