@@ -27,7 +27,7 @@ in
       cfg.kernelPackage
     ];
     boot.extraModprobeConfig = ''
-      options v4l2loopback exclusive_caps=1 video_nr=0 card_label="v4l2loopback device"
+      options v4l2loopback exclusive_caps=1 card_label="v4l2loopback device"
     '';
     environment.systemPackages = [
       cfg.utilsPackage
