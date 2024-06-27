@@ -103,7 +103,12 @@ rec {
     };
   };
   programs.firefox.enable = true;
-  programs.alacritty.enable = true;
+  programs.alacritty = {
+    enable = true;
+    settings = {
+      window.opacity = 0.8;
+    };
+  };
   programs.nheko.enable = true;
 
   programs.obs-studio.enable = true; # Grab OBS 
