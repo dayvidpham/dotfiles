@@ -11,6 +11,8 @@ let
   inherit (lib)
     mkIf
     mkEnableOption
+    mkDefault
+    mkOption
     ;
 
 in
@@ -18,6 +20,12 @@ in
   options.CUSTOM.services.kanshi = {
     enable =
       mkEnableOption "setup Wayland displays to personal preference";
+    systemdTarget = mkOption {
+      type = lib.types.str;
+      default = "graphical-session.target";
+      description = "systemd desktop unit dependency";
+      example = "graphical-session.target";
+    };
   };
 
   config = mkIf cfg.enable {
@@ -28,7 +36,7 @@ in
 
     services.kanshi = {
       enable = true;
-
+      systemdTarget = cfg.systemdTarget;
       settings = [
 
         {
@@ -118,3 +126,4 @@ in
 
   };
 }
+
