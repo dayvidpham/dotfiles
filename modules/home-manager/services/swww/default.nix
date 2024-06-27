@@ -54,6 +54,7 @@ in
 
         Service = {
           ExecStart = "${getExe' cfg.package "swww-daemon"}";
+          ExecStartPost = "${getExe' cfg.package "swww"} restore";
           Restart = "always";
           RestartSec = "10";
         };
