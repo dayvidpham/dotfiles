@@ -13,6 +13,7 @@ let
     mkPackageOption
     mkEnableOption
     getExe'
+    optional
     ;
 
 in
@@ -35,22 +36,28 @@ in
       swww
     ];
 
-    systemd.user.services.swww-daemon = {
-      Install = { WantedBy = [ "graphical-session.target" ]; };
+    systemd.user.services.swww-daemon =
+      let
+        desktopTargets = [ "graphical-session.target" ];
+        afterKanshi = desktopTargets
+          ++ (optional config.services.kanshi.enable "kanshi.service");
+      in
+      {
+        Install = { WantedBy = desktopTargets; };
 
-      Unit = {
-        ConditionEnvironment = "WAYLAND_DISPLAY";
-        Description = "swww-daemon";
-        After = [ "graphical-session-pre.target" ];
-        PartOf = [ "graphical-session.target" ];
-      };
+        Unit = {
+          ConditionEnvironment = "WAYLAND_DISPLAY";
+          Description = "swww-daemon (swww wallpaper daemon)";
+          After = afterKanshi;
+          Requires = afterKanshi;
+        };
 
-      Service = {
-        ExecStart = "${getExe' cfg.package "swww-daemon"}";
-        Restart = "always";
-        RestartSec = "10";
+        Service = {
+          ExecStart = "${getExe' cfg.package "swww-daemon"}";
+          Restart = "always";
+          RestartSec = "10";
+        };
       };
-    };
   };
 
 }
