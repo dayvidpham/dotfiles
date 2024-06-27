@@ -92,6 +92,8 @@ case ${chosen} in
 			betterlockscreen -l
 		elif [[ -x '/usr/bin/i3lock' ]]; then
 			i3lock
+		else
+			loginctl lock-session
 		fi
         ;;
     $suspend)
