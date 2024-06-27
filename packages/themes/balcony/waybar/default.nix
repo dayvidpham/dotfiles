@@ -27,6 +27,7 @@ let
 
     buildInputs = [
       python3-deps
+      rofi
       #rofi-bluetooth
       #rofi-network-manager
       #networkmanager
@@ -48,6 +49,7 @@ let
       chmod +x $out/share/waybar/scripts/spotify.sh
       chmod +x $out/share/waybar/scripts/hello.sh
       chmod +x $out/share/waybar/scripts/weather.py
+      chmod +x $out/share/waybar/scripts/power-menu/powermenu.sh
 
       mkdir -p $out/config/waybar
       cp ./config $out/config/waybar/config
@@ -60,10 +62,13 @@ let
 
     preFixup = ''
       wrapProgram $out/share/waybar/scripts/spotify.sh \
-        --suffix PATH "${lib.makeBinPath [ playerctl ]}"
+        --suffix PATH : "${lib.makeBinPath [ playerctl ]}"
 
       wrapProgram $out/share/waybar/scripts/weather.py \
         --set PYTHONPATH "${python3-deps}/${python3-deps.sitePackages}"
+
+      wrapProgram $out/share/waybar/scripts/power-menu/powermenu.sh \
+        --prefix PATH : "${lib.makeBinPath [ rofi ]}"
     '';
 
     passthru =

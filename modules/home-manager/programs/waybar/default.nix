@@ -44,6 +44,10 @@ in
           style = waybar-themed.passthru.style;
         in
         {
+          xdg.configFile."waybar/scripts" = {
+            recursive = true;
+            source = "${waybar-themed}/share/waybar/scripts";
+          };
           programs.waybar = {
             enable = true;
             systemd.enable = true;
@@ -154,3 +158,4 @@ in
     })
   ];
 }
+
