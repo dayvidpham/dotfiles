@@ -63,7 +63,7 @@
     "format" = "{icon}";
     "format-muted" = "";
     "format-icons" = {
-      "default" = [ "" "" "" ];
+      "default" = [ "" " " " " ];
     };
     "on-click" = "${getExe pavucontrol} &";
   };
