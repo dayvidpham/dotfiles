@@ -14,7 +14,7 @@ let
     getExe
     ;
 
-  hyprlockExe = getExe pkgs.hyprlock;
+  hyprlockExe = getExe config.programs.hyprlock.package;
 
 in
 {
