@@ -61,7 +61,6 @@ rec {
   # NOTE: General package stuff
   home.packages = with pkgs; [
     # Wayland stuff
-    bemenu # launcher menu
     wdisplays # gui for display settings
     wl-clipboard-rs # Rust CLI clipboard utility
     pw-volume # for volume control w/ sway
