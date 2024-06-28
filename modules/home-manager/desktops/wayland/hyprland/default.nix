@@ -76,23 +76,24 @@ in
     };
 
     CUSTOM.services.kanshi.enable = true;
-    CUSTOM.services.playerctld.enable = true;
 
     CUSTOM.services.swww.enable = true;
     CUSTOM.services.hypridle.enable = true;
     CUSTOM.programs.hyprlock.enable = true;
 
     # GUI elements: widgets and status bars
-    CUSTOM.programs.eww.enable = true;
-    CUSTOM.programs.waybar = {
+    CUSTOM.theme = {
       enable = true;
-      windowManager = "hyprland";
+      name = "balcony";
     };
 
-    # Notification daemon
+    # TODO: Move notification daemon into CUSTOM.theme too
     services.mako = {
       enable = true;
     };
+
+
+
 
     home.packages = with pkgs; [
       run-cwd

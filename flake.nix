@@ -2,7 +2,7 @@
   description = "Base configuration using flake to manage NixOS";
 
   nixConfig = {
-    experimental-features = [ "nix-command" "flakes" ];
+    experimental-features = [ "nix-command" "flakes" "repl-flake" ];
     substituters = [
       "https://cache.nixos.org"
     ];
@@ -158,6 +158,10 @@
           ];
           extraSpecialArgs = extraSpecialArgs // {
             GLOBALS.hostName = "desktop";
+            GLOBALS.theme = {
+              name = "balcony";
+              basePath = ./packages/themes/balcony;
+            };
           };
         };
       };

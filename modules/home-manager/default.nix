@@ -4,7 +4,7 @@
 {
   imports = [
     ./desktops
-    ./themes
+    ./theme
     ./services
     ./programs
   ];

@@ -32,7 +32,7 @@ rec {
   home.stateVersion = "23.11"; # Please read the comment before changing.
 
   # cursorTheme, GTK theme, ...
-  CUSTOM.themes.enable = true;
+  CUSTOM.theme.enable = true;
 
   # Env vars
   home.sessionVariables = {

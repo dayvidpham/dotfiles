@@ -1,6 +1,7 @@
 { config
 , pkgs
 , lib ? pkgs.lib
+, GLOBALS
 , ...
 }:
 let
@@ -19,13 +20,15 @@ in
   options.CUSTOM.programs.waybar = {
     enable = mkEnableOption
       "Customized waybar, dependant on the current window manager";
+
     windowManager = mkOption {
       type = lib.types.enum [ "hyprland" "sway" ];
       description = "Which Wayland window manager is enabled";
       example = "hyprland";
     };
+
     theme = mkOption {
-      type = lib.types.enum [ "balcony" ];
+      type = lib.types.enum [ "balcony" null ];
       default = "balcony";
       description = "preconfigured Waybar themes";
       example = ''
@@ -37,9 +40,9 @@ in
 
   config = mkMerge [
     (mkIf (cfg.enable && cfg.windowManager == "hyprland")
-      (
+      (mkIf (cfg.theme == "balcony") (
         let
-          waybar-themed = pkgs."waybar-${cfg.theme}";
+          waybar-themed = pkgs.waybar-balcony;
           settings = [ waybar-themed.passthru.config ];
           style = waybar-themed.passthru.style;
         in
@@ -56,12 +59,8 @@ in
           };
 
           # TODO: Place in the theme property?
-          programs.rofi = {
-            enable = true;
-            package = pkgs.rofi-wayland-unwrapped;
-          };
         }
-      ))
+      )))
 
 
     # NOTE: DEPRECATED

@@ -6,5 +6,6 @@
     ./eww
     ./waybar
     ./hyprlock
+    ./rofi
   ];
 }
