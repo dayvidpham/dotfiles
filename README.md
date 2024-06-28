@@ -24,10 +24,11 @@ NixOS dotfiles directory: my experimental descent into madness
   - [x] ~hyprpapr~ swww
     - [x] set layer to black: done through hyprland disabling default layer
     - [ ] colour dependent on bg too
-    - [ ] contribute: cache the dims/scale of the last img too
+    - [ ] contribute: animation getting stuck and only displaying single pixel? needs two calls to `swww img`
   - [x] hypridle
-    - [ ] post-wake fixes: set background
+    - [x] post-wake fixes: set background (handled via swww systemd unit)
     - [ ] kanshi on wake
+    - [ ] unmute on wake
   - [ ] improve the Hyprland keybindings
   - [ ] convert to pulseaudio to pipewire/wireplumber, use wpctl?
   - [x] any GUI for pipewire? qpwgraph, pavucontrol
