@@ -6,24 +6,49 @@
 }:
 let
   treesitterWithGrammars = (pkgs.vimPlugins.nvim-treesitter.withPlugins (p: [
+    p.awk
     p.bash
+    p.bibtex
+    p.c
+    p.cpp
     p.comment
     p.css
+    p.scss
+    p.diff
     p.dockerfile
     p.gitattributes
+    p.gitcommit
     p.gitignore
+    p.git_rebase
+    p.haskell
+    p.http
+    p.hyprlang
+    p.java
     p.javascript
     p.jq
     p.json5
     p.json
+    p.jsonc
     p.lua
+    p.luadoc
     p.make
     p.markdown
+    p.markdown_inline
+    p.meson
     p.nix
+    p.printf
     p.python
+    p.query
+    p.r
+    p.rasi
+    p.regex
+    p.rust
     p.toml
     p.typescript
+    p.vim
+    p.vimdoc
     p.yaml
+    p.yuck
   ]));
 
   treesitter-parsers = pkgs.symlinkJoin {
@@ -58,9 +83,9 @@ in
     withNodeJs = true;
     defaultEditor = true;
 
-    plugins = [
-      treesitterWithGrammars
-    ];
+    #plugins = [
+    #  treesitterWithGrammars
+    #];
 
     extraPackages = with pkgs; [
       ripgrep
@@ -72,7 +97,13 @@ in
       nixpkgs-fmt
       nil-lsp-pkg
       rust-minimal
+      #tree-sitter
+      treesitterWithGrammars
     ];
+
+    extraLuaConfig = ''
+      vim.opt.runtimepath:append("${treesitter-parsers}")
+    '';
   };
 
   home.file."${nvimConfigDir}" = {
@@ -80,9 +111,9 @@ in
     recursive = true;
   };
 
-  home.file."${nvimConfigDir}/lua/minttea/init.lua".text = ''
-    vim.opt.runtimepath:append("${treesitter-parsers}")
-  '';
+  #home.file."${nvimConfigDir}/lua/nix/nvim-treesitter/init.lua".text = ''
+  #  vim.opt.runtimepath:append("${treesitter-parsers}")
+  #'';
 
   # Treesitter is configured as a locally developed module in lazy.nvim
   # we hardcode a symlink here so that we can refer to it in our lazy config

@@ -91,7 +91,10 @@ vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
 -- Set to true if you have a Nerd Font installed and selected in the terminal
-vim.g.have_nerd_font = false
+vim.g.have_nerd_font = true
+
+-- NOTE: Nix env set up
+vim.g.NVIM_DATA_HOME = vim.env.XDG_DATA_HOME .. '/nvim'
 
 -- [[ Setting options ]]
 -- See `:help vim.opt`
@@ -866,7 +869,7 @@ require('lazy').setup({
     end,
   },
   { -- Highlight, edit, and navigate code
-    'nvim-treesitter/nvim-treesitter',
+    dir = vim.g.NVIM_DATA_HOME .. '/nix/nvim-treesitter',
     build = ':TSUpdate',
     opts = {
       ensure_installed = { 'bash', 'c', 'html', 'lua', 'luadoc', 'markdown', 'vim', 'vimdoc' },
@@ -889,7 +892,7 @@ require('lazy').setup({
       ---@diagnostic disable-next-line: missing-fields
       require('nvim-treesitter.configs').setup(opts)
 
-      -- There are additional nvim-treesitter modules that you can use to interact
+      -- TODO: There are additional nvim-treesitter modules that you can use to interact
       -- with nvim-treesitter. You should go explore a few and see what interests you:
       --
       --    - Incremental selection: Included, see `:help nvim-treesitter-incremental-selection-mod`
