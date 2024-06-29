@@ -16,8 +16,8 @@
     "format" = "{icon}";
     "on-click" = "activate";
     "format-icons" = {
-      "active" = " 󰮯";
-      "default" = "";
+      "active" = "󰮯";
+      "default" = " ";
     };
   };
   "hyprland/window" = {
@@ -48,14 +48,14 @@
     "device" = "eDP-1";
     "format" = "{icon}";
     "tooltip-format" = "{percent}";
-    "format-icons" = [ "󱩎 " "󱩏 " "󱩐 " "󱩑 " "󱩒 " "󱩓 " "󱩔 " "󱩕 " "󱩖 " "󰛨 " ];
+    "format-icons" = [ "󱩎" "󱩏" "󱩐" "󱩑" "󱩒" "󱩓" "󱩔" "󱩕" "󱩖" "󰛨" ];
   };
   "network" = {
     "format-wifi" = "{icon}";
     "format-ethernet" = ""; #  
     "format-disconnected" = "";
     "tooltip-format" = "{essid}";
-    "on-click" = "bash ${scriptsDir}/network/rofi-network-manager.sh";
+    "on-click" = "${scriptsDir}/network/rofi-network-manager.sh";
     "format-icons" = [ "󰤯" "󰤟" "󰤢" "󰤥" "󰤨" ];
   };
 
@@ -63,7 +63,7 @@
     "format" = "{icon}";
     "format-muted" = "";
     "format-icons" = {
-      "default" = [ "" " " " " ];
+      "default" = [ "" "" " " ];
     };
     "on-click" = "${getExe pavucontrol} &";
   };
@@ -95,19 +95,23 @@
   "custom/lock" = {
     "tooltip" = false;
     "on-click" = "${getExe hyprlock}";
-    "format" = " ";
+    "format" = "";
   };
-  "custom/spotify" = {
-    "exec" = "${waybar-balcony}/bin/waybar-mediaplayer.py --player spotify";
-    "format" = " {}";
-    "return-type" = "json";
-    "on-click" = "${getExe playerctl} play-pause";
-    "on-double-click-right" = "${getExe playerctl} next";
-    "on-scroll-down" = "${getExe playerctl} previous";
-  };
+  "custom/spotify" =
+    let
+      playerctl-spotify = "${getExe playerctl} --player spotify";
+    in
+    {
+      "exec" = "${waybar-balcony}/bin/waybar-mediaplayer.py --player spotify";
+      "format" = " {}";
+      "return-type" = "json";
+      "on-click" = "${playerctl-spotify} play-pause";
+      "on-double-click-right" = "${playerctl-spotify} next";
+      "on-scroll-down" = "${playerctl-spotify} previous";
+    };
   "custom/power-menu" = {
-    "format" = "⏻ ";
-    "on-click" = "bash ${scriptsDir}/power-menu/powermenu.sh &";
+    "format" = "⏻";
+    "on-click" = "${scriptsDir}/power-menu/powermenu.sh &";
   };
   "custom/launcher" = {
     "format" = "";
