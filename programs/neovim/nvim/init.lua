@@ -611,7 +611,7 @@ require('lazy').setup({
                 command = { "nixpkgs-fmt" },
               },
               nix = {
-                maxMemoryMB = 1024 * 8, -- 8 GiB for input eval
+                maxMemoryMB = 1024 * 12, -- 12 GiB for input eval
                 flake = {
                   autoArchive    = true,
                   autoEvalInputs = true,
