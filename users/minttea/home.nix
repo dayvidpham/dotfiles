@@ -4,18 +4,18 @@
 }:
 let
   # maybe this stuff should be defined in Flake and passed to users
-  rstudio-env = pkgs.rstudioWrapper.override {
-    packages = with pkgs.rPackages; [
-      tidyverse
-      knitr
-      rmarkdown
-      markdown
-      reticulate
-    ];
-  };
-  texlive-env = (pkgs.texlive.combine {
-    inherit (pkgs.texlive) scheme-full float;
-  });
+  #rstudio-env = pkgs.rstudioWrapper.override {
+  #  packages = with pkgs.rPackages; [
+  #    tidyverse
+  #    knitr
+  #    rmarkdown
+  #    markdown
+  #    reticulate
+  #  ];
+  #};
+  #texlive-env = (pkgs.texlive.combine {
+  #  inherit (pkgs.texlive) scheme-full float;
+  #});
 in
 rec {
   # Let Home Manager install and manage itself.
@@ -78,9 +78,9 @@ rec {
     fastfetch # C implmentation of neofetch
     nvtopPackages.full # htop but for GPUs
     # R
-    rstudio-env
-    pandoc
-    texlive-env
+    #rstudio-env
+    #pandoc
+    #texlive-env
     # Typical user applications
     google-chrome
     spotify

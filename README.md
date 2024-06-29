@@ -39,3 +39,6 @@ NixOS dotfiles directory: my experimental descent into madness
     - scythe
     - [ ] run-cwd(-sway)
   - [ ] implement: run-cwd-hyprland
+  - neovim plugins:
+    - [ ] mini indent
+    - [ ] neo-tree

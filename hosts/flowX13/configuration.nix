@@ -13,7 +13,7 @@
   system.stateVersion = "23.11";
   nix = {
     package = pkgs.nixFlakes;
-    settings.experimental-features = [ "nix-command" "flakes" ];
+    settings.experimental-features = [ "nix-command" "flakes" "repl-flake" ];
   };
 
   #########################
@@ -32,6 +32,8 @@
     kernelPackages = pkgs.linuxPackages_latest;
   }; 
 
+  # For OBS and screen sharing/recording
+  CUSTOM.v4l2loopback.enable = true;
 
   # ################################
   # General system-config
@@ -98,15 +100,15 @@
     audio.enable = true;
     wireplumber = {
       enable = true;
-      #configPackages = [
-      #  (pkgs.writeTextDir "share/wireplumber/wireplumber.conf.d/10-bluez.conf" ''
-      #    monitor.bluez.properties = {
-      #      bluez5.roles = [ a2dp_sink a2dp_source bap_sink bap_source ]
-      #      bluez5.codecs = [ sbc sbc_xq aac ]
-      #      bluez5.enable-sbc-xq = true
-      #    }
-      #  '')
-      #];
+      configPackages = [
+        (pkgs.writeTextDir "share/wireplumber/wireplumber.conf.d/10-bluez.conf" ''
+          monitor.bluez.properties = {
+            bluez5.roles = [ a2dp_sink a2dp_source bap_sink bap_source ]
+            bluez5.codecs = [ sbc sbc_xq aac ]
+            bluez5.enable-sbc-xq = true
+          }
+        '')
+      ];
     };
 
     alsa.enable = true;
@@ -132,21 +134,27 @@
     enable = true;
     enableSSHSupport = true;
   };
+  services.gnome.gnome-keyring.enable = true;
 
   #####################################################
   # Package management
   nixpkgs.config.allowUnfree = true;
   environment.systemPackages = with pkgs; [
-    hwinfo
-    file
-    lshw
+    ########
+    # HW utils
+    hwinfo # lower-level hardware (cpu/pci/usb) info
+    file # returns device/file type and info
+    lshw # list connected hardware devices
+    bluez # bluetooth
+    # disk
+    gparted polkit_gnome
+    # cli
     zip unzip
+    # getters
     wget curl
-    greetd.tuigreet
-    bluez
     waypipe
   ];
-  programs.vim.defaultEditor = true;
+
   programs.git = {
     enable = true;
     config = {
@@ -159,6 +167,8 @@
   ######################################
   # Window manager & GPU
   programs.hyprland.enable = true;
+  CUSTOM.programs.hyprlock.enable = true;
+  CUSTOM.programs.eww.enable = true;
 
   hardware.enableRedistributableFirmware = pkgs.lib.mkDefault true;
 
@@ -185,21 +195,13 @@
     settings = {
       default_session = {
         command = ''
-          ${pkgs.greetd.tuigreet}/bin/tuigreet --remember-session --remember --time --asterisks --cmd "dwl -s 'kanshi& alacritty -e ranger' > /tmp/dwltags"
+          ${pkgs.greetd.tuigreet}/bin/tuigreet --remember-session --remember --time --asterisks --cmd "Hyprland"
         '';
         user = "greeter";
       };
     };
   };
   services.dbus.enable = true;
-  # nixpkgs.overlays = [
-  #   (final: prev: {
-  #     dwl = prev.dwl.override { conf = ./dwl-config.h; };
-  #   })
-  # ];
-
-  # Screen-sharing
-  CUSTOM.v4l2loopback.enable = true;
 
   ######################################
   # Some user setup: Most user-stuff will be in home-manager

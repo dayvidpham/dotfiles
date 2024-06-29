@@ -146,6 +146,10 @@
           ];
           extraSpecialArgs = extraSpecialArgs // {
             GLOBALS.hostName = "flowX13";
+            GLOBALS.theme = {
+              name = "balcony";
+              basePath = ./packages/themes/balcony;
+            };
           };
         };
 

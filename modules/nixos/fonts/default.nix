@@ -8,6 +8,7 @@ let
   inherit (lib)
     mkIf
     mkEnableOption
+    mkMerge
     ;
 
 in
@@ -23,21 +24,36 @@ in
 
       cfg = config.CUSTOM.fonts;
 
+      nerdfonts-custom = mkMerge (with pkgs; [
+        (mkIf (config.networking.hostName == "flowX13") (
+          nerdfonts.override {
+            fonts = [
+              "DaddyTimeMono"
+              "JetBrainsMono"
+              "Hack"
+              "Iosevka"
+              "IosevkaTerm"
+            ];
+          }))
+        (mkIf (config.networking.hostName == "desktop") (
+          nerdfonts.override {
+            fonts = [
+              "DaddyTimeMono"
+              "JetBrainsMono"
+              "Hack"
+              "Iosevka"
+              "IosevkaTerm"
+            ];
+          }))
+      ]);
+
     in
     mkIf cfg.enable {
 
       fonts = {
 
         packages = with pkgs; [
-          (nerdfonts.override {
-            fonts = [
-              "DaddyTimeMono"
-              "JetBrainsMono"
-              "Iosevka"
-              "Hack"
-              "IosevkaTerm"
-            ];
-          })
+          nerdfonts-custom
           noto-fonts
           noto-fonts-emoji
           font-awesome
