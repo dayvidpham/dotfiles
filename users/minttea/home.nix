@@ -69,7 +69,7 @@ rec {
     swappy # draw on image, mostly for screenshots
     swayimg # image viewer
     qpwgraph # gui for audio
-    light # backlight controller
+    brightnessctl # device light controller
     # Utils
     tree # fs vis
     ranger # CLI file explorer
