@@ -64,10 +64,6 @@ let
   removeHomePrefix = s: removePrefix homeDirectory s;
 
   # Config files placed in XDG dirs, but home-manager requires paths relative to homeDirectory
-  configHome = removeHomePrefix config.xdg.configHome;
-  dataHome = removeHomePrefix config.xdg.dataHome;
-  nvimConfigDir = "${configHome}/nvim";
-  nvimDataDir = "${dataHome}/nvim";
 
   # Pull in cargo and nil packages for Nix LSP
   system = pkgs.system;
@@ -83,9 +79,9 @@ in
     withNodeJs = true;
     defaultEditor = true;
 
-    #plugins = [
-    #  treesitterWithGrammars
-    #];
+    plugins = with pkgs.vimPlugins; [
+      typescript-tools-nvim
+    ];
 
     extraPackages = with pkgs; [
       ripgrep
@@ -103,10 +99,15 @@ in
 
     extraLuaConfig = ''
       vim.opt.runtimepath:append("${treesitter-parsers}")
+
+      package.path = '${config.xdg.configHome}/nvim/?.lua;' ..
+        '${config.xdg.configHome}/nvim/?/init.lua;' .. 
+        package.path
+      require('minttea')
     '';
   };
 
-  home.file."${nvimConfigDir}" = {
+  xdg.configFile."nvim/minttea" = {
     source = ./nvim;
     recursive = true;
   };
@@ -117,7 +118,7 @@ in
 
   # Treesitter is configured as a locally developed module in lazy.nvim
   # we hardcode a symlink here so that we can refer to it in our lazy config
-  home.file."${nvimDataDir}/nix/nvim-treesitter/" = {
+  xdg.dataFile."nvim/nix/nvim-treesitter/" = {
     recursive = true;
     source = treesitterWithGrammars;
   };

@@ -623,6 +623,13 @@ require('lazy').setup({
             },
           },
         },
+
+        --typescript_tools = {
+        --  autostart = true,
+        --  cmd = { },
+        --  settings = {
+        --  },
+        --}
       }
 
       for server_name, server in pairs(servers) do
