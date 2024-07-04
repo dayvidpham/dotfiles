@@ -57,18 +57,12 @@ let
   };
 
   # NOTE: my own config
-  inherit (lib)
-    removePrefix
-    ;
-  homeDirectory = config.home.homeDirectory;
-  removeHomePrefix = s: removePrefix homeDirectory s;
-
-  # Config files placed in XDG dirs, but home-manager requires paths relative to homeDirectory
-
   # Pull in cargo and nil packages for Nix LSP
   system = pkgs.system;
   nil-lsp-pkg = nil-lsp.outputs.packages.${system}.nil;
   rust-minimal = nil-lsp.inputs.rust-overlay.packages.${system}.default.minimal;
+
+  nvimConfig = "${config.xdg.configHome}/nvim";
 in
 {
 
@@ -79,9 +73,13 @@ in
     withNodeJs = true;
     defaultEditor = true;
 
-    plugins = with pkgs.vimPlugins; [
-      typescript-tools-nvim
-    ];
+    #plugins = with pkgs.vimPlugins; [
+    #  {
+    #    type = "lua";
+    #    plugin = typescript-tools-nvim;
+    #    config = "";
+    #  }
+    #];
 
     extraPackages = with pkgs; [
       ripgrep
@@ -100,8 +98,10 @@ in
     extraLuaConfig = ''
       vim.opt.runtimepath:append("${treesitter-parsers}")
 
-      package.path = '${config.xdg.configHome}/nvim/?.lua;' ..
-        '${config.xdg.configHome}/nvim/?/init.lua;' .. 
+      package.path = '${nvimConfig}/?.lua;' ..
+        '${nvimConfig}/?/init.lua;' .. 
+        '${nvimConfig}/minttea/lua/?/init.lua;' .. 
+        '${nvimConfig}/minttea/lua/?.lua;' .. 
         package.path
       require('minttea')
     '';
