@@ -835,6 +835,7 @@ require('lazy').setup({
 
   { -- Collection of various small independent plugins/modules
     'echasnovski/mini.nvim',
+    verison = false,
     config = function()
       -- Better Around/Inside textobjects
       --
@@ -868,6 +869,8 @@ require('lazy').setup({
 
       -- ... and there is more!
       --  Check out: https://github.com/echasnovski/mini.nvim
+      require('mini.align').setup {}
+      require('mini.animate').setup {}
     end,
   },
   { -- Highlight, edit, and navigate code
