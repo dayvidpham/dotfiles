@@ -419,10 +419,9 @@ require('lazy').setup({
 
   { -- LSP Configuration & Plugins
     'neovim/nvim-lspconfig',
-    lazy = false,
     dependencies = {
       -- Automatically install LSPs and related tools to stdpath for Neovim
-      -- WARN: Do not use Mason with Nix
+      -- WARN: I am using Mason with Nix at my own peril
       { 'williamboman/mason.nvim', config = true }, -- NOTE: Must be loaded before dependants
       'williamboman/mason-lspconfig.nvim',
       'WhoIsSethDaniel/mason-tool-installer.nvim',
