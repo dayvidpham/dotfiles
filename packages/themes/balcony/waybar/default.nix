@@ -1,4 +1,5 @@
 { stdenv
+, symlinkJoin
 , lib
 , makeWrapper
 , waybar
@@ -10,16 +11,25 @@
 , python3
 , pavucontrol
 , hyprlock
+  #, formats
 }@inputs:
 let
+  inherit (lib)
+    fileContents
+    getExe
+    ;
+
   waybar-mediaPlayer = (waybar.override { withMediaPlayer = true; });
   python3-deps = (python3.withPackages (pyPkgs: with pyPkgs; [
     requests
   ]));
-  pkg = stdenv.mkDerivation (finalAttrs: {
+  #jsonFormat = formats.json { };
+
+  derivationArgs = (finalAttrs: {
     pname = "waybar-balcony";
-    version = "0.0.2";
+    version = "0.0.3";
     src = ./.;
+    allowSubstitutes = false; # custom package will never be found in online cache
 
     nativeBuildInputs = [
       makeWrapper
@@ -35,27 +45,22 @@ let
       #playerctl
     ];
 
-    # NOTE: The dest dir is needed in cp, else will copy as <store-path>-scripts
+    # WARN: The dest dir is needed in cp, else will copy as <store-path>-scripts
     # CORRECT:    cp -r ${./scripts} $out/share/scripts
     # INCORRECT:  cp -r ${./scripts} $out/share
+
     installPhase = ''
       runHook preInstall
 
       mkdir -p $out
-      cp -r ${waybar-mediaPlayer}/bin $out/bin
 
-      mkdir -p $out/share/waybar
-      cp -r ./scripts $out/share/waybar/scripts
+      cp -r ./share $out/share
       chmod +x $out/share/waybar/scripts/spotify.sh
       chmod +x $out/share/waybar/scripts/hello.sh
       chmod +x $out/share/waybar/scripts/weather.py
       chmod +x $out/share/waybar/scripts/power-menu/powermenu.sh
 
-      mkdir -p $out/config/waybar
-      cp ./config $out/config/waybar/config
-      cp ./config.nix $out/config/waybar/config.nix
-      cp ./nixos-icon.svg $out/config/waybar/nixos-icon.svg
-      cp ./style.css $out/config/waybar/style.css
+      cp -r ./config $out/config
 
       runHook postInstall
     '';
@@ -74,26 +79,37 @@ let
     passthru =
       let
         outPath = finalAttrs.finalPackage.outPath;
-        inherit (lib) fileContents;
-      in
-      {
-        finalAttrs = finalAttrs;
-        original = pkg;
-
         scripts = outPath + "/share/waybar/scripts";
         style = fileContents (outPath + "/config/waybar/style.css");
-        config = (import (outPath + "/config/waybar/config.nix") {
-          waybar-balcony = finalAttrs.finalPackage;
-          scriptsDir = finalAttrs.finalPackage.passthru.scripts;
-          getExe = lib.getExe;
+      in
+      {
+        inherit
+          finalAttrs
+          scripts
+          style
+          ;
+        original = waybar-balcony;
+
+        settings = (import ./config/waybar/config.nix {
           inherit
             rofi
             playerctl
             pavucontrol
             hyprlock
+            getExe
             ;
+
+          waybar-balcony = finalAttrs.finalPackage;
+          scriptsDir = scripts;
         });
       };
   });
+
+  waybar-balcony-precursor = stdenv.mkDerivation derivationArgs;
+
+  waybar-balcony = symlinkJoin ({
+    inherit (waybar-balcony-precursor) name passthru;
+    paths = [ waybar-mediaPlayer waybar-balcony-precursor ];
+  });
 in
-pkg
+waybar-balcony

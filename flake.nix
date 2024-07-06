@@ -20,7 +20,7 @@
     # The master branch of the NixOS/nixpkgs repository on GitHub.
     # inputs.unstable.url = "github:NixOS/nixpkgs/master";
 
-    nixpkgs.url = "github:NixOS/nixpkgs";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-registry = {
       url = "github:nixos/flake-registry";
       flake = false;
@@ -33,6 +33,9 @@
       url = "github:oxalica/nil";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    #xdg-desktop-portal-hyprland = {
+    #  url = "github:hyprwm/xdg-desktop-portal-hyprland";
+    #};
   };
 
   outputs =
@@ -41,11 +44,11 @@
     , flake-registry
     , home-manager
     , nil-lsp
+      #, xdg-desktop-portal-hyprland
     , ...
     }:
     let
       system = "x86_64-linux";
-
       pkgs = import nixpkgs {
         inherit system;
         config = {
@@ -64,6 +67,7 @@
               rofi = rofi-wayland-unwrapped;
             };
           })
+          #xdg-desktop-portal-hyprland.overlays.default
         ];
       };
 

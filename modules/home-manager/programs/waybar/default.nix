@@ -43,7 +43,7 @@ in
       (mkIf (cfg.theme == "balcony") (
         let
           waybar-themed = pkgs.waybar-balcony;
-          settings = [ waybar-themed.passthru.config ];
+          settings = [ waybar-themed.passthru.settings ];
           style = waybar-themed.passthru.style;
         in
         {
@@ -63,7 +63,7 @@ in
       )))
 
 
-    # NOTE: DEPRECATED
+    # WARN: DEPRECATED
     (mkIf (cfg.enable && cfg.windowManager == "sway") {
       programs.waybar = {
         enable = true;
