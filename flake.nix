@@ -33,9 +33,6 @@
       url = "github:oxalica/nil";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    #xdg-desktop-portal-hyprland = {
-    #  url = "github:hyprwm/xdg-desktop-portal-hyprland";
-    #};
   };
 
   outputs =
@@ -44,7 +41,6 @@
     , flake-registry
     , home-manager
     , nil-lsp
-      #, xdg-desktop-portal-hyprland
     , ...
     }:
     let
@@ -67,7 +63,6 @@
               rofi = rofi-wayland-unwrapped;
             };
           })
-          #xdg-desktop-portal-hyprland.overlays.default
         ];
       };
 
