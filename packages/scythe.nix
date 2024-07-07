@@ -2,7 +2,7 @@
 , runtimeShell
 , grim
 , slurp
-, dmenu
+, rofi-wayland-unwrapped
 , swappy
 , wl-clipboard
 , output-dir ? "$GRIM_DFEAULT_DIR"
@@ -11,7 +11,7 @@
 writeShellApplication rec {
   # Metadata
   name = "scythe";
-  runtimeInputs = [ grim slurp dmenu swappy wl-clipboard ];
+  runtimeInputs = [ grim slurp rofi-wayland-unwrapped swappy wl-clipboard ];
 
   text = ''
     #!${runtimeShell}
@@ -27,7 +27,7 @@ writeShellApplication rec {
         mkdir -p "$OUT_DIR"
     fi
 
-    OUT_NAME=$(dmenu -p "$OUT_DIR/{input}-%date.png: " < /dev/null)
+    OUT_NAME=$(rofi -dmenu -p "$OUT_DIR/{input}-%date.png: " < /dev/null)
 
     OUT_PATH="$OUT_DIR/$OUT_NAME"
 
