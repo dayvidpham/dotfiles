@@ -610,19 +610,22 @@ require('lazy').setup({
           },
         },
 
-        nil_ls = {
-          autostart = true,
-          cmd = { 'nil' },
+        nixd = {
+          cmd = { 'nixd' },
           settings = {
-            ['nil'] = {
+            nixd = {
+              nixpkgs = {
+                expr = 'import (builtins.getFlake ("git+file://" + toString ${' .. vim.env.HOME .. '})).homeConfigurations."minttea@desktop".nixpkgs',
+              },
               formatting = {
                 command = { 'nixpkgs-fmt' },
               },
-              nix = {
-                maxMemoryMB = 1024 * 12, -- 12 GiB for input eval
-                flake = {
-                  autoArchive = true,
-                  autoEvalInputs = true,
+              options = {
+                nixos = {
+                  expr = '(builtins.getFlake ("git+file://" + toString ${' .. vim.env.HOME .. '})).nixosConfigurations.desktop.options',
+                },
+                home_manager = {
+                  expr = '(builtins.getFlake ("git+file://" + toString ${' .. vim.env.HOME .. '})).homeConfigurations."minttea@desktop".options',
                 },
               },
             },
@@ -641,12 +644,19 @@ require('lazy').setup({
       --    :Mason
       --
       --  You can press `g?` for help in this menu.
-      --  NOTE: Do not use Mason with Nix
+      --  WARN: Do not use Mason with Nix
       require('mason').setup()
 
       ---- You can add other tools here that you want Mason to install
       ---- for you, so that they are available from within Neovim.
-      local ensure_installed = vim.tbl_keys(servers or {})
+      local ensure_installed = {}
+      local dont_install = '|nixd|'
+      for k in pairs(servers) do
+        if string.find(dont_install, '|' .. k .. '|') ~= nil then
+          ensure_installed[k] = servers[k]
+        end
+      end
+      vim.tbl_keys(servers or {})
       vim.list_extend(ensure_installed, {
         'stylua', -- Used to format Lua code
       })

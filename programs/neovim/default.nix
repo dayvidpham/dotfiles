@@ -93,6 +93,7 @@ in
       rust-minimal
       #tree-sitter
       treesitterWithGrammars
+      nixd
     ];
 
     extraLuaConfig = ''
