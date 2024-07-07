@@ -7,5 +7,6 @@
     ./waybar
     ./hyprlock
     ./rofi
+    ./renv
   ];
 }

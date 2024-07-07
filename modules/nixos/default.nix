@@ -1,10 +1,8 @@
-{
-  ...
+{ ...
 }:
 
 {
   imports = [
-    ./renv
     ./v4l2loopback
     ./services
     ./desktops
