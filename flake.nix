@@ -2,7 +2,7 @@
   description = "Base configuration using flake to manage NixOS";
 
   nixConfig = {
-    experimental-features = [ "nix-command" "flakes" "repl-flake" ];
+    experimental-features = [ "nix-command" "flakes" ];
     substituters = [
       "https://cache.nixos.org"
     ];

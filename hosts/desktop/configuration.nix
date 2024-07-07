@@ -17,8 +17,8 @@
   system.stateVersion = "23.11";
   nix = {
     # NOTE: Enable Flakes
-    package = pkgs.nixFlakes;
-    settings.experimental-features = [ "nix-command" "flakes" "repl-flake" ];
+    package = pkgs.nixVersions.latest;
+    settings.experimental-features = [ "nix-command" "flakes" ];
 
     # NOTE: Nix store gc, optimisation
     gc = {
