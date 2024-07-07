@@ -21,6 +21,7 @@
     # inputs.unstable.url = "github:NixOS/nixpkgs/master";
 
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nix.url = "github:DeterminateSystems/nix-src/multithreaded-eval";
     flake-registry = {
       url = "github:nixos/flake-registry";
       flake = false;
@@ -38,6 +39,7 @@
   outputs =
     inputs@{ self
     , nixpkgs
+    , nix
     , flake-registry
     , home-manager
     , nil-lsp
@@ -52,6 +54,7 @@
           allowUnfreePredicate = (_: true);
         };
         overlays = [
+          nix.overlays.default
           (final: prev: {
             # NOTE: My own packages and programs
             run-cwd = with final; callPackage ./packages/run-cwd.nix { };
@@ -77,10 +80,15 @@
         environment.etc."nix/inputs/nixpkgs".source = "${nixpkgs}";
         environment.etc."nix/inputs/home-manager".source = "${home-manager}";
 
+        nix.nixPath = lib.mkForce [
+          "nixpkgs=/etc/nix/inputs/nixpkgs"
+          "home-manager=/etc/nix/inputs/home-manager"
+        ];
         nix.settings.nix-path = lib.mkForce [
           "nixpkgs=/etc/nix/inputs/nixpkgs"
           "home-manager=/etc/nix/inputs/home-manager"
         ];
+
         nix.settings.flake-registry = "${flake-registry}/flake-registry.json";
       };
 
