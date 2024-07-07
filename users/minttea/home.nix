@@ -65,6 +65,10 @@ rec {
     jq # CLI json explorer
     fastfetch # C implmentation of neofetch
     nvtopPackages.full # htop but for GPUs
+    # Nix utils
+    nix-output-manager # more informative nix build outputs
+    nix-tree # interactive closure explorer
+    nvd # closure differ
     # Typical user applications
     google-chrome
     spotify
