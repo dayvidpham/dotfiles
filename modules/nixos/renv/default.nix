@@ -1,40 +1,41 @@
-{
-  config
-  , pkgs
-  , lib ? pkgs.lib
-  , ... 
+{ config
+, pkgs
+, lib ? pkgs.lib
+, ...
 }:
 let
-  cfg = config.CUSTOM.renv;
+  cfg = config.CUSTOM.programs.rEnv;
 
-  rstudio-env = pkgs.rstudioWrapper.override { 
+  inherit (lib)
+    mkEnableOption
+    mkIf
+    ;
+
+  rstudio-env = pkgs.rstudioWrapper.override {
     packages = with pkgs.rPackages; [
       tidyverse
       knitr
       rmarkdown
       markdown
+      reticulate
     ];
   };
 
-  # Need scheme-full for proper integration with RMarkdown
   texlive-env = (pkgs.texlive.combine {
     inherit (pkgs.texlive) scheme-full float;
   });
-  
-  inherit (lib)
-    mkEnableOption
-    mkIf
-  ;
 
-in rec {
-
-  # NOTE: Handle options
-  options = {
-    programs.renv.enable = mkEnableOption "renv";
+in
+{
+  options.CUSTOM.programs.rEnv = {
+    enable = mkEnableOption "R dev env with RStudio and necessary TeX pkgs";
   };
 
-  # NOTE: Acutal implementation
   config = mkIf cfg.enable {
-    
+    home.packages = [
+      rstudio-env
+      texlive-env
+      pkgs.pandoc
+    ];
   };
 }
