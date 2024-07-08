@@ -6,14 +6,23 @@
 
 {
   imports =
-    [ # Include the results of the hardware scan.
+    [
+      # Include the results of the hardware scan.
       ./hardware-configuration.nix
     ];
 
   system.stateVersion = "23.11";
   nix = {
-    package = pkgs.nixFlakes;
-    settings.experimental-features = [ "nix-command" "flakes" "repl-flake" ];
+    package = pkgs.nixVersions.git;
+    settings.experimental-features = [ "nix-command" "flakes" ];
+
+    # NOTE: Nix store gc, optimisation
+    gc = {
+      automatic = true;
+      persistent = true;
+      dates = "4 days";
+    };
+    settings.auto-optimise-store = true;
   };
 
   #########################
@@ -23,14 +32,14 @@
     loader.systemd-boot.enable = true;
     loader.systemd-boot.extraFiles = {
       "loader/loader.conf" = pkgs.writeText "loader.conf" ''
-          timeout 10
-          default @saved
-          console-mode keep
-        '';
+        timeout 10
+        default @saved
+        console-mode keep
+      '';
     };
     loader.efi.canTouchEfiVariables = true;
     kernelPackages = pkgs.linuxPackages_latest;
-  }; 
+  };
 
   # For OBS and screen sharing/recording
   CUSTOM.v4l2loopback.enable = true;
@@ -41,7 +50,7 @@
   # Networking
   networking = {
     hostName = "flowX13"; # Define your hostname.
-    networkmanager.enable = true;  # Easiest to use and most distros use this by default.
+    networkmanager.enable = true; # Easiest to use and most distros use this by default.
   };
 
   # Bluetooth
@@ -140,18 +149,24 @@
   # Package management
   nixpkgs.config.allowUnfree = true;
   environment.systemPackages = with pkgs; [
-    ########
+    ######## 
     # HW utils
     hwinfo # lower-level hardware (cpu/pci/usb) info
     file # returns device/file type and info
     lshw # list connected hardware devices
     bluez # bluetooth
     # disk
-    gparted polkit_gnome
+    gparted
+    polkit_gnome
     # cli
-    zip unzip
+    zip
+    unzip
     # getters
-    wget curl
+    wget
+    curl
+    # greeter
+    greetd.tuigreet
+    # remote wayland
     waypipe
   ];
 
@@ -208,6 +223,6 @@
   users.users.minttea = {
     isNormalUser = true;
     description = "the guy";
-    extraGroups = [ "networkmanager" "wheel" "libvirtd" "video" ];
+    extraGroups = [ "networkmanager" "wheel" "libvirtd" "video" "gamemode" ];
   };
 }
