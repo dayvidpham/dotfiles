@@ -75,7 +75,7 @@ in
       fonts.fontconfig = {
 
         enable = true;
-        hinting.style = "full";
+        hinting.style = "medium";
 
       };
 
