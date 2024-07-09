@@ -168,6 +168,10 @@
     greetd.tuigreet
     # remote wayland
     waypipe
+    # Nix utils
+    nix-output-monitor # more informative nix build outputs
+    nix-tree # interactive closure explorer
+    nvd # closure differ
   ];
 
   programs.git = {
