@@ -36,6 +36,7 @@ in
     home.packages = [
       rstudio-env
       texlive-env
+      pkgs.R
       pkgs.pandoc
     ];
   };

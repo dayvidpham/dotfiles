@@ -2,9 +2,7 @@
 , pkgs
 , ...
 }:
-let
-  # maybe this stuff should be defined in Flake and passed to users
-in
+
 rec {
   # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;
@@ -46,7 +44,8 @@ rec {
     enable = true;
   };
 
-  # NOTE: General package stuff
+  #####################
+  # NOTE: General programs and packages
   home.packages = with pkgs; [
     # Wayland stuff
     wdisplays # gui for display settings
@@ -97,8 +96,8 @@ rec {
     };
   };
   programs.nheko.enable = true;
-
-  programs.obs-studio.enable = true; # Grab OBS 
+  programs.obs-studio.enable = true;
+  CUSTOM.programs.rEnv.enable = true;
 
   ######################################
   # NOTE: Gaming
