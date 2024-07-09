@@ -24,9 +24,18 @@ in
 
       cfg = config.CUSTOM.fonts;
 
-      nerdfonts-custom = mkMerge (with pkgs; [
+      nerdfonts-custom = pkgs.nerdfonts.override {
+        fonts = [
+          "DaddyTimeMono"
+          "JetBrainsMono"
+          "Hack"
+          "Iosevka"
+          "IosevkaTerm"
+        ];
+      };
+      /* nerdfonts-custom = mkMerge [
         (mkIf (config.networking.hostName == "flowX13") (
-          nerdfonts.override {
+          pkgs.nerdfonts.override {
             fonts = [
               "DaddyTimeMono"
               "JetBrainsMono"
@@ -36,7 +45,7 @@ in
             ];
           }))
         (mkIf (config.networking.hostName == "desktop") (
-          nerdfonts.override {
+          pkgs.nerdfonts.override {
             fonts = [
               "DaddyTimeMono"
               "JetBrainsMono"
@@ -45,19 +54,18 @@ in
               "IosevkaTerm"
             ];
           }))
-      ]);
+      ]; */
 
     in
     mkIf cfg.enable {
 
       fonts = {
 
-        packages = with pkgs; [
-          nerdfonts-custom
+        packages = (with pkgs; [
           noto-fonts
           noto-fonts-emoji
           font-awesome
-        ];
+        ]) ++ [ nerdfonts-custom ];
 
         enableDefaultPackages = true;
 
@@ -67,7 +75,7 @@ in
       fonts.fontconfig = {
 
         enable = true;
-        hinting.style = "none";
+        hinting.style = "full";
 
       };
 
