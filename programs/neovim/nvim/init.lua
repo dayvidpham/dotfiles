@@ -676,12 +676,14 @@ require('lazy').setup({
       ---- for you, so that they are available from within Neovim.
       local ensure_installed = {}
       local dont_install = '|nixd|'
+
       for k in pairs(servers) do
-        if string.find(dont_install, '|' .. k .. '|') ~= nil then
-          ensure_installed[k] = servers[k]
+        local dont_install_server = string.find(dont_install, '|' .. k .. '|') == nil
+        if dont_install_server then
+          vim.list_extend(ensure_installed, { k })
         end
       end
-      vim.tbl_keys(servers or {})
+
       vim.list_extend(ensure_installed, {
         'stylua', -- Used to format Lua code
       })
