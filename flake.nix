@@ -112,10 +112,6 @@
         inherit
           nil-lsp
           ;
-        inherit (pkgs)
-          run-cwd
-          scythe
-          ;
       };
     in
     {

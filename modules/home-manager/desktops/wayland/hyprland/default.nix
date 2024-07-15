@@ -1,11 +1,8 @@
 { config
-, osConfig
 , pkgs
 , lib ? pkgs.lib
 , terminal
 , menu
-, run-cwd
-, scythe
 , GLOBALS
 , ...
 }:
