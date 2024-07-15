@@ -66,7 +66,7 @@ rec {
     fastfetch # C implmentation of neofetch
     nvtopPackages.full # htop but for GPUs
     mpv # media player
-    #vimiv-qt # image viewer with vim bindings
+    pkgs-stable.vimiv-qt # image viewer with vim bindings
     # Typical user applications
     google-chrome
     spotify
