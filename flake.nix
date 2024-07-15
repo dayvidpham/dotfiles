@@ -21,15 +21,20 @@
     # inputs.unstable.url = "github:NixOS/nixpkgs/master";
 
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-24.05";
+
     nix-multithreaded.url = "github:DeterminateSystems/nix-src/multithreaded-eval";
+
     flake-registry = {
       url = "github:nixos/flake-registry";
       flake = false;
     };
+
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
     nil-lsp = {
       url = "github:oxalica/nil";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -39,6 +44,7 @@
   outputs =
     inputs@{ self
     , nixpkgs
+    , nixpkgs-stable
     , nix-multithreaded
     , flake-registry
     , home-manager
@@ -67,6 +73,14 @@
             };
           })
         ];
+      };
+
+      pkgs-stable = import nixpkgs-stable {
+        inherit system;
+        config = {
+          allowUnfree = true;
+          allowUnfreePredicate = (_: true);
+        };
       };
 
       lib = pkgs.lib;
@@ -104,12 +118,14 @@
       specialArgs = {
         inherit
           pkgs
+          pkgs-stable
           libmint
           ;
       };
 
       extraSpecialArgs = {
         inherit
+          pkgs-stable
           nil-lsp
           ;
       };
