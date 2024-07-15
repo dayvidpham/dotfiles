@@ -22,7 +22,7 @@ let
     (desktop: (attrByPath
       [ desktop "enable" ]
       false
-      config.CUSTOM.programs))
+      config.programs))
     wayland-desktops;
 in
 {
