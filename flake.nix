@@ -21,7 +21,7 @@
     # inputs.unstable.url = "github:NixOS/nixpkgs/master";
 
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    nix.url = "github:DeterminateSystems/nix-src/multithreaded-eval";
+    nix-multithreaded.url = "github:DeterminateSystems/nix-src/multithreaded-eval";
     flake-registry = {
       url = "github:nixos/flake-registry";
       flake = false;
@@ -39,7 +39,7 @@
   outputs =
     inputs@{ self
     , nixpkgs
-    , nix
+    , nix-multithreaded
     , flake-registry
     , home-manager
     , nil-lsp
@@ -54,7 +54,7 @@
           allowUnfreePredicate = (_: true);
         };
         overlays = [
-          nix.overlays.default
+          nix-multithreaded.overlays.default
           (final: prev: {
             # NOTE: My own packages and programs
             run-cwd = with final; callPackage ./packages/run-cwd.nix { };
