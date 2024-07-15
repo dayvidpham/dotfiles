@@ -1,4 +1,4 @@
-{ waybar-balcony
+{ waybar-mediaPlayer
 , scriptsDir ? "~/.local/share/waybar/scripts"
 , rofi
 , playerctl
@@ -103,7 +103,7 @@
       playerctl-spotify = "${getExe playerctl} --player spotify";
     in
     {
-      "exec" = "${waybar-balcony}/bin/waybar-mediaplayer.py --player spotify";
+      "exec" = "${waybar-mediaPlayer}/bin/waybar-mediaplayer.py --player spotify";
       "format" = " {}";
       "return-type" = "json";
       "on-click" = "${playerctl-spotify} play-pause";

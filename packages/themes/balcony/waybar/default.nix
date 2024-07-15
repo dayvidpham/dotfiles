@@ -11,9 +11,12 @@
 , python3
 , pavucontrol
 , hyprlock
-  #, formats
 }@inputs:
 let
+  inherit (builtins)
+    replaceStrings
+    ;
+
   inherit (lib)
     fileContents
     getExe
@@ -23,10 +26,9 @@ let
   python3-deps = (python3.withPackages (pyPkgs: with pyPkgs; [
     requests
   ]));
-  #jsonFormat = formats.json { };
 
   derivationArgs = (finalAttrs: {
-    pname = "waybar-balcony";
+    pname = "waybar-balcony-config";
     version = "0.0.3";
     src = ./.;
     allowSubstitutes = false; # custom package will never be found in online cache
@@ -48,6 +50,14 @@ let
     # WARN: The dest dir is needed in cp, else will copy as <store-path>-scripts
     # CORRECT:    cp -r ${./scripts} $out/share/scripts
     # INCORRECT:  cp -r ${./scripts} $out/share
+
+    buildPhase = ''
+      runHook preBuild
+      
+      mkdir -p $src
+
+      runHook postBuild
+    '';
 
     installPhase = ''
       runHook preInstall
@@ -97,19 +107,22 @@ let
             pavucontrol
             hyprlock
             getExe
+            waybar-mediaPlayer
             ;
 
-          waybar-balcony = finalAttrs.finalPackage;
           scriptsDir = scripts;
         });
       };
   });
 
-  waybar-balcony-precursor = stdenv.mkDerivation derivationArgs;
+  waybar-balcony-config = stdenv.mkDerivation derivationArgs;
 
   waybar-balcony = symlinkJoin ({
-    inherit (waybar-balcony-precursor) name passthru;
-    paths = [ waybar-mediaPlayer waybar-balcony-precursor ];
+    inherit (waybar-balcony-config) passthru;
+    name = replaceStrings
+      [ "waybar-balcony-config" ] [ "waybar-balcony" ]
+      waybar-balcony-config.name;
+    paths = [ waybar-mediaPlayer waybar-balcony-config ];
   });
 in
 waybar-balcony
