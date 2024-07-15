@@ -77,15 +77,13 @@ rec {
 
   programs.direnv = {
     enable = true;
-    enableBashIntegration = true;
+    enableZshIntegration = true;
     nix-direnv.enable = true;
   };
-  programs.bash = {
-    enable = true;
-    shellAliases = {
-      ranger = ". ranger";
-    };
-  };
+  # NOTE: Zsh setup
+  # Manual setup: don't like how home-manager currently sets up zsh
+  CUSTOM.programs.zsh.enable = true;
+
   programs.firefox.enable = true;
   programs.alacritty = {
     enable = true;

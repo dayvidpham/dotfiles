@@ -94,7 +94,11 @@
 
       # NOTE: Utils and enum types
       libmint =
-        import ./modules/nixos/libmint.nix { inherit lib; };
+        import ./modules/nixos/libmint.nix {
+          inherit lib;
+          lib-hm = home-manager.outputs.lib.hm;
+          inherit (pkgs) runCommandLocal;
+        };
 
       # NOTE: Common args to be passed to nixosConfigs and homeConfigurations
       specialArgs = {

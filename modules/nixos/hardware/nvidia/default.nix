@@ -65,6 +65,17 @@ let
 
   };
 
+  gpu-paths = {
+    desktop = {
+      card-igpu = "/dev/dri/by-path/pci-0000:16:00.0-card";
+      card-dgpu = "/dev/dri/by-path/pci-0000:01:00.0-card";
+    };
+    flowX13 = {
+      card-igpu = "/dev/dri/by-path/pci-0000:08:00.0-card";
+      card-dgpu = "/dev/dri/by-path/pci-0000:01:00.0-card";
+    };
+  };
+
   inherit (lib)
     mkIf
     mkEnableOption
@@ -73,10 +84,12 @@ let
     mkDefault
     mkBefore
     mkAfter
+    mkMerge
     ;
 
   inherit (libmint)
     configureHost
+    mkOutOfStoreSymlink
     ;
 
 in
@@ -121,17 +134,36 @@ in
       videoDrivers = mkIf cfg.proprietaryDrivers.enable [ "nvidia" ];
     };
 
-    environment.variables = {
-      # https://wiki.hyprland.org/Nvidia/#environment-variables
-      LIBVA_DRIVER_NAME = "nvidia";
-      GBM_BACKEND = "nvidia-drm";
-      __GLX_VENDOR_LIBRARY_NAME = "nvidia";
-      __GL_GSYNC_ALLOWED = "1";
+    environment.etc."card-dgpu".source =
+      mkOutOfStoreSymlink gpu-paths."${cfg.hostName}".card-dgpu;
+    environment.etc."card-igpu".source =
+      mkOutOfStoreSymlink gpu-paths."${cfg.hostName}".card-igpu;
 
-      # https://wiki.hyprland.org/Nvidia/#va-api-hardware-video-acceleration
-      NVD_BACKEND = "direct";
-    };
+    environment.variables =
+      let
+        hyprRenderer = mkMerge [
+          (mkIf (config.programs.hyprland.enable && cfg.hostName == "desktop") {
+            # Fuck it: use dGPU for everything
+            WLR_DRM_DEVICES = "/etc/card-dgpu";
+          })
+          (mkIf (config.programs.hyprland.enable && cfg.hostName == "flowX13") {
+            # TODO: Must test which value is correct for laptop
+            # Use iGPU for everything
+            WLR_DRM_DEVICES = "/etc/card-igpu";
+          })
+        ];
+      in
+      {
+        # https://wiki.hyprland.org/Nvidia/#environment-variables
+        LIBVA_DRIVER_NAME = "nvidia";
+        GBM_BACKEND = "nvidia-drm";
+        __GLX_VENDOR_LIBRARY_NAME = "nvidia";
+        __GL_GSYNC_ALLOWED = "1";
+
+        # https://wiki.hyprland.org/Nvidia/#va-api-hardware-video-acceleration
+        NVD_BACKEND = "direct";
+      }
+      // hyprRenderer;
 
   };
-
 }

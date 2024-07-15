@@ -179,10 +179,6 @@
     nix-tree # interactive closure explorer
     nvd # closure differ
   ];
-  #programs.nix-ld.enable = true;
-  #programs.nix-ld.libraries = with pkgs; [
-  #  lua-language-server
-  #];
 
   programs.git = {
     enable = true;
@@ -192,6 +188,8 @@
       user.email = "dayvidpham@gmail.com";
     };
   };
+
+  CUSTOM.programs.zsh.enable = true;
 
   ######################################
   # Window manager & GPU

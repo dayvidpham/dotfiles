@@ -3,8 +3,6 @@
 # https://thevaluable.dev/zsh-completion-guide-examples/
 # https://github.com/Phantas0s/.dotfiles/blob/master/zsh/completion.zsh
 
-# Should be called before compinit
-zmodload zsh/complist
 # No longer beeps on ambiguous completion
 unsetopt LIST_BEEP
 
@@ -31,19 +29,8 @@ setopt PROMPT_SUBST
 # Load more completions
 # fpath=($DOTFILES/zsh/plugins/zsh-completions/src $fpath)
 
-# Change zsh history timestamps
-export HISTTIMEFORMAT="%d/%m/%y %T "
-HISTFILE="$HOME/.zsh_history"
-HISTSIZE=10000
-SAVEHIST=10000
-# setopt appendhistory
-setopt share_history
-
-# ???
-export ZSH_DISABLE_COMPFIX="true"
-
 # Config location
-# export ZDOTDIR="$HOME/.zsh"
+# export ZDOTDIR="$HOME/.config/zsh"
 
 KEYTIMEOUT=1                                               # 10ms delay before key sequence timeout
 _comp_options+=(globdots)                                  # With hidden files
@@ -51,16 +38,17 @@ _comp_options+=(globdots)                                  # With hidden files
 
 # Use hjlk in menu selection (during completion)
 # Doesn't work well with interactive mode
-bindkey -M menuselect '^[h' vi-backward-char
-bindkey -M menuselect '^[k' vi-up-line-or-history
-bindkey -M menuselect '^[j' vi-down-line-or-history
-bindkey -M menuselect '^[l' vi-forward-char
+bindkey -M menuselect '^h' vi-backward-char
+bindkey -M menuselect '^k' vi-up-line-or-history
+bindkey -M menuselect '^j' vi-down-line-or-history
+bindkey -M menuselect '^l' vi-forward-char
 
-bindkey -M menuselect '^[g' clear-screen
-bindkey -M menuselect '^[i' vi-insert                      # Insert
+bindkey -M menuselect '^g' clear-screen
+bindkey -M menuselect '^i' vi-insert                      # Insert
 bindkey -M menuselect '^[^M' accept-and-hold               # Hold
-bindkey -M menuselect '^[n' accept-and-infer-next-history  # Next
+bindkey -M menuselect '^n' accept-and-infer-next-history  # Next
 bindkey -M menuselect '\033' undo                          # Undo, ESC key
+bindkey -M menuselect '^u' undo                          # Undo, ESC key
 
 # +---------+
 # | zstyles |
@@ -86,7 +74,8 @@ zstyle ':completion:alias-expension:*' completer _expand_alias
 # Allow you to select in a menu
 zstyle ':completion:*' menu select
 # Find command options first
-zstyle ':completion:*:complete:**' tag-order 'options'
+# zstyle ':completion:*:complete:**' tag-order 'options'
+# Generate matches in verbose form
 
 # Autocomplete options for cd instead of directory stack
 zstyle ':completion:*' complete-options true
@@ -100,11 +89,7 @@ zstyle ':completion:*:*:*:*:messages' format ' %F{purple} -- %d --%f'
 zstyle ':completion:*:*:*:*:warnings' format ' %F{red}-- no matches found --%f'
 zstyle ':completion:*:default' list-prompt '%S%M matches%s'
 
-# Colors for files and directory
-export LS_COLORS=$(< ${HOME}/.zsh/ls-colors.env);        # Custom listings colors
-export LSCOLORS="ehfxcxdxbxegedabagacad"
-# export LSCOLORS="$LS_COLORS"
-zstyle ':completion:*:*:*:*:default' list-colors ${(s.:.)LS_COLORS}
+zstyle ':completion:*:default' list-colors ${(s.:.)LS_COLORS}
 # zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
 
 # enable detailed completions for files
@@ -133,51 +118,27 @@ zstyle ':vcs_info:git:*' formats '%F{green}branch %b%f'
 # Alternate prompt formatting: set prompt theme (see prompt for details)
 #prompt fire black red black grey white white
 #prompt redhat
-zstyle ':completion:*:*:git:*' script ${HOME}/.zsh/git-completion.bash
-fpath=(~/.zsh $fpath)
 
 # Custom prompt formatting
 PROMPT='%F{cyan}[%f%F{red} %n %f@ %F{cyan}${PWD/#$HOME/~} ]%f [${vcs_info_msg_0_}] $ '
 
-autoload -U compinit; compinit
 # +---------+
 # | Plugins |
 # +---------+
-#
+
 
 # # Load fzf
 # [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 # # Load fzf-tab plugin
 # NOTE: fzf-tab needs to be loaded after compinit, but before plugins which will wrap widgets, such as zsh-autosuggestions or fast-syntax-highlighting!!
-# source ${HOME}/.zsh/fzf-tab/fzf-tab.plugin.zsh
-
-
-# Load zsh-autosuggestions plugin
-source $HOME/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh
-# Override defaults
-export ZSH_AUTOSUGGEST_STRATEGY=(history completion)
-
-
-# Load zsh-fast-syntax-highlighting plugin
-source $HOME/.zsh/zsh-fast-syntax-highlighting/fast-syntax-highlighting.plugin.zsh
+# source ${ZDOTDIR}/fzf-tab/fzf-tab.plugin.zsh
 
 # ========== END ZSH CHANGES =========
 
 
 
 # ========== BEGIN TERMINAL CHANGES =========
-export CLICOLOR=1
 
 # ========== END TERMINAL CHANGES =========
 
-
-# Pip Aliasing
-alias pip="pip3"
-
-# Get colors in ls
-alias ls="ls -G"
-alias ll="ls -lG"
-
-# Get colors in grep
-alias grep="grep --color=always"
 

@@ -8,5 +8,6 @@
     ./hyprlock
     ./rofi
     ./rEnv
+    ./zsh
   ];
 }

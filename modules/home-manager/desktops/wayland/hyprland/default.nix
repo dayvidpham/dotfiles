@@ -103,13 +103,13 @@ in
 
     # NOTE: For multi-gpu systems
     # https://wiki.hyprland.org/Configuring/Multi-GPU/
-    xdg.configFile = (mkIf (hasAttr GLOBALS.hostName hosts) {
-      "hypr/card-dgpu".source =
-        mkOutOfStoreSymlink hosts."${GLOBALS.hostName}".card-dgpu;
+    #xdg.configFile = (mkIf (hasAttr GLOBALS.hostName hosts) {
+    #  "hypr/card-dgpu".source =
+    #    mkOutOfStoreSymlink hosts."${GLOBALS.hostName}".card-dgpu;
 
-      "hypr/card-igpu".source =
-        mkOutOfStoreSymlink hosts."${GLOBALS.hostName}".card-igpu;
-    });
+    #  "hypr/card-igpu".source =
+    #    mkOutOfStoreSymlink hosts."${GLOBALS.hostName}".card-igpu;
+    #});
 
     home.sessionVariables = mkMerge [
       {
@@ -118,15 +118,15 @@ in
         MOZ_ENABLE_WAYLAND = "1"; # Run Firefox on Wayland
       }
 
-      (mkIf (GLOBALS.hostName == "desktop") {
-        # Fuck it: use dGPU for everything
-        WLR_DRM_DEVICES = "${hyprHome}/card-dgpu";
-      })
-      (mkIf (GLOBALS.hostName == "flowX13") {
-        # TODO: Must test which value is correct for laptop
-        # Use iGPU for everything
-        WLR_DRM_DEVICES = "${hyprHome}/card-igpu";
-      })
+      #(mkIf (GLOBALS.hostName == "desktop") {
+      #  # Fuck it: use dGPU for everything
+      #  WLR_DRM_DEVICES = "${hyprHome}/card-dgpu";
+      #})
+      #(mkIf (GLOBALS.hostName == "flowX13") {
+      #  # TODO: Must test which value is correct for laptop
+      #  # Use iGPU for everything
+      #  WLR_DRM_DEVICES = "${hyprHome}/card-igpu";
+      #})
     ];
 
   };
