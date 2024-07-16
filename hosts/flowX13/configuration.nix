@@ -179,6 +179,8 @@
     };
   };
 
+  CUSTOM.programs.zsh.enable = true;
+
   ######################################
   # Window manager & GPU
   CUSTOM.programs.hyprland.enable = true;
