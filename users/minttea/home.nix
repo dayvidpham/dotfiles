@@ -81,20 +81,27 @@ rec {
     enableZshIntegration = true;
     nix-direnv.enable = true;
   };
+
   # NOTE: Zsh setup
   # Manual setup: don't like how home-manager currently sets up zsh
   CUSTOM.programs.zsh.enable = true;
 
   programs.firefox.enable = true;
+
   programs.alacritty = {
     enable = true;
     settings = {
       window.opacity = 0.8;
     };
   };
+
   programs.nheko.enable = true;
+
   programs.obs-studio.enable = true;
+
   CUSTOM.programs.rEnv.enable = true;
+
+  programs.lazygit.enable = true;
 
   ######################################
   # NOTE: Gaming
