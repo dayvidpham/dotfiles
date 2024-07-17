@@ -26,6 +26,16 @@ precmd() { vcs_info }
 
 setopt PROMPT_SUBST
 
+# Formatting for git branch in prompt
+zstyle ':vcs_info:git:*' formats '%F{green}branch %b%f'
+
+# Alternate prompt formatting: set prompt theme (see prompt for details)
+#prompt fire black red black grey white white
+#prompt redhat
+
+# Custom prompt formatting
+PROMPT='%F{cyan}[%f%F{red} %n %f@ %F{cyan}${PWD/#$HOME/~} ]%f [${vcs_info_msg_0_}] $ '
+
 # Load more completions
 # fpath=($DOTFILES/zsh/plugins/zsh-completions/src $fpath)
 
@@ -111,16 +121,6 @@ zstyle ':completion:*' matcher-list '' 'm:{a-zA-Z}={A-Za-z}'
 zstyle ':completion:*' keep-prefix true
 
 zstyle -e ':completion:*:(ssh|scp|sftp|rsh|rsync):hosts' hosts 'reply=(${=${${(f)"$(cat {/etc/ssh_,~/.ssh/known_}hosts(|2)(N) /dev/null)"}%%[# ]*}//,/ })'
-
-# Formatting for git branch in prompt
-zstyle ':vcs_info:git:*' formats '%F{green}branch %b%f'
-
-# Alternate prompt formatting: set prompt theme (see prompt for details)
-#prompt fire black red black grey white white
-#prompt redhat
-
-# Custom prompt formatting
-PROMPT='%F{cyan}[%f%F{red} %n %f@ %F{cyan}${PWD/#$HOME/~} ]%f [${vcs_info_msg_0_}] $ '
 
 # +---------+
 # | Plugins |
