@@ -7,6 +7,23 @@
 let
   cfg = config.CUSTOM.hardware.nvidia;
 
+  inherit (lib)
+    mkIf
+    mkEnableOption
+    mkPackageOption
+    mkOption
+    mkDefault
+    mkBefore
+    mkAfter
+    mkMerge
+    optionals
+    ;
+
+  inherit (libmint)
+    configureHost
+    mkOutOfStoreSymlink
+    ;
+
   nvidiaDriver = config.boot.kernelPackages.nvidia_x11_beta;
 
   # NOTE: Config
@@ -75,23 +92,6 @@ let
       card-dgpu = "/dev/dri/by-path/pci-0000:01:00.0-card";
     };
   };
-
-  inherit (lib)
-    mkIf
-    mkEnableOption
-    mkPackageOption
-    mkOption
-    mkDefault
-    mkBefore
-    mkAfter
-    mkMerge
-    ;
-
-  inherit (libmint)
-    configureHost
-    mkOutOfStoreSymlink
-    ;
-
 in
 {
 
@@ -131,7 +131,7 @@ in
     services.xserver = {
       enable = true;
       # NOTE: If not set, will use nouveau drivers
-      videoDrivers = mkIf cfg.proprietaryDrivers.enable [ "nvidia" ];
+      videoDrivers = optionals cfg.proprietaryDrivers.enable [ "nvidia" ];
     };
 
     environment.etc."card-dgpu".source =

@@ -198,6 +198,12 @@
     enable = true;
     proprietaryDrivers.enable = true;
   };
+  # Try getting AMD iGPU to work @_@
+  hardware.amdgpu = {
+    amdvlk.enable = true;
+    opencl.enable = true;
+    initrd.enable = true;
+  };
 
   services.xserver = {
     enable = true;

@@ -31,6 +31,9 @@
     libuuid
     libxkbcommon
     libxml2
+    libva
+    libva1
+    nvidia-vaapi-driver
     mesa
     nspr
     nss
