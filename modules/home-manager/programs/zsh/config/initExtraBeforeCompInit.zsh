@@ -18,29 +18,6 @@ unsetopt MENU_COMPLETE        # Automatically highlight first element of complet
 setopt AUTO_LIST            # Automatically list choices on ambiguous completion.
 setopt COMPLETE_IN_WORD     # Complete from both ends of a word.
 
-# +----------------+
-# | Prompt Options |
-# +----------------+
-
-# enable colored prompts
-autoload -U promptinit && promptinit
-# enable vcs_info to display git branch
-autoload -Uz vcs_info
-precmd() { vcs_info }
-
-setopt PROMPT_SUBST
-
-# Formatting for git branch in prompt
-zstyle ':vcs_info:git:*' formats '%F{green}branch %b%f'
-
-# Alternate prompt formatting: set prompt theme (see prompt for details)
-#prompt fire black red black grey white white
-#prompt redhat
-
-# Custom prompt formatting
-PROMPT='%F{cyan}[%f%F{red} %n %f@ %F{cyan}${PWD/#$HOME/~} ]%f [${vcs_info_msg_0_}] $ '
-
-
 
 # Load more completions
 # fpath=($DOTFILES/zsh/plugins/zsh-completions/src $fpath)
@@ -138,6 +115,29 @@ zstyle -e ':completion:*:(ssh|scp|sftp|rsh|rsync):hosts' hosts 'reply=(${=${${(f
 # # Load fzf-tab plugin
 # NOTE: fzf-tab needs to be loaded after compinit, but before plugins which will wrap widgets, such as zsh-autosuggestions or fast-syntax-highlighting!!
 # source ${ZDOTDIR}/fzf-tab/fzf-tab.plugin.zsh
+
+# +----------------+
+# | Prompt Options |
+# +----------------+
+
+# enable colored prompts
+autoload -U promptinit && promptinit
+# enable vcs_info to display git branch
+autoload -Uz vcs_info
+precmd() { vcs_info }
+
+setopt PROMPT_SUBST
+
+# Formatting for git branch in prompt
+zstyle ':vcs_info:git:*' formats '%F{green}branch %b%f'
+
+# Alternate prompt formatting: set prompt theme (see prompt for details)
+#prompt fire black red black grey white white
+#prompt redhat
+
+# Custom prompt formatting
+PROMPT='%F{cyan}[%f%F{red} %n %f@ %F{cyan}${PWD/#$HOME/~} ]%f [${vcs_info_msg_0_}] $ '
+
 
 # ========== END ZSH CHANGES =========
 
