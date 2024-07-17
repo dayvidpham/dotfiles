@@ -25,7 +25,6 @@ setopt COMPLETE_IN_WORD     # Complete from both ends of a word.
 # Config location
 # export ZDOTDIR="$HOME/.config/zsh"
 
-KEYTIMEOUT=1                                               # 10ms delay before key sequence timeout
 _comp_options+=(globdots)                                  # With hidden files
 
 
@@ -137,6 +136,40 @@ zstyle ':vcs_info:git:*' formats '%F{green}branch %b%f'
 
 # Custom prompt formatting
 PROMPT='%F{cyan}[%f%F{red} %n %f@ %F{cyan}${PWD/#$HOME/~} ]%f [${vcs_info_msg_0_}] $ '
+
+# +----------------+
+# | Cursor Options |
+# +----------------+
+
+# Activate vim mode
+bindkey -v
+KEYTIMEOUT=1                                               # 10ms delay before key sequence timeout
+
+# Grabbed from this post: https://unix.stackexchange.com/q/433273
+local _beam_cursor() {
+    echo -ne '\e[5 q'
+}
+local _block_cursor() {
+    echo -ne '\e[1 q'
+}
+
+# For startup
+precmd_functions+=(_beam_cursor)
+
+local _cursor_select() {
+    if [[ "$KEYMAP" == "vicmd" 
+        || "$1" == "block" ]]; then
+        _block_cursor
+    fi
+
+    if [[ "$KEYMAP" == "main" 
+        || "$KEYMAP" == "viins"
+        || "$KEYMAP" == ""
+        || "$1" == "beam" ]]; then
+        _beam_cursor
+    fi
+}
+zle -N zle-keymap-select _cursor_select
 
 
 # ========== END ZSH CHANGES =========
