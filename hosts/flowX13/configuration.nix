@@ -193,6 +193,12 @@
     proprietaryDrivers.enable = true;
   };
 
+  hardware.amdgpu = {
+    amdvlk.enable = true;
+    opencl.enable = true;
+    initrd.enable = true;
+  };
+
 
   services.xserver = {
     enable = true;
