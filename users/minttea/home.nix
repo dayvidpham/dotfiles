@@ -10,8 +10,8 @@ rec {
 
   nix.gc = {
     automatic = true;
-    persistent = true;
-    frequency = "4 days";
+    persistent = false;
+    frequency = "7 days";
   };
 
   home.username = "minttea";
