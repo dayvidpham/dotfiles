@@ -39,6 +39,8 @@
       url = "github:oxalica/nil";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    nixos-wsl.url = "github:nix-community/NixOS-WSL/main";
   };
 
   outputs =
@@ -49,6 +51,7 @@
     , flake-registry
     , home-manager
     , nil-lsp
+    , nixos-wsl
     , ...
     }:
     let
@@ -87,6 +90,7 @@
 
       # NOTE: Needs to be defined here to have access to nixpkgs and home-manager inputs
       noChannelModule = {
+    	nix.settings.experimental-features = [ "nix-command" "flakes" ];
         nix.channel.enable = false;
 
         nix.registry.nixpkgs.flake = nixpkgs;
@@ -157,6 +161,19 @@
             noChannelModule
           ];
         };
+
+        wsl = nixpkgs.lib.nixosSystem {
+          inherit
+            system
+            specialArgs
+          ;
+          modules = [
+            nixos-wsl.nixosModules.default {}
+            ./hosts/wsl/configuration.nix
+            ./modules/nixos
+            noChannelModule
+          ];
+        };
       };
 
       homeConfigurations = {
@@ -185,6 +202,22 @@
           ];
           extraSpecialArgs = extraSpecialArgs // {
             GLOBALS.hostName = "desktop";
+            GLOBALS.theme = {
+              name = "balcony";
+              basePath = ./packages/themes/balcony;
+            };
+          };
+        };
+
+        "minttea@wsl" = home-manager.lib.homeManagerConfiguration {
+          inherit pkgs;
+          modules = [
+            ./modules/home-manager
+            ./programs/neovim
+            ./users/minttea/home.nix
+          ];
+          extraSpecialArgs = extraSpecialArgs // {
+            GLOBALS.hostName = "wsl";
             GLOBALS.theme = {
               name = "balcony";
               basePath = ./packages/themes/balcony;
