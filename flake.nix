@@ -90,7 +90,7 @@
 
       # NOTE: Needs to be defined here to have access to nixpkgs and home-manager inputs
       noChannelModule = {
-    	nix.settings.experimental-features = [ "nix-command" "flakes" ];
+        nix.settings.experimental-features = [ "nix-command" "flakes" ];
         nix.channel.enable = false;
 
         nix.registry.nixpkgs.flake = nixpkgs;
@@ -166,9 +166,10 @@
           inherit
             system
             specialArgs
-          ;
+            ;
           modules = [
-            nixos-wsl.nixosModules.default {}
+            nixos-wsl.nixosModules.default
+            { }
             ./hosts/wsl/configuration.nix
             ./modules/nixos
             noChannelModule
@@ -214,7 +215,7 @@
           modules = [
             ./modules/home-manager
             ./programs/neovim
-            ./users/minttea/home.nix
+            ./users/minttea/wsl.nix
           ];
           extraSpecialArgs = extraSpecialArgs // {
             GLOBALS.hostName = "wsl";
