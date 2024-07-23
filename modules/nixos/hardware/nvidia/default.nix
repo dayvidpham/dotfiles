@@ -7,6 +7,10 @@
 let
   cfg = config.CUSTOM.hardware.nvidia;
 
+  inherit(builtins)
+    hasAttr
+  ;
+
   inherit (lib)
     mkIf
     mkEnableOption
@@ -134,10 +138,12 @@ in
       videoDrivers = optionals cfg.proprietaryDrivers.enable [ "nvidia" ];
     };
 
-    environment.etc."card-dgpu".source =
-      mkOutOfStoreSymlink gpu-paths."${cfg.hostName}".card-dgpu;
-    environment.etc."card-igpu".source =
-      mkOutOfStoreSymlink gpu-paths."${cfg.hostName}".card-igpu;
+    environment.etc = mkIf (hasAttr cfg.hostName gpu-paths) {
+      card-dgpu.source =
+        mkOutOfStoreSymlink gpu-paths."${cfg.hostName}".card-dgpu;
+      card-igpu.source =
+        mkOutOfStoreSymlink gpu-paths."${cfg.hostName}".card-igpu;
+    };
 
     environment.variables =
       let
