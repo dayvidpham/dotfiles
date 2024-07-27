@@ -169,7 +169,6 @@
             ;
           modules = [
             nixos-wsl.nixosModules.default
-            { }
             ./hosts/wsl/configuration.nix
             ./modules/nixos
             noChannelModule
