@@ -1,4 +1,5 @@
-{ ...
+{ config
+, ...
 }:
 
 {
@@ -10,4 +11,10 @@
     ./fonts
     ./programs
   ];
+
+  config = {
+    environment.variables = {
+      HOST = config.networking.hostName;
+    };
+  };
 }

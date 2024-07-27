@@ -15,6 +15,7 @@
   wsl.enable = true;
   wsl.defaultUser = "minttea";
   wsl.wslConf.network.hostname = "wsl";
+  networking.hostName = "wsl";
 
   /**
    * nixos-wsl config
