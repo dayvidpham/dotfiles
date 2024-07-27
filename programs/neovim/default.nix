@@ -81,7 +81,7 @@ in
     #  }
     #];
 
-    extraPackages = with pkgs; [
+    extraPackages = (with pkgs; [
       ripgrep
       fd
       lua-language-server
@@ -89,11 +89,11 @@ in
       black
       gcc
       nixpkgs-fmt
+      nixd
+    ]) ++ [
       nil-lsp-pkg
       rust-minimal
-      #tree-sitter
       treesitterWithGrammars
-      nixd
     ];
 
     extraLuaConfig = ''

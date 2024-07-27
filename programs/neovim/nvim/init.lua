@@ -291,18 +291,30 @@ require('lazy').setup({
 
       -- Document existing key chains
       require('which-key').register {
-        ['<leader>c'] = { name = '[C]ode', _ = 'which_key_ignore' },
-        ['<leader>d'] = { name = '[D]ocument', _ = 'which_key_ignore' },
-        ['<leader>r'] = { name = '[R]ename', _ = 'which_key_ignore' },
-        ['<leader>s'] = { name = '[S]earch', _ = 'which_key_ignore' },
-        ['<leader>w'] = { name = '[W]orkspace', _ = 'which_key_ignore' },
-        ['<leader>t'] = { name = '[T]oggle', _ = 'which_key_ignore' },
-        ['<leader>h'] = { name = 'Git [H]unk', _ = 'which_key_ignore' },
+        {
+          mode = { 'n' },
+          { '<leader>c', group = '[C]ode' },
+          { '<leader>c_', hidden = true },
+          { '<leader>d', group = '[D]ocument' },
+          { '<leader>d_', hidden = true },
+          { '<leader>h', group = 'Git [H]unk' },
+          { '<leader>h_', hidden = true },
+          { '<leader>r', group = '[R]ename' },
+          { '<leader>r_', hidden = true },
+          { '<leader>s', group = '[S]earch' },
+          { '<leader>s_', hidden = true },
+          { '<leader>t', group = '[T]oggle' },
+          { '<leader>t_', hidden = true },
+          { '<leader>w', group = '[W]orkspace' },
+          { '<leader>w_', hidden = true },
+        },
+
+        -- visual mode
+        {
+          mode = { 'v' },
+          { '<leader>h', group = 'Git [H]unk' },
+        },
       }
-      -- visual mode
-      require('which-key').register({
-        ['<leader>h'] = { 'Git [H]unk' },
-      }, { mode = 'v' })
     end,
   },
 
@@ -586,6 +598,10 @@ require('lazy').setup({
       --  - capabilities (table): Override fields in capabilities. Can be used to disable certain LSP features.
       --  - settings (table): Override the default settings passed when initializing the server.
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
+
+      local nixGetFlake = 'flake = (builtins.getFlake ("git+file://" + (builtins.toString ' .. vim.env.HOME .. '/dotfiles))); '
+      local nixOsConfig = 'nixos = flake.outputs.nixosConfigurations."' .. vim.env.HOST .. '"; '
+      local nixHmConfig = 'hm = flake.outputs.homeConfigurations."' .. vim.env.USER .. '@' .. vim.env.HOST .. '"; '
       local servers = {
         -- clangd = {},
         -- gopls = {},
@@ -628,8 +644,8 @@ require('lazy').setup({
                 maxMemoryMB = 0, -- 12 GiB for input eval
                 flake = {
                   autoArchive = true,
-                  autoEvalInputs = true,
-                  nixpkgsInputName = 'nixpkgs',
+                  autoEvalInputs = false,
+                  nixpkgsInputName = 'nixpkgs-stable',
                 },
               },
             },
@@ -641,17 +657,17 @@ require('lazy').setup({
           settings = {
             nixd = {
               nixpkgs = {
-                expr = 'import (builtins.getFlake ("git+file://" + toString ${' .. vim.env.HOME .. '})).homeConfigurations."minttea@desktop".nixpkgs',
+                expr = 'let ' .. nixGetFlake .. 'in flake.inputs.nixpkgs {}',
               },
               formatting = {
                 command = { 'nixpkgs-fmt' },
               },
               options = {
                 nixos = {
-                  expr = '(builtins.getFlake ("git+file://" + toString ${' .. vim.env.HOME .. '})).nixosConfigurations.desktop.options',
+                  expr = 'let ' .. nixGetFlake .. nixOsConfig .. 'in nixos.options',
                 },
                 home_manager = {
-                  expr = '(builtins.getFlake ("git+file://" + toString ${' .. vim.env.HOME .. '})).homeConfigurations."minttea@desktop".options',
+                  expr = 'let ' .. nixGetFlake .. nixHmConfig .. 'in hm.options',
                 },
               },
             },
@@ -676,11 +692,11 @@ require('lazy').setup({
       ---- You can add other tools here that you want Mason to install
       ---- for you, so that they are available from within Neovim.
       local ensure_installed = {}
-      local dont_install = '|nixd|'
+      local dont_install = '|nixd|nil_ls|'
 
       for k in pairs(servers) do
-        local dont_install_server = string.find(dont_install, '|' .. k .. '|') == nil
-        if dont_install_server then
+        local should_install_server = string.find(dont_install, '|' .. k .. '|') == nil
+        if should_install_server then
           vim.list_extend(ensure_installed, { k })
         end
       end

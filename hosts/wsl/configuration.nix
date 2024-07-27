@@ -18,7 +18,7 @@
   networking.hostName = "wsl";
 
   /**
-   * nixos-wsl config
+   * Regular NixOS config stuff
    */
   nix = {
     # NOTE: Enable Flakes
