@@ -15,6 +15,7 @@
   wsl.enable = true;
   wsl.defaultUser = "minttea";
   wsl.wslConf.network.hostname = "wsl";
+  wsl.interop.register = true;
   networking.hostName = "wsl";
 
   /**
@@ -168,4 +169,9 @@
     description = "the guy";
     extraGroups = [ "networkmanager" "wheel" "video" ];
   };
+
+
+  ######################################
+  # Cross-compilation
+  boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
 }
