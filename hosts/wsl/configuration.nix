@@ -129,19 +129,13 @@
 
   CUSTOM.programs.zsh.enable = true;
 
-  ######################################
-  # Window manager & GPU
-  programs.hyprland.enable = true;
+  programs.nix-ld.enable = true;
 
+  ######################################
+  # GPU
   CUSTOM.hardware.nvidia = {
     enable = true;
     proprietaryDrivers.enable = true;
-  };
-  # Try getting AMD iGPU to work @_@
-  hardware.amdgpu = {
-    amdvlk.enable = true;
-    opencl.enable = true;
-    initrd.enable = true;
   };
 
   services.xserver = {

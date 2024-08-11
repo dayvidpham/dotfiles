@@ -1,6 +1,5 @@
 { config
 , pkgs
-, pkgs-stable
 , ...
 }:
 
@@ -10,7 +9,6 @@ rec {
 
   nix.gc = {
     automatic = true;
-    persistent = false;
     frequency = "7 days";
   };
 
@@ -58,7 +56,7 @@ rec {
     fastfetch # C implmentation of neofetch
     nvtopPackages.full # htop but for GPUs
     mpv # media player
-    pkgs-stable.vimiv-qt # image viewer with vim bindings
+    vimiv-qt # image viewer with vim bindings
     # Typical user applications
     google-chrome
     spotify
@@ -66,6 +64,7 @@ rec {
     discord-screenaudio
     # Gaming
     protonup
+    steam-run
   ];
 
   programs.direnv = {

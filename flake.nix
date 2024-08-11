@@ -20,8 +20,8 @@
     # The master branch of the NixOS/nixpkgs repository on GitHub.
     # inputs.unstable.url = "github:NixOS/nixpkgs/master";
 
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-24.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.05";
+    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
 
     nix-multithreaded.url = "github:DeterminateSystems/nix-src/multithreaded-eval";
 
@@ -31,13 +31,13 @@
     };
 
     home-manager = {
-      url = "github:nix-community/home-manager";
-      inputs.nixpkgs.follows = "nixpkgs-stable";
+      url = "github:nix-community/home-manager/release-24.05";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     nil-lsp = {
       url = "github:oxalica/nil";
-      inputs.nixpkgs.follows = "nixpkgs-stable";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     nixos-wsl.url = "github:nix-community/NixOS-WSL/main";
@@ -46,7 +46,7 @@
   outputs =
     inputs@{ self
     , nixpkgs
-    , nixpkgs-stable
+    , nixpkgs-unstable
     , nix-multithreaded
     , flake-registry
     , home-manager
@@ -60,7 +60,6 @@
         inherit system;
         config = {
           allowUnfree = true;
-          allowUnfreePredicate = (_: true);
         };
         overlays = [
           nix-multithreaded.overlays.default
@@ -78,11 +77,10 @@
         ];
       };
 
-      pkgs-stable = import nixpkgs-stable {
+      pkgs-unstable = import nixpkgs-unstable {
         inherit system;
         config = {
           allowUnfree = true;
-          allowUnfreePredicate = (_: true);
         };
       };
 
@@ -122,14 +120,14 @@
       specialArgs = {
         inherit
           pkgs
-          pkgs-stable
+          pkgs-unstable
           libmint
           ;
       };
 
       extraSpecialArgs = {
         inherit
-          pkgs-stable
+          pkgs-unstable
           nil-lsp
           ;
       };

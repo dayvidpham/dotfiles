@@ -645,7 +645,7 @@ require('lazy').setup({
                 flake = {
                   autoArchive = true,
                   autoEvalInputs = false,
-                  nixpkgsInputName = 'nixpkgs-stable',
+                  nixpkgsInputName = 'nixpkgs',
                 },
               },
             },
