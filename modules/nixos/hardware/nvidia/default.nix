@@ -7,9 +7,9 @@
 let
   cfg = config.CUSTOM.hardware.nvidia;
 
-  inherit(builtins)
+  inherit (builtins)
     hasAttr
-  ;
+    ;
 
   inherit (lib)
     mkIf
@@ -28,7 +28,7 @@ let
     mkOutOfStoreSymlink
     ;
 
-  nvidiaDriver = config.boot.kernelPackages.nvidia_x11_beta;
+  nvidiaDriver = config.boot.kernelPackages.nvidia_x11;
 
   # NOTE: Config
   nvidia = {
@@ -109,7 +109,7 @@ in
           default = true;
         };
       package =
-        mkPackageOption config.boot.kernelPackages "nvidia_x11_beta" {
+        mkPackageOption config.boot.kernelPackages "nvidia_x11" {
           example = [ "nvidia_x11" "nvidia_x11_beta" "nvidia_x11_production" ];
         };
     };
