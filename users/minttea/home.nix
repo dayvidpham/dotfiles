@@ -10,7 +10,6 @@ rec {
 
   nix.gc = {
     automatic = true;
-    persistent = false;
     frequency = "7 days";
   };
 
@@ -94,8 +93,6 @@ rec {
       window.opacity = 0.8;
     };
   };
-
-  programs.nheko.enable = true;
 
   programs.obs-studio.enable = true;
 
