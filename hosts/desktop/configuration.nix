@@ -43,7 +43,7 @@
     #};
 
     loader.efi.canTouchEfiVariables = true;
-    kernelPackages = pkgs.linuxPackages_latest;
+    kernelPackages = pkgs.linuxPackages_6_6;
   };
 
   # For OBS and screen sharing/recording
@@ -199,11 +199,11 @@
     proprietaryDrivers.enable = true;
   };
   # Try getting AMD iGPU to work @_@
-  hardware.amdgpu = {
-    amdvlk.enable = true;
-    opencl.enable = true;
-    initrd.enable = true;
-  };
+  # hardware.amdgpu = {
+  #   amdvlk.enable = true;
+  #   opencl.enable = true;
+  #   initrd.enable = true;
+  # };
 
   services.xserver = {
     enable = true;
