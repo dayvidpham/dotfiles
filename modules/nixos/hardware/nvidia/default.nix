@@ -145,6 +145,9 @@ in
         mkOutOfStoreSymlink gpu-paths."${cfg.hostName}".card-igpu;
     };
 
+    # CUDA support?
+    boot.kernelModules = [ "nvidia-uvm" ];
+
     environment.variables =
       let
         hyprRenderer = mkMerge [

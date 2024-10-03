@@ -151,6 +151,7 @@
   #####################################################
   # Package management
   nixpkgs.config.allowUnfree = true;
+  nixpkgs.config.cudaSupport = true;
   environment.systemPackages = with pkgs; [
     ######## 
     # HW utils
