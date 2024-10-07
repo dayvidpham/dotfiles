@@ -24,12 +24,21 @@ let
 
   swww-restore-cache = pkgs.writeShellApplication {
     name = "swww-restore-cache";
-    runtimeInputs = [ cfg.package ];
+    runtimeInputs = [ 
+      cfg.package
+    ] ++ (lib.optionals (config.wayland.windowManager.hyprland.enable) [
+      pkgs.jq
+      pkgs.hyprland
+    ]);
+
     text = ''
-      centerDisplayCache=$(find "${config.xdg.cacheHome}/swww" -type f -regex '.*\(eDP-1\|DP-2\|DP-5\)$' -regextype posix-extended)
+      centerDisplay="$(hyprctl monitors -j | jq -r 'if length == 3 then .[1] else .[0] end | .name')"
+      echo "INFO: Using swww-cache for $centerDisplay"
+      centerDisplayCache="$(find "${config.xdg.cacheHome}/swww" -type f -regex ".*/$centerDisplay\$" -regextype posix-extended -print -quit)"
+      echo "INFO: Using cached image at $centerDisplayCache"
       # Need to run twice: otherwise animation freezes and only displays single pixel
       ${getExe cfg.package} img --resize fit -t center --transition-fps 60 "$(cat "$centerDisplayCache")"
-      ${getExe cfg.package} img --resize fit -t center --transition-fps 60 "$(cat "$centerDisplayCache")"
+      #${getExe cfg.package} img --resize fit -t center --transition-fps 60 "$(cat "$centerDisplayCache")"
     '';
   };
 in
