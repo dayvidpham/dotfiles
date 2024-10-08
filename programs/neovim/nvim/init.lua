@@ -616,6 +616,8 @@ require('lazy').setup({
         -- tsserver = {},
         --
 
+        ---------------
+        -- Lua
         lua_ls = {
           -- cmd = {...},
           -- filetypes = { ...},
@@ -632,6 +634,8 @@ require('lazy').setup({
           },
         },
 
+        ---------------
+        -- Nix
         nil_ls = {
           autostart = true,
           cmd = { 'nil' },
@@ -673,6 +677,13 @@ require('lazy').setup({
             },
           },
         },
+
+        ---------------
+        -- Python
+        pyright = {
+
+        },
+
       }
 
       for server_name, server in pairs(servers) do
@@ -702,7 +713,9 @@ require('lazy').setup({
       end
 
       vim.list_extend(ensure_installed, {
-        'stylua', -- Used to format Lua code
+        'stylua',   -- Used to format Lua code
+        'jq',       -- For JSON tool jq
+        'pyright',  -- Python lsp
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
