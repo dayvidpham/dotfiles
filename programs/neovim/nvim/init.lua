@@ -680,9 +680,7 @@ require('lazy').setup({
 
         ---------------
         -- Python
-        pyright = {
-
-        },
+        basedpyright = {},
 
       }
 
@@ -715,7 +713,6 @@ require('lazy').setup({
       vim.list_extend(ensure_installed, {
         'stylua',   -- Used to format Lua code
         'jq',       -- For JSON tool jq
-        'pyright',  -- Python lsp
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
@@ -731,6 +728,7 @@ require('lazy').setup({
           end,
         },
       }
+
     end,
   },
 
