@@ -1,5 +1,6 @@
 { config
 , pkgs
+, pkgs-unstable
 , lib ? pkgs.lib
 , nil-lsp
 , ...
@@ -51,14 +52,14 @@ let
     p.yuck
   ]));
 
-  treesitter-parsers = pkgs.symlinkJoin {
+  treesitter-parsers = pkgs-unstable.symlinkJoin {
     name = "treesitter-parsers";
     paths = treesitterWithGrammars.dependencies;
   };
 
   # NOTE: my own config
   # Pull in cargo and nil packages for Nix LSP
-  system = pkgs.system;
+  system = pkgs-unstable.system;
   nil-lsp-pkg = nil-lsp.outputs.packages.${system}.nil;
   rust-minimal = nil-lsp.inputs.rust-overlay.packages.${system}.default.minimal;
 
@@ -72,6 +73,7 @@ in
     coc.enable = false;
     withNodeJs = true;
     defaultEditor = true;
+    package = pkgs-unstable.neovim-unwrapped;
 
     #plugins = with pkgs.vimPlugins; [
     #  {
@@ -81,7 +83,7 @@ in
     #  }
     #];
 
-    extraPackages = (with pkgs; [
+    extraPackages = (with pkgs-unstable; [
       ripgrep
       fd
       lua-language-server

@@ -56,15 +56,19 @@
     }:
     let
       system = "x86_64-linux";
-      pkgs = import nixpkgs {
+      nixpkgs-options = {
         inherit system;
+
         config = {
           allowUnfree = true;
+          cudaSuport = true;
         };
+
         overlays = [
           nix-multithreaded.overlays.default
+
+          # NOTE: My own packages and programs
           (final: prev: {
-            # NOTE: My own packages and programs
             run-cwd = with final; callPackage ./packages/run-cwd.nix { };
             scythe = with final; callPackage ./packages/scythe.nix {
               wl-clipboard = wl-clipboard-rs;
@@ -77,12 +81,8 @@
         ];
       };
 
-      pkgs-unstable = import nixpkgs-unstable {
-        inherit system;
-        config = {
-          allowUnfree = true;
-        };
-      };
+      pkgs = import nixpkgs nixpkgs-options;
+      pkgs-unstable = import nixpkgs-unstable nixpkgs-options;
 
       lib = pkgs.lib;
 
