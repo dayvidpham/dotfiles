@@ -6,7 +6,7 @@
 , ...
 }:
 let
-  treesitterWithGrammars = (pkgs.vimPlugins.nvim-treesitter.withPlugins (p: [
+  treesitterWithGrammars = (pkgs-unstable.vimPlugins.nvim-treesitter.withPlugins (p: [
     p.awk
     p.bash
     p.bibtex
