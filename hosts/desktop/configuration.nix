@@ -91,6 +91,8 @@
       # };
     };
   };
+  # Cross-compile for aarch64
+  boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
 
   # Set time zone.
   time.timeZone = "America/Vancouver";
