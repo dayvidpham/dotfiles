@@ -10,6 +10,7 @@ let
     mkOption
     mkDefault
     mkEnableOption
+    getExe
     ;
 
 in
@@ -22,11 +23,15 @@ in
   config =
     let
       cfg = config.CUSTOM.wayland.windowManager.sway;
+      waybar-themed-sway = config.programs.waybar.package;
     in
     mkIf cfg.enable {
       CUSTOM.programs.waybar = {
         enable = true;
-        windowManager = "sway";
+        # WARN: Deprecated
+        #windowManager = "sway";
+        windowManager = "hyprland"; # WARN: VERY HACKY
+        theme = "balcony";
       };
 
       wayland.windowManager.sway =
@@ -35,7 +40,7 @@ in
           terminal = "${pkgs.alacritty}/bin/alacritty";
         in
         {
-          enable = false;
+          enable = true;
           config = {
             terminal = terminal;
             output = {
@@ -96,7 +101,7 @@ in
             };
             bars = [
               {
-                command = "${pkgs.waybar}/bin/waybar";
+                command = "${getExe waybar-themed-sway}";
               }
             ];
             input = {
@@ -132,6 +137,7 @@ in
               "resize" =
                 let
                   cfg = config.wayland.windowManager.sway;
+
                 in
                 {
                   "${cfg.config.left}" = "resize shrink width 10 px";
@@ -155,10 +161,11 @@ in
 
       home.packages = with pkgs; [
         alacritty
-        waybar
         polkit_gnome
         run-cwd
         scythe
+      ] ++ [
+        waybar-themed-sway
       ];
     };
 }

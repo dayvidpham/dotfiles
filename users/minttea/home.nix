@@ -43,6 +43,10 @@ rec {
   CUSTOM.wayland.windowManager.hyprland = {
     enable = true;
   };
+  # NOTE: Sway, for remote desktop & waypipe
+  CUSTOM.wayland.windowManager.sway = {
+    enable = true;
+  };
 
   #####################
   # NOTE: General programs and packages

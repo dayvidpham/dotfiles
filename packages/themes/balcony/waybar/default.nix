@@ -126,6 +126,7 @@ let
       [ "waybar-balcony-config" ] [ "waybar-balcony" ]
       waybar-balcony-config.name;
     paths = [ waybar-mediaPlayer waybar-balcony-config ];
+    meta.mainProgram = waybar-mediaPlayer.meta.mainProgram;
   });
 in
 waybar-balcony

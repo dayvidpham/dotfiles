@@ -57,8 +57,6 @@ in
             package = waybar-themed;
             inherit settings style;
           };
-
-          # TODO: Place in the theme property?
         }
       )))
 

@@ -198,6 +198,9 @@
   CUSTOM.programs.hyprlock.enable = true;
   CUSTOM.programs.eww.enable = true;
 
+  # Sway for remote desktop & waypipe
+  CUSTOM.programs.sway.enable = true;
+
   CUSTOM.hardware.nvidia = {
     enable = true;
     proprietaryDrivers.enable = true;
