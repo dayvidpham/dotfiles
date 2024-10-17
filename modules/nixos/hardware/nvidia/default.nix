@@ -146,7 +146,7 @@ in
     };
 
     # CUDA support?
-    boot.kernelModules = [ "nvidia-uvm" ];
+    #boot.kernelModules = [ "nvidia-uvm" ];
 
     environment.variables =
       let
