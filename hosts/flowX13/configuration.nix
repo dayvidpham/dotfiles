@@ -168,6 +168,7 @@
     nix-output-monitor # more informative nix build outputs
     nix-tree # interactive closure explorer
     nvd # closure differ
+    nix-index # find binaries, which originating packages
   ];
 
   programs.git = {
