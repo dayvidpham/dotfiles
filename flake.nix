@@ -88,7 +88,7 @@
 
       # NOTE: Needs to be defined here to have access to nixpkgs and home-manager inputs
       noChannelModule = {
-        nix.settings.experimental-features = [ "nix-command" "flakes" ];
+        nix.settings.experimental-features = [ "nix-command" "flakes" "fetch-closure" ];
         nix.channel.enable = false;
 
         nix.registry.nixpkgs.flake = nixpkgs;
