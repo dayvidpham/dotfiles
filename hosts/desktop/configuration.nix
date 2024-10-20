@@ -181,14 +181,7 @@
     nix-index
   ];
 
-  programs.git = {
-    enable = true;
-    config = {
-      init.defaultBranch = "main";
-      user.name = "dayvidpham";
-      user.email = "dayvidpham@gmail.com";
-    };
-  };
+  CUSTOM.programs.git.enable = true;
 
   CUSTOM.programs.zsh.enable = true;
 

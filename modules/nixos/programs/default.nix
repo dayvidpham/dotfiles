@@ -7,5 +7,6 @@
     ./hyprlock
     ./nix-ld
     ./zsh
+    ./git
   ];
 }
