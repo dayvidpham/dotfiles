@@ -25,18 +25,15 @@ in
     };
 
   config =
-    let
-      git-libsecret-pkg = pkgs.git.override { withLibsecret = true; };
-    in
     mkIf cfg.enable {
       programs.git = {
         enable = true;
-        package = git-libsecret-pkg;
+        package = pkgs.gitFull;
         config = {
           init.defaultBranch = "main";
           user.name = "dayvidpham";
           user.email = "dayvidpham@gmail.com";
-          credential.helper = "${git-libsecret-pkg}/share/git/contrib/credential/libsecret/git-credential-libsecret";
+          #credential.helper = "${pkgs.gitFull}/bin/git-credential-libsecret";
         };
       };
     };
