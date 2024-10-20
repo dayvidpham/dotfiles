@@ -16,10 +16,6 @@
 
   system.stateVersion = "23.11";
   nix = {
-    # NOTE: Enable Flakes
-    package = pkgs.nixVersions.git; # enable experimental multithreaded eval
-    settings.experimental-features = [ "nix-command" "flakes" ];
-
     # NOTE: Nix store gc, optimisation
     gc = {
       automatic = true;

@@ -2,7 +2,7 @@
   description = "Base configuration using flake to manage NixOS";
 
   nixConfig = {
-    experimental-features = [ "nix-command" "flakes" ];
+    experimental-features = [ "nix-command" "flakes" "fetch-closure" ];
     substituters = [
       "https://cache.nixos.org"
     ];
@@ -24,6 +24,10 @@
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
 
     nix-multithreaded.url = "github:DeterminateSystems/nix-src/multithreaded-eval";
+    nix = {
+      url = "github:NixOS/nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     flake-registry = {
       url = "github:nixos/flake-registry";
@@ -47,6 +51,7 @@
     inputs@{ self
     , nixpkgs
     , nixpkgs-unstable
+    , nix
     , nix-multithreaded
     , flake-registry
     , home-manager
@@ -66,6 +71,7 @@
 
         overlays = [
           #nix-multithreaded.overlays.default
+          nix.overlays.default
 
           # NOTE: My own packages and programs
           (final: prev: {
@@ -88,6 +94,8 @@
 
       # NOTE: Needs to be defined here to have access to nixpkgs and home-manager inputs
       noChannelModule = {
+        nix.package = pkgs.nix;
+
         nix.settings.experimental-features = [ "nix-command" "flakes" "fetch-closure" ];
         nix.channel.enable = false;
 

@@ -13,9 +13,6 @@
 
   system.stateVersion = "23.11";
   nix = {
-    package = pkgs.nixVersions.git;
-    settings.experimental-features = [ "nix-command" "flakes" ];
-
     # NOTE: Nix store gc, optimisation
     gc = {
       automatic = true;
