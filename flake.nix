@@ -65,7 +65,7 @@
         };
 
         overlays = [
-          nix-multithreaded.overlays.default
+          #nix-multithreaded.overlays.default
 
           # NOTE: My own packages and programs
           (final: prev: {
