@@ -13,6 +13,7 @@ let
     p.c
     p.cpp
     p.comment
+    p.cmake
     p.css
     p.scss
     p.diff
@@ -92,6 +93,7 @@ in
       gcc
       nixpkgs-fmt
       nixd
+      python3
     ]) ++ [
       nil-lsp-pkg
       rust-minimal
