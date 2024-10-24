@@ -163,6 +163,7 @@
     # cli
     zip
     unzip
+    unrar
     # getters
     wget
     curl
