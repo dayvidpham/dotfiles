@@ -47,6 +47,7 @@ rec {
   CUSTOM.wayland.windowManager.sway = {
     enable = true;
   };
+  CUSTOM.services.kanshi.enable = true;
 
   #####################
   # NOTE: General programs and packages
