@@ -27,7 +27,12 @@ zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
 autoload -U promptinit && promptinit
 # enable vcs_info to display git branch
 autoload -Uz vcs_info
-precmd() { vcs_info }
+precmd() { 
+    vcs_info 
+    if [[ -n "${vcs_info_msg_0_}" ]]; then
+        PROMPT_VCS_BRANCH=" [${vcs_info_msg_0_}]" # print git branch if exists
+    fi
+}
 
 setopt PROMPT_SUBST
 
@@ -39,7 +44,12 @@ zstyle ':vcs_info:git:*' formats '%F{green}%b%f'
 #prompt redhat
 
 # Custom prompt formatting
-PROMPT='%F{cyan}[%f%F{red} %n %f@ %F{cyan}${PWD/#$HOME/~} ]%f [${vcs_info_msg_0_}] $ '
+CWD="${PWD##*/}"
+CWD="${CWD:-/}"     # handle when at root / case
+
+PROMPT=$'\n'' %F{cyan}${${PWD/#$HOME/~}##*/}%f'  # cwd
+PROMPT+='${PROMPT_VCS_BRANCH}'$'\n' # print git branch if exists
+PROMPT+='   > '   # actual command prompt
 
 # +------------------+
 # | Antidote Options |
