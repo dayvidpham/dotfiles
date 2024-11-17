@@ -31,6 +31,8 @@ precmd() {
     vcs_info 
     if [[ -n "${vcs_info_msg_0_}" ]]; then
         PROMPT_VCS_BRANCH=" [${vcs_info_msg_0_}]" # print git branch if exists
+    else
+        PROMPT_VCS_BRANCH="" # print git branch if exists
     fi
 }
 
