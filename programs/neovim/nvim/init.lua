@@ -452,7 +452,14 @@ require('lazy').setup({
       -- used for completion, annotations and signatures of Neovim apis
       { 'folke/neodev.nvim', opts = {} },
     },
-    config = function()
+    opts = {
+      servers = {
+        clangd = {
+          mason = false,
+        },
+      },
+    },
+    config = function(_, opts)
       -- Brief aside: **What is LSP?**
       --
       -- LSP is an initialism you've probably heard, but might not understand what it is.
@@ -680,10 +687,13 @@ require('lazy').setup({
 
         ---------------
         -- Python
-        pyright = {
+        pyright = {},
 
+        ---------------
+        -- C++
+        clangd = {
+          cmd = { vim.g.clangd },
         },
-
       }
 
       for server_name, server in pairs(servers) do
@@ -703,7 +713,7 @@ require('lazy').setup({
       ---- You can add other tools here that you want Mason to install
       ---- for you, so that they are available from within Neovim.
       local ensure_installed = {}
-      local dont_install = '|nixd|nil_ls|'
+      local dont_install = '|nixd|nil_ls|clangd|'
 
       for k in pairs(servers) do
         local should_install_server = string.find(dont_install, '|' .. k .. '|') == nil
@@ -713,9 +723,9 @@ require('lazy').setup({
       end
 
       vim.list_extend(ensure_installed, {
-        'stylua',   -- Used to format Lua code
-        'jq',       -- For JSON tool jq
-        'pyright',  -- Python lsp
+        'stylua', -- Used to format Lua code
+        'jq', -- For JSON tool jq
+        'pyright', -- Python lsp
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 

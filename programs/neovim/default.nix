@@ -94,6 +94,10 @@ in
       nixpkgs-fmt
       nixd
       python3
+      # C++
+      clang
+      libclang
+      clang-tools
     ]) ++ [
       nil-lsp-pkg
       rust-minimal
@@ -102,6 +106,7 @@ in
 
     extraLuaConfig = ''
       vim.opt.runtimepath:append("${treesitter-parsers}")
+      vim.g.clangd = "${pkgs-unstable.clang-tools}/bin/clangd"
 
       package.path = '${nvimConfig}/?.lua;' ..
         '${nvimConfig}/?/init.lua;' .. 
