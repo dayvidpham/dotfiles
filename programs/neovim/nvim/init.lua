@@ -687,13 +687,18 @@ require('lazy').setup({
 
         ---------------
         -- Python
-        pyright = {},
+        basedpyright = {},
+        ruff = {},
 
         ---------------
         -- C++
         clangd = {
           cmd = { vim.g.clangd },
         },
+
+        ---------------
+        -- md, txt, rst
+        vale_ls = {},
       }
 
       for server_name, server in pairs(servers) do
@@ -725,7 +730,11 @@ require('lazy').setup({
       vim.list_extend(ensure_installed, {
         'stylua', -- Used to format Lua code
         'jq', -- For JSON tool jq
-        'pyright', -- Python lsp
+        'jsonlint',
+
+        ---------------
+        -- md, txt, rst
+        'vale',
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
