@@ -92,13 +92,13 @@ in
       black
       gcc
       nixpkgs-fmt
-      nixd
       python3
       # C++
       clang
       libclang
       clang-tools
     ]) ++ [
+      pkgs.nixd
       nil-lsp-pkg
       rust-minimal
       treesitterWithGrammars
