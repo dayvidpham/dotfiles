@@ -687,8 +687,7 @@ require('lazy').setup({
 
         ---------------
         -- Python
-        basedpyright = {},
-        ruff = {},
+        pyright = {},
 
         ---------------
         -- C++
