@@ -101,6 +101,7 @@
 
         nix.registry.nixpkgs.flake = nixpkgs;
         nix.registry.home-manager.flake = home-manager;
+        nix.registry.nixpkgs-unstable.flake = nixpkgs-unstable;
         environment.etc."nix/inputs/nixpkgs".source = "${nixpkgs}";
         environment.etc."nix/inputs/home-manager".source = "${home-manager}";
 
