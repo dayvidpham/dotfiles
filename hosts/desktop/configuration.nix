@@ -4,6 +4,7 @@
 
 { config
 , pkgs
+, pkgs-unstable
 , home-manager
 , ...
 }:
@@ -39,7 +40,7 @@
     #};
 
     loader.efi.canTouchEfiVariables = true;
-    kernelPackages = pkgs.linuxPackages_6_6;
+    kernelPackages = pkgs-unstable.linuxPackages_6_11;
   };
 
   # For OBS and screen sharing/recording

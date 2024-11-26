@@ -26,7 +26,7 @@
     nix-multithreaded.url = "github:DeterminateSystems/nix-src/multithreaded-eval";
     nix = {
       url = "github:NixOS/nix";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
 
     flake-registry = {
@@ -41,7 +41,7 @@
 
     nil-lsp = {
       url = "github:oxalica/nil";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
 
     nixos-wsl.url = "github:nix-community/NixOS-WSL/main";
