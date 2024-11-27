@@ -52,6 +52,7 @@ rec {
   #####################
   # NOTE: General programs and packages
   home.packages = with pkgs; [
+
     # Wayland stuff
     wdisplays # gui for display settings
     wl-clipboard-rs # Rust CLI clipboard utility
@@ -62,6 +63,7 @@ rec {
     swayimg # image viewer
     qpwgraph # gui for audio
     brightnessctl # device light controller
+
     # Utils
     tree # fs vis
     ranger # CLI file explorer
@@ -71,11 +73,14 @@ rec {
     nvtopPackages.full # htop but for GPUs
     mpv # media player
     vimiv-qt # image viewer with vim bindings
+    neovide # Rust-based native nvim text editor
+
     # Typical user applications
     google-chrome
     spotify
     discord
     discord-screenaudio
+
     # Gaming
     protonup
   ];
