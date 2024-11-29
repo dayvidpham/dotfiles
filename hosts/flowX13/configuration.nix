@@ -35,7 +35,7 @@
       '';
     };
     loader.efi.canTouchEfiVariables = true;
-    kernelPackages = pkgs.linuxPackages_6_6;
+    kernelPackages = pkgs.linuxPackages_6_12;
   };
 
   # For OBS and screen sharing/recording
@@ -181,7 +181,7 @@
 
   CUSTOM.hardware.nvidia = {
     enable = true;
-    proprietaryDrivers.enable = true;
+    proprietaryDrivers.enable = false;
   };
 
 
@@ -189,6 +189,7 @@
     enable = true;
     xkb.variant = "";
     xkb.layout = "us";
+    videoDrivers = [ "nouveau" "amdgpu" ];
   };
 
   services.logind.extraConfig = ''
