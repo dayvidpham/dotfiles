@@ -153,7 +153,7 @@ in
         };
 
         programs.alacritty.settings = mkIf config.programs.alacritty.enable {
-          shell = "${getExe pkgs.zsh}";
+          terminal.shell = "${getExe config.programs.zsh.package}";
         };
       }
     );
