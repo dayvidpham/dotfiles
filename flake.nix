@@ -17,46 +17,56 @@
   # Inputs
   # https://nixos.org/manual/nix/unstable/command-ref/new-cli/nix3-flake.html#flake-inputs
   inputs = {
-    # The master branch of the NixOS/nixpkgs repository on GitHub.
-    # inputs.unstable.url = "github:NixOS/nixpkgs/master";
-
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.05";
+    #############################
+    # NixOS-related inputs
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
-
-    nix-multithreaded.url = "github:DeterminateSystems/nix-src/multithreaded-eval";
-    nix = {
-      url = "github:NixOS/nix";
-      inputs.nixpkgs.follows = "nixpkgs-unstable";
-    };
+    nixos-wsl.url = "github:nix-community/NixOS-WSL/main";
 
     flake-registry = {
       url = "github:nixos/flake-registry";
       flake = false;
     };
 
+    #############################
+    # Nix package management
+    nix-multithreaded.url = "github:DeterminateSystems/nix-src/multithreaded-eval";
+    nix = {
+      url = "github:NixOS/nix/2.25-maintenance";
+    };
+
     home-manager = {
-      url = "github:nix-community/home-manager/release-24.05";
+      url = "github:nix-community/home-manager/release-24.11";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    #############################
+    # Community tools
     nil-lsp = {
       url = "github:oxalica/nil";
-      inputs.nixpkgs.follows = "nixpkgs-unstable";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    nixos-wsl.url = "github:nix-community/NixOS-WSL/main";
+    nix-search = {
+      url = "github:diamondburned/nix-search";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
     inputs@{ self
+      # NixOS-related
     , nixpkgs
     , nixpkgs-unstable
+    , nixos-wsl
+    , flake-registry
+      # Package management
     , nix
     , nix-multithreaded
-    , flake-registry
     , home-manager
+      # Community tools
     , nil-lsp
-    , nixos-wsl
+    , nix-search
     , ...
     }:
     let
@@ -71,7 +81,7 @@
 
         overlays = [
           #nix-multithreaded.overlays.default
-          nix.overlays.default
+          #nix.overlays.default
 
           # NOTE: My own packages and programs
           (final: prev: {
@@ -94,7 +104,7 @@
 
       # NOTE: Needs to be defined here to have access to nixpkgs and home-manager inputs
       noChannelModule = {
-        nix.package = pkgs.nix;
+        nix.package = nix.packages."${system}".nix;
 
         nix.settings.experimental-features = [ "nix-command" "flakes" "fetch-closure" ];
         nix.channel.enable = false;
@@ -103,14 +113,17 @@
         nix.registry.home-manager.flake = home-manager;
         nix.registry.nixpkgs-unstable.flake = nixpkgs-unstable;
         environment.etc."nix/inputs/nixpkgs".source = "${nixpkgs}";
+        environment.etc."nix/inputs/nixpkgs-unstable".source = "${nixpkgs-unstable}";
         environment.etc."nix/inputs/home-manager".source = "${home-manager}";
 
         nix.nixPath = lib.mkForce [
           "nixpkgs=/etc/nix/inputs/nixpkgs"
+          "nixpkgs-unstable=/etc/nix/inputs/nixpkgs-unstable"
           "home-manager=/etc/nix/inputs/home-manager"
         ];
         nix.settings.nix-path = lib.mkForce [
           "nixpkgs=/etc/nix/inputs/nixpkgs"
+          "nixpkgs-unstable=/etc/nix/inputs/nixpkgs-unstable"
           "home-manager=/etc/nix/inputs/home-manager"
         ];
 
@@ -137,8 +150,9 @@
       extraSpecialArgs = {
         inherit
           pkgs-unstable
-          nil-lsp
           ;
+        nil-lsp = nil-lsp;
+        nix-search = nix-search.packages."${system}".default;
       };
     in
     {

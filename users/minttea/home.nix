@@ -74,6 +74,7 @@ rec {
     mpv # media player
     vimiv-qt # image viewer with vim bindings
     neovide # Rust-based native nvim text editor
+    nix-search # Fast, indexed replacement for awful builtin `nix search`
 
     # Typical user applications
     google-chrome
