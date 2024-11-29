@@ -47,10 +47,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    nix-search = {
-      url = "github:diamondburned/nix-search";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
   outputs =
@@ -66,7 +62,6 @@
     , home-manager
       # Community tools
     , nil-lsp
-    , nix-search
     , ...
     }:
     let
@@ -85,14 +80,15 @@
 
           # NOTE: My own packages and programs
           (final: prev: {
-            run-cwd = with final; callPackage ./packages/run-cwd.nix { };
-            scythe = with final; callPackage ./packages/scythe.nix {
+            run-cwd = with prev; callPackage ./packages/run-cwd.nix { };
+            scythe = with prev; callPackage ./packages/scythe.nix {
               wl-clipboard = wl-clipboard-rs;
               output-dir = "$HOME/Pictures/scythe";
             };
-            waybar-balcony = with final; callPackage ./packages/themes/balcony/waybar {
+            waybar-balcony = with prev; callPackage ./packages/themes/balcony/waybar {
               rofi = rofi-wayland-unwrapped;
             };
+            ImPlay = with prev; callPackage ./packages/implay.nix { };
           })
         ];
       };
@@ -150,9 +146,8 @@
       extraSpecialArgs = {
         inherit
           pkgs-unstable
+          nil-lsp
           ;
-        nil-lsp = nil-lsp;
-        nix-search = nix-search.packages."${system}".default;
       };
     in
     {

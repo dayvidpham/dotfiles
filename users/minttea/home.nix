@@ -51,7 +51,7 @@ rec {
 
   #####################
   # NOTE: General programs and packages
-  home.packages = with pkgs; [
+  home.packages = (with pkgs; [
 
     # Wayland stuff
     wdisplays # gui for display settings
@@ -71,10 +71,15 @@ rec {
     jq # CLI json explorer
     fastfetch # C implmentation of neofetch
     nvtopPackages.full # htop but for GPUs
-    mpv # media player
+    mpv # CLI media player
+    haruna # mpv Qt/QML frontend for mpv
     vimiv-qt # image viewer with vim bindings
+  ])
+  ++ (with pkgs-unstable; [
+    # Utils
     neovide # Rust-based native nvim text editor
     nix-search # Fast, indexed replacement for awful builtin `nix search`
+    ImPlay # cross-platform media player built on mpv
 
     # Typical user applications
     google-chrome
@@ -84,7 +89,7 @@ rec {
 
     # Gaming
     protonup
-  ];
+  ]);
 
   programs.direnv = {
     enable = true;
