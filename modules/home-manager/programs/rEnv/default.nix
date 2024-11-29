@@ -1,5 +1,6 @@
 { config
 , pkgs
+, pkgs-unstable
 , lib ? pkgs.lib
 , ...
 }:
@@ -22,10 +23,6 @@ let
     ];
   };
 
-  texlive-env = (pkgs.texlive.combine {
-    inherit (pkgs.texlive) scheme-full float;
-  });
-
 in
 {
   options.CUSTOM.programs.rEnv = {
@@ -35,7 +32,7 @@ in
   config = mkIf cfg.enable {
     home.packages = [
       rstudio-env
-      texlive-env
+      pkgs.texliveFull
       pkgs.R
       pkgs.pandoc
     ];
