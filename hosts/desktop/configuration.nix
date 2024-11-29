@@ -206,6 +206,7 @@
   services.xserver = {
     enable = true;
     xkb.layout = "us";
+    videoDrivers = [ "nouveau" "amdgpu" "modesetting" ];
   };
 
   # NOTE: Not sure why I set this option originally
