@@ -1,5 +1,6 @@
 { config
 , pkgs
+, pkgs-unstable
 , lib ? pkgs.lib
 , libmint
 , ...
@@ -28,7 +29,7 @@ let
     mkOutOfStoreSymlink
     ;
 
-  nvidiaDriver = config.boot.kernelPackages.nvidia_x11;
+  #nvidiaDriver = config.boot.kernelPackages.nvidia_x11_production;
 
   # NOTE: Config
   nvidia = {
@@ -67,7 +68,7 @@ let
 
     # NOTE: Open kernel module: this is not the nouveau driver
     open = {
-      default = false; # GTX 10XX gen is unsupported
+      default = true; # GTX 10XX gen is unsupported
       # we on the RTX 4090 now though!
     };
 
@@ -125,7 +126,7 @@ in
   config = mkIf cfg.enable {
 
     hardware.nvidia = {
-      package = nvidiaDriver;
+      #package = nvidiaDriver;
       modesetting.enable = true; # NOTE: Wayland requires this to be true
       nvidiaSettings = true;
     } // (configureHost cfg.hostName nvidia);
@@ -135,7 +136,10 @@ in
     services.xserver = {
       enable = true;
       # NOTE: If not set, will use nouveau drivers
-      videoDrivers = optionals cfg.proprietaryDrivers.enable [ "nvidia" ];
+      videoDrivers =
+        optionals cfg.proprietaryDrivers.enable [ "nvidia" ]
+        ++ optionals (!cfg.proprietaryDrivers.enable) [ "nouveau" ]
+      ;
     };
 
     environment.etc = mkIf (hasAttr cfg.hostName gpu-paths) {

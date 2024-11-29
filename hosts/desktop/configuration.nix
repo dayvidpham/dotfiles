@@ -40,7 +40,7 @@
     #};
 
     loader.efi.canTouchEfiVariables = true;
-    kernelPackages = pkgs-unstable.linuxPackages_6_11;
+    kernelPackages = pkgs-unstable.linuxPackages_6_12;
   };
 
   # For OBS and screen sharing/recording
@@ -194,7 +194,7 @@
 
   CUSTOM.hardware.nvidia = {
     enable = true;
-    proprietaryDrivers.enable = true;
+    proprietaryDrivers.enable = false;
   };
   # Try getting AMD iGPU to work @_@
   # hardware.amdgpu = {
