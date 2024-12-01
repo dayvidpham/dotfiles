@@ -44,15 +44,14 @@ in
       settings = [
 
         {
-          profile.name = "desktop-1";
+          profile.name = "desktop-1-nvidia";
           profile.outputs = [
-
             # NOTE: Desktop, 3 monitor setup: |V|[ H ]|V|
             {
               # left
               criteria = "DP-3";
-              mode = "2560x1440@169.831Hz";
-              scale = 1.25;
+              mode = "2560x1440";
+              scale = 1.00;
               position = "0,0";
               adaptiveSync = true;
               transform = "270";
@@ -60,17 +59,17 @@ in
             {
               # center
               criteria = "DP-2";
-              mode = "2560x1440@169.831Hz";
-              scale = 1.25;
-              position = "1152,374";
+              mode = "2560x1440";
+              scale = 1.00;
+              position = "1440,374";
               adaptiveSync = true;
             }
             {
               # right
               criteria = "DP-1";
-              mode = "2560x1440@169.831Hz";
-              scale = 1.25;
-              position = "3200,0";
+              mode = "2560x1440";
+              scale = 1.00;
+              position = "4000,0";
               adaptiveSync = true;
               transform = "270";
             }
@@ -79,15 +78,15 @@ in
         }
 
         {
-          profile.name = "desktop-2";
+          profile.name = "desktop-2-nvidia";
           profile.outputs = [
 
             # NOTE: Desktop, 3 monitor setup: |V|[ H ]|V|
             {
               # left
               criteria = "DP-6";
-              mode = "2560x1440@169.831Hz";
-              scale = 1.25;
+              mode = "2560x1440";
+              scale = 1.00;
               position = "0,0";
               adaptiveSync = true;
               transform = "270";
@@ -95,17 +94,17 @@ in
             {
               # center
               criteria = "DP-5";
-              mode = "2560x1440@169.831Hz";
-              scale = 1.25;
-              position = "1152,374";
+              mode = "2560x1440";
+              scale = 1.00;
+              position = "1440,374";
               adaptiveSync = true;
             }
             {
               # right
               criteria = "DP-4";
-              mode = "2560x1440@169.831Hz";
-              scale = 1.25;
-              position = "3200,0";
+              mode = "2560x1440";
+              scale = 1.00;
+              position = "4000,0";
               adaptiveSync = true;
               transform = "270";
             }
