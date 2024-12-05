@@ -29,7 +29,7 @@ let
     mkOutOfStoreSymlink
     ;
 
-  #nvidiaDriver = config.boot.kernelPackages.nvidia_x11_production;
+  nvidiaDriver = config.boot.kernelPackages.nvidia_x11_beta;
 
   # NOTE: Config
   nvidia = {
@@ -126,7 +126,7 @@ in
   config = mkIf cfg.enable {
 
     hardware.nvidia = {
-      #package = nvidiaDriver;
+      package = nvidiaDriver;
       modesetting.enable = true; # NOTE: Wayland requires this to be true
       nvidiaSettings = true;
     } // (configureHost cfg.hostName nvidia);

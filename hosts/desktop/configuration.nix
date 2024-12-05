@@ -194,7 +194,7 @@
 
   CUSTOM.hardware.nvidia = {
     enable = true;
-    proprietaryDrivers.enable = false;
+    proprietaryDrivers.enable = true;
   };
   # Try getting AMD iGPU to work @_@
   # hardware.amdgpu = {
@@ -206,7 +206,7 @@
   services.xserver = {
     enable = true;
     xkb.layout = "us";
-    videoDrivers = [ "nouveau" "amdgpu" "modesetting" ];
+    videoDrivers = [ "nvidia" "amdgpu" "modesetting" ];
   };
 
   # NOTE: Not sure why I set this option originally
