@@ -40,7 +40,7 @@
     #};
 
     loader.efi.canTouchEfiVariables = true;
-    kernelPackages = pkgs-unstable.linuxPackages_6_12;
+    kernelPackages = pkgs.linuxPackages_6_12;
   };
 
   # For OBS and screen sharing/recording
