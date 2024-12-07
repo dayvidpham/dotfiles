@@ -79,7 +79,6 @@ rec {
     # Utils
     neovide # Rust-based native nvim text editor
     nix-search # Fast, indexed replacement for awful builtin `nix search`
-    ImPlay # cross-platform media player built on mpv
 
     # Typical user applications
     google-chrome
@@ -99,6 +98,14 @@ rec {
 
   # NOTE: Zsh setup
   # Manual setup: don't like how home-manager currently sets up zsh
+  programs.atuin = {
+    enable = true;
+    enableZshIntegration = config.programs.zsh.enable;
+  };
+  programs.zoxide = {
+    enable = true;
+    enableZshIntegration = config.programs.zsh.enable;
+  };
   CUSTOM.programs.zsh.enable = true;
 
   programs.firefox.enable = true;
@@ -111,9 +118,7 @@ rec {
   };
 
   programs.obs-studio.enable = true;
-
   CUSTOM.programs.rEnv.enable = true;
-
   programs.lazygit.enable = true;
 
   ######################################

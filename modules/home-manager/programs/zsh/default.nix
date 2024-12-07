@@ -19,6 +19,7 @@ let
     mkEnableOption
     getExe
     removePrefix
+    optionalAttrs
     ;
 
 
@@ -118,7 +119,9 @@ in
 
             # Pip Aliasing
             pip = "pip3";
-          };
+          } // (optionalAttrs config.programs.zoxide.enable {
+            cd = "z";
+          });
 
           sessionVariables = {
             # Disable insecure directory checks
