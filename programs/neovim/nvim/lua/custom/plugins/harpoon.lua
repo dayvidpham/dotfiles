@@ -14,6 +14,7 @@ return {
       },
     }
 
+    -- List manipulation
     vim.keymap.set('n', '<leader>la', function()
       harpoon:list():add()
     end, { desc = 'Harpoon: [L]ist [A]dd' })
@@ -22,6 +23,7 @@ return {
       harpoon.ui:toggle_quick_menu(harpoon:list())
     end, { desc = 'Harpoon: Show [l]ist' })
 
+    -- Convenient 1-4 harpoon select
     vim.keymap.set('n', '<M-1>', function()
       harpoon:list():select(1)
     end, { desc = 'Harpoon: Select file 1' })
