@@ -74,11 +74,6 @@ rec {
     mpv # CLI media player
     haruna # mpv Qt/QML frontend for mpv
     vimiv-qt # image viewer with vim bindings
-  ])
-  ++ (with pkgs-unstable; [
-    # Utils
-    neovide # Rust-based native nvim text editor
-    nix-search # Fast, indexed replacement for awful builtin `nix search`
 
     # Typical user applications
     google-chrome
@@ -88,6 +83,11 @@ rec {
 
     # Gaming
     protonup
+  ])
+  ++ (with pkgs-unstable; [
+    # Utils
+    neovide # Rust-based native nvim text editor
+    nix-search # Fast, indexed replacement for awful builtin `nix search`
   ]);
 
   programs.direnv = {
@@ -105,6 +105,23 @@ rec {
   programs.zoxide = {
     enable = true;
     enableZshIntegration = config.programs.zsh.enable;
+  };
+  programs.bat = {
+    enable = true;
+    extraPackages = with pkgs.bat-extras; [ batdiff batman batgrep batwatch ];
+  };
+  programs.fzf = {
+    enable = true;
+    enableZshIntegration = config.programs.zsh.enable;
+  };
+  programs.eza = {
+    enable = true;
+    enableZshIntegration = config.programs.zsh.enable;
+    extraOptions =
+      [
+        "--group-directories-first"
+        "--header"
+      ];
   };
   CUSTOM.programs.zsh.enable = true;
 
