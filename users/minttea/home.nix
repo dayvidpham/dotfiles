@@ -98,6 +98,7 @@ rec {
 
   # NOTE: Zsh setup
   # Manual setup: don't like how home-manager currently sets up zsh
+  CUSTOM.programs.zsh.enable = true;
   programs.atuin = {
     enable = true;
     enableZshIntegration = config.programs.zsh.enable;
@@ -117,13 +118,14 @@ rec {
   programs.eza = {
     enable = true;
     enableZshIntegration = config.programs.zsh.enable;
+    icons = "auto";
+    colors = "always";
     extraOptions =
       [
         "--group-directories-first"
         "--header"
       ];
   };
-  CUSTOM.programs.zsh.enable = true;
 
   programs.firefox.enable = true;
 

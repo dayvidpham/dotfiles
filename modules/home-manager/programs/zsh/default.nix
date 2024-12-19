@@ -13,6 +13,7 @@ let
   inherit (lib)
     mkIf
     mkMerge
+    mkBefore
     mkAfter
     mkOption
     mkDefault
@@ -110,18 +111,22 @@ in
             ''
           ;
 
-          shellAliases = {
-            # Show colours by default
-            ls = "ls --color=always";
-            ll = "ls -l --color=always";
-            grep = "grep --color=always";
-            less = "less -R";
+          shellAliases =
+            {
+              # Show colours by default
+              grep = "grep --color=always";
+              less = "less -R";
 
-            # Pip Aliasing
-            pip = "pip3";
-          } // (optionalAttrs config.programs.zoxide.enable {
-            cd = "z";
-          });
+              # Pip Aliasing
+              pip = "pip3";
+            }
+            // (optionalAttrs (!config.programs.eza.enable) {
+              ls = "ls --color=always";
+              ll = "ls -l --color=always";
+            })
+            // (optionalAttrs (config.programs.zoxide.enable) {
+              cd = "z";
+            });
 
           sessionVariables = {
             # Disable insecure directory checks
