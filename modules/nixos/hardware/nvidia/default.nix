@@ -42,6 +42,9 @@ let
       laptop = {
         finegrained = true;
       };
+      desktop = {
+        enable = false;
+      };
     };
 
     # NOTE: Balancing between iGPU and dGPU
