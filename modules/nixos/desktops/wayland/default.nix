@@ -18,12 +18,15 @@ let
     "hyprland"
   ];
 
-  wayland-enabled = any
-    (desktop: (attrByPath
-      [ desktop "enable" ]
-      false
-      config.programs))
-    wayland-desktops;
+  wayland-enabled =
+    any
+      (desktop:
+        (attrByPath
+          [ desktop "enable" ]
+          false
+          config.programs
+        ))
+      wayland-desktops;
 in
 {
   imports = [
