@@ -49,7 +49,7 @@ in
             # NOTE: Desktop, 3 monitor setup: |V|[ H ]|V|
             {
               # left
-              criteria = "DP-3";
+              criteria = "GIGA-BYTE TECHNOLOGY CO. LTD. M27Q 21330B007986";
               mode = "2560x1440";
               scale = 1.00;
               position = "0,0";
@@ -58,7 +58,7 @@ in
             }
             {
               # center
-              criteria = "DP-2";
+              criteria = "GIGA-BYTE TECHNOLOGY CO. LTD. M27Q 21330B008006";
               mode = "2560x1440";
               scale = 1.00;
               position = "1440,374";
@@ -66,7 +66,7 @@ in
             }
             {
               # right
-              criteria = "DP-1";
+              criteria = "GIGA-BYTE TECHNOLOGY CO. LTD. M27Q 21330B007981";
               mode = "2560x1440";
               scale = 1.00;
               position = "4000,0";
@@ -77,7 +77,7 @@ in
           ];
         }
 
-        {
+        /* {
           profile.name = "desktop-2-nvidia";
           profile.outputs = [
 
@@ -110,7 +110,7 @@ in
             }
 
           ];
-        }
+        } */
 
         # NOTE: Laptop
         {
