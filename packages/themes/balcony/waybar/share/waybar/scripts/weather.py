@@ -85,6 +85,10 @@ def format_chances(hour):
     for event in chances.keys():
         if int(hour[event]) > 0:
             conditions.append(chances[event]+" "+hour[event]+"%")
+
+    precip = hour['precipMM']
+    if precip != '0.0':
+        conditions.append(f'{precip}mm')
     return ", ".join(conditions)
 
 
