@@ -14,12 +14,12 @@
   "modules-center" = [ "custom/spotify" ];
   "modules-right" = [ "tray" "network" "backlight" "battery" "wireplumber" "clock" "custom/lock" "custom/power-menu" ];
   "hyprland/workspaces" = {
-    "format" = "{icon}";
+    "format" = "{}";
     "on-click" = "activate";
-    "format-icons" = {
+    /* "format-icons" = {
       "active" = "󰮯";
       "default" = " ";
-    };
+    }; */
   };
   "hyprland/window" = {
     "format" = "{}";
