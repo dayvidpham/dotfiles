@@ -200,6 +200,10 @@ vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right win
 vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
 vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
 
+-- Paste most recently yanked text, not from unnamed register.
+-- Unnamed register gets constantly overwritten by deletes.
+vim.keymap.set('n', 'p', '"0p', { desc = 'Paste last yanked text' })
+
 -- Neovide
 if vim.g.neovide == true then
   vim.api.nvim_set_keymap('n', '<C-=>', ':lua vim.g.neovide_scale_factor = math.min(vim.g.neovide_scale_factor + 0.1,  2.0)<CR>', { silent = true })
