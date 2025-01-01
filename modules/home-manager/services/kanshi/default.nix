@@ -49,7 +49,7 @@ in
             # NOTE: Desktop, 3 monitor setup: |V|[ H ]|V|
             {
               # left
-              criteria = "GIGA-BYTE TECHNOLOGY CO. LTD. M27Q 21330B007986";
+              criteria = "GIGA-BYTE TECHNOLOGY CO., LTD. M27Q 21330B007986";
               mode = "2560x1440";
               scale = 1.00;
               position = "0,0";
@@ -58,7 +58,7 @@ in
             }
             {
               # center
-              criteria = "GIGA-BYTE TECHNOLOGY CO. LTD. M27Q 21330B008006";
+              criteria = "GIGA-BYTE TECHNOLOGY CO., LTD. M27Q 21330B008006";
               mode = "2560x1440";
               scale = 1.00;
               position = "1440,374";
@@ -66,7 +66,7 @@ in
             }
             {
               # right
-              criteria = "GIGA-BYTE TECHNOLOGY CO. LTD. M27Q 21330B007981";
+              criteria = "GIGA-BYTE TECHNOLOGY CO., LTD. M27Q 21330B007981";
               mode = "2560x1440";
               scale = 1.00;
               position = "4000,0";
