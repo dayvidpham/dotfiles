@@ -43,7 +43,7 @@ let
         finegrained = true;
       };
       desktop = {
-        enable = false;
+        enable = true;
       };
     };
 
@@ -140,9 +140,9 @@ in
       enable = true;
       # NOTE: If not set, will use nouveau drivers
       videoDrivers =
-        optionals cfg.proprietaryDrivers.enable [ "nvidia" ]
-        ++ optionals (!cfg.proprietaryDrivers.enable) [ "nouveau" ]
-      ;
+        if cfg.proprietaryDrivers.enable
+        then [ "nvidia" ]
+        else [ "nouveau" ];
     };
 
     environment.etc = mkIf (hasAttr cfg.hostName gpu-paths) {
