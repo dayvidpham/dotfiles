@@ -7,5 +7,6 @@
     ./playerctld
     ./hypridle
     ./swww
+    ./podman
   ];
 }

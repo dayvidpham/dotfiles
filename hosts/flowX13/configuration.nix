@@ -64,6 +64,10 @@
     # GUI for controlling QEMU/KVM VMs on libvirtd
     enable = true;
   };
+
+  # Virtualisation
+  CUSTOM.podman.enable = true;
+
   virtualisation.libvirtd = {
     enable = true;
     qemu = {

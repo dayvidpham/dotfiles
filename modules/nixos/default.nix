@@ -12,6 +12,7 @@
     ./fonts
     ./programs
     ./shared
+    ./virtualisation
   ];
 
   config = {

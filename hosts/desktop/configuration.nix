@@ -60,6 +60,9 @@
     enable = true;
     proprietaryDrivers.enable = true;
   };
+
+  # Virtualisation
+  CUSTOM.podman.enable = true;
   # Try getting AMD iGPU to work @_@
   # hardware.amdgpu = {
   #   amdvlk.enable = true;
