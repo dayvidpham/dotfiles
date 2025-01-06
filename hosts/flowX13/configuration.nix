@@ -48,6 +48,12 @@
   networking = {
     hostName = "flowX13"; # Define your hostname.
     networkmanager.enable = true; # Easiest to use and most distros use this by default.
+
+    # NOTE: For GrSim
+    firewall.allowedUDPPorts = [
+      10003
+      10020
+    ];
   };
 
   # Bluetooth
