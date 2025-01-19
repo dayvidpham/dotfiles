@@ -11,13 +11,12 @@
   #  ./nix
   #  ./cli
   #];
-  environment.systemPackages = with pkgs; [
+  environment.systemPackages = (with pkgs; [
     # Nix utils
     nix-output-monitor # more informative nix build outputs
     nix-tree # interactive closure explorer
     nvd # closure differ
     nix-index # offline index of all files in nixpkgs, can search for files
-    nix-search # offline nixpkgs package search, fuck default nix search
     nix-fast-build # multithreaded nix eval? for CI? can I use for nixos-rebuild?
 
     # CLI/system tools
@@ -35,7 +34,9 @@
     # getters
     wget
     curl
-  ];
+  ]) ++ (with pkgs-unstable; [
+    nix-search # offline nixpkgs package search, fuck default nix search
+  ]);
 
   programs.nix-index.enable = true;
   programs.nix-index.enableZshIntegration = true;

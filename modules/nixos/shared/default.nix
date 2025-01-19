@@ -16,6 +16,12 @@ let
   utils = import ./utils args;
   keyboards = import ./keyboards args;
   system = import ./system args;
+
+  shared-config = [
+    system
+    utils
+    keyboards
+  ];
 in
 {
   options.CUSTOM.shared = {
@@ -24,11 +30,8 @@ in
 
   config =
     mkIf (cfg.enable) (
-      mkMerge [
-        system
-        utils
-        keyboards
-      ]
+      #mkMerge defaults
+      mkMerge shared-config
     )
   ;
 }

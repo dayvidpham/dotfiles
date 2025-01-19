@@ -21,6 +21,8 @@
     # NixOS-related inputs
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
+
+    nixpkgs-wsl.url = "github:NixOS/nixpkgs/nixos-24.05";
     nixos-wsl.url = "github:nix-community/NixOS-WSL/main";
 
     flake-registry = {
@@ -39,6 +41,10 @@
       url = "github:nix-community/home-manager/release-24.11";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    home-manager-wsl = {
+      url = "github:nix-community/home-manager/release-24.05";
+      inputs.nixpkgs.follows = "nixpkgs-wsl";
+    };
 
     #############################
     # Community tools
@@ -54,12 +60,14 @@
       # NixOS-related
     , nixpkgs
     , nixpkgs-unstable
+    , nixpkgs-wsl
     , nixos-wsl
     , flake-registry
       # Package management
     , nix
     , nix-multithreaded
     , home-manager
+    , home-manager-wsl
       # Community tools
     , nil-lsp
     , ...
@@ -95,6 +103,7 @@
 
       pkgs = import nixpkgs nixpkgs-options;
       pkgs-unstable = import nixpkgs-unstable nixpkgs-options;
+      pkgs-wsl = import nixpkgs-wsl nixpkgs-options;
 
       lib = pkgs.lib;
 
@@ -105,7 +114,7 @@
         nix.settings.experimental-features = [ "nix-command" "flakes" "fetch-closure" ];
         nix.channel.enable = false;
 
-        nix.registry.nixpkgs.flake = nixpkgs;
+        #nix.registry.nixpkgs.flake = lib.mkDefault nixpkgs;
         nix.registry.home-manager.flake = home-manager;
         nix.registry.nixpkgs-unstable.flake = nixpkgs-unstable;
         environment.etc."nix/inputs/nixpkgs".source = "${nixpkgs}";
@@ -183,8 +192,13 @@
             system
             specialArgs
             ;
+          #specialArgs = specialArgs // {
+          #  pkgs = pkgs-wsl;
+          #};
           modules = [
-            nixos-wsl.nixosModules.default
+            (nixos-wsl.nixosModules.default // {
+              system.build.installBootLoader = lib.mkForce "${pkgs.coreutils}/bin/true";
+            })
             ./hosts/wsl/configuration.nix
             ./modules/nixos
             noChannelModule

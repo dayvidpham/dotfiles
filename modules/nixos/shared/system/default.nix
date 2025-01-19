@@ -4,6 +4,11 @@
 , lib ? pkgs.lib
 , ...
 }:
+let
+  inherit (lib)
+    mkDefault
+    ;
+in
 {
   nix = {
     # NOTE: Nix store gc, optimisation
