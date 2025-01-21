@@ -9,5 +9,6 @@
     ./rofi
     ./rEnv
     ./zsh
+    ./ghostty
   ];
 }
