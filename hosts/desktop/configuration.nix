@@ -32,12 +32,13 @@
   networking = {
     hostName = "desktop"; # Define your hostname.
     networkmanager.enable = true; # Easiest to use and most distros use this by default.
+
+    # NOTE: For GrSim
+    firewall.allowedUDPPorts = [
+      10003
+      10020
+    ];
   };
-  # NOTE: For GrSim
-  firewall.allowedUDPPorts = [
-    10003
-    10020
-  ];
 
   # Cross-compile for aarch64
   boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
