@@ -31,7 +31,7 @@ in
     programs.ghostty.enableZshIntegration = config.programs.zsh.enable;
     programs.ghostty.enableBashIntegration = true;
     programs.ghostty.settings = {
-      theme = "dark:catppuccin-frappe,light:catppuccin-latte";
+      theme = "catppuccin-mocha";
       command = shell;
       font-size = 14;
     };
