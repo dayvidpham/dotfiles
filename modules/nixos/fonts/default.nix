@@ -75,7 +75,7 @@ in
           enable = true;
           antialias = true;
           hinting.enable = true;
-          hinting.style = "slight";
+          hinting.style = "none";
         };
       };
 
