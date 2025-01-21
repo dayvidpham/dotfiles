@@ -65,18 +65,18 @@ in
           noto-fonts
           noto-fonts-emoji
           font-awesome
-        ]) ++ [ nerdfonts-custom ];
+        ]) ++ [
+          nerdfonts-custom
+        ];
 
         enableDefaultPackages = true;
 
-      };
-
-
-      fonts.fontconfig = {
-
-        enable = true;
-        hinting.style = "slight";
-
+        fontconfig = {
+          enable = true;
+          antialias = true;
+          hinting.enable = true;
+          hinting.style = "slight";
+        };
       };
 
     };
