@@ -28,7 +28,6 @@
 
   config =
     let
-
       cfg = config.CUSTOM.theme;
 
       fonts = {
@@ -46,9 +45,21 @@
       };
 
       gtk.themes = {
+        breeze = {
+          name = "Breeze-Dark";
+          package = pkgs.breeze-gtk;
+        };
+
         dracula = {
           name = "Dracula";
           package = pkgs.dracula-theme;
+        };
+      };
+
+      gtk.iconThemes = {
+        breeze = {
+          name = "Breeze Dark";
+          package = pkgs.breeze-icons;
         };
       };
 
@@ -75,7 +86,8 @@
           enable = if gtkNonNull then true else false;
 
           font = lib.mkDefault fonts.dejavu-sans;
-          theme = lib.mkDefault gtk.themes.dracula;
+          theme = lib.mkDefault gtk.themes.breeze;
+          iconTheme = lib.mkDefault gtk.iconThemes.breeze;
         };
       };
 
@@ -84,6 +96,10 @@
         "org/gnome/desktop/interface" = {
           color-scheme = "prefer-dark";
         };
+      };
+
+      home.sessionVariables = lib.mkIf (cfg.gtk.enable) {
+        GTK_THEME = cfg.gtk.theme.name;
       };
     };
 }
