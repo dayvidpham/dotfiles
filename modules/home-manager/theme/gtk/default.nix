@@ -35,13 +35,13 @@
         noto-sans = {
           name = "Noto Sans";
           package = pkgs.noto-fonts;
-          size = 12;
+          size = 14;
         };
 
         dejavu-sans = {
           name = "DejaVu Sans";
           package = pkgs.dejavu_fonts;
-          size = 12;
+          size = 14;
         };
       };
 
@@ -76,6 +76,13 @@
 
           font = lib.mkDefault fonts.dejavu-sans;
           theme = lib.mkDefault gtk.themes.dracula;
+        };
+      };
+
+      dconf.enable = true;
+      dconf.settings = {
+        "org/gnome/desktop/interface" = {
+          color-scheme = "prefer-dark";
         };
       };
     };
