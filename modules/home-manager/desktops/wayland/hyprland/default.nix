@@ -68,9 +68,10 @@ in
       };
 
       extraPortals = with pkgs; [
-        xdg-desktop-portal-hyprland
+        xdg-desktop-portal-gtk
       ];
     };
+
 
     CUSTOM.services.kanshi.enable = true;
 
