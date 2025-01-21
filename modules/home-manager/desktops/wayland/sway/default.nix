@@ -37,7 +37,7 @@ in
       wayland.windowManager.sway =
         let
           modifier = "Mod1";
-          terminal = "${pkgs.alacritty}/bin/alacritty";
+          terminal = "${pkgs.ghostty}/bin/ghostty";
         in
         {
           enable = true;
@@ -160,7 +160,7 @@ in
         };
 
       home.packages = with pkgs; [
-        alacritty
+        ghostty
         polkit_gnome
         run-cwd
         scythe

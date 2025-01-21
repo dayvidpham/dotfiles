@@ -11,13 +11,7 @@ let
     mkOption
     mkDefault
     mkEnableOption
-    getExe
     ;
-
-  shell =
-    if config.programs.zsh.enable
-    then "${config.programs.zsh.package}/bin/zsh"
-    else "${pkgs.bash}/bin/bash";
 in
 {
   options.CUSTOM.programs.ghostty = {
@@ -31,9 +25,9 @@ in
     programs.ghostty.enableZshIntegration = config.programs.zsh.enable;
     programs.ghostty.enableBashIntegration = true;
     programs.ghostty.settings = {
-      theme = "catppuccin-mocha";
-      command = shell;
-      font-size = 14;
+      theme = mkDefault "catppuccin-mocha";
+      command = mkDefault "${pkgs.bash}/bin/bash";
+      font-size = mkDefault 14;
     };
   };
 }

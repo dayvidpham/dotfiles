@@ -188,8 +188,9 @@ in
         };
 
         programs.alacritty.settings = mkIf config.programs.alacritty.enable {
-          terminal.shell = "${getExe config.programs.zsh.package}";
+          terminal.shell = "${config.programs.zsh.package}/bin/zsh";
         };
+        programs.ghostty.settings.command = mkIf config.programs.ghostty.enable "${config.programs.zsh.package}/bin/zsh";
       }
     );
 }
