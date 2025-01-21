@@ -133,12 +133,6 @@ rec {
   programs.firefox.enable = true;
 
   CUSTOM.programs.ghostty.enable = true;
-  programs.alacritty = {
-    enable = true;
-    settings = {
-      #window.opacity = 0.8;
-    };
-  };
 
   programs.obs-studio.enable = true;
   CUSTOM.programs.rEnv.enable = true;
