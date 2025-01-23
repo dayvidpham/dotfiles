@@ -83,6 +83,7 @@ rec {
     spotify
     discord
     discord-screenaudio
+    zotero
 
     # Gaming
     protonup
