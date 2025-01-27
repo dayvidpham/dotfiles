@@ -88,11 +88,22 @@ in
       ripgrep
       fd
       lua-language-server
-      rust-analyzer-unwrapped
       black
-      gcc
       nixpkgs-fmt
-      python3
+      rust-analyzer-unwrapped
+    ]
+    ++ [
+      # Python
+      (python313.withPackages (pyPkgs: with pyPkgs; [
+        rope
+        ruff
+        jedi
+        python-lsp-server
+        pylsp-rope
+        python-lsp-ruff
+      ]))
+    ]
+    ++ [
       # C++
       clang
       libclang
@@ -104,17 +115,18 @@ in
       treesitterWithGrammars
     ];
 
-    extraLuaConfig = ''
-      vim.opt.runtimepath:append("${treesitter-parsers}")
-      vim.g.clangd = "${pkgs-unstable.clang-tools}/bin/clangd"
+    extraLuaConfig =
+      ''
+        vim.opt.runtimepath:append("${treesitter-parsers}")
+        vim.g.clangd = "${pkgs-unstable.clang-tools}/bin/clangd"
 
-      package.path = '${nvimConfig}/?.lua;' ..
-        '${nvimConfig}/?/init.lua;' .. 
-        '${nvimConfig}/minttea/lua/?/init.lua;' .. 
-        '${nvimConfig}/minttea/lua/?.lua;' .. 
-        package.path
-      require('minttea')
-    '';
+        package.path = '${nvimConfig}/?.lua;' ..
+          '${nvimConfig}/?/init.lua;' .. 
+          '${nvimConfig}/minttea/lua/?/init.lua;' .. 
+          '${nvimConfig}/minttea/lua/?.lua;' .. 
+          package.path
+        require('minttea')
+      '';
   };
 
   xdg.configFile."nvim/minttea" = {

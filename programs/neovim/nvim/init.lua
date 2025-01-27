@@ -560,6 +560,14 @@ require('lazy').setup({
           --  For example, in C this would take you to the header.
           map('gD', vim.lsp.buf.declaration, '[G]oto [D]eclaration')
 
+          -- As above, but for visual mode
+          local map_visual = function(keys, func, desc)
+            vim.keymap.set('v', keys, func, { buffer = event.buf, desc = 'LSP: ' .. desc })
+          end
+          -- Execute a code action, usually your cursor needs to be on top of an error
+          -- or a suggestion from your LSP for this to activate.
+          map_visual('<leader>ca', vim.lsp.buf.code_action, '[C]ode [A]ction')
+
           -- The following two autocommands are used to highlight references of the
           -- word under your cursor when your cursor rests there for a little while.
           --    See `:help CursorHold` for information about when this is executed
@@ -706,6 +714,29 @@ require('lazy').setup({
         ---------------
         -- Python
         pyright = {},
+        ruff = {},
+        pylsp = {
+          plugins = {
+            rope_autoimport = {
+              enabled = true,
+            },
+            -- python-lsp-ruff: use ruff by default
+            ruff = {
+              enabled = true,
+            },
+
+            -- only use pylsp-rope for renaming
+            pylsp_rope = {
+              rename = true,
+            },
+            rope_rename = {
+              enabled = false,
+            },
+            jedi_rename = {
+              enabled = false,
+            },
+          },
+        },
 
         ---------------
         -- C++
@@ -749,7 +780,7 @@ require('lazy').setup({
       ---- You can add other tools here that you want Mason to install
       ---- for you, so that they are available from within Neovim.
       local ensure_installed = {}
-      local dont_install = '|nixd|nil_ls|clangd|'
+      local dont_install = '|nixd|nil_ls|clangd|ruff|pylsp|'
 
       for k in pairs(servers) do
         local should_install_server = string.find(dont_install, '|' .. k .. '|') == nil
