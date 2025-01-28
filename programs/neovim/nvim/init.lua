@@ -729,9 +729,6 @@ require('lazy').setup({
             pylsp_rope = {
               rename = true,
             },
-            rope_rename = {
-              enabled = false,
-            },
             jedi_rename = {
               enabled = false,
             },
