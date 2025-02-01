@@ -46,10 +46,9 @@ zstyle ':vcs_info:git:*' formats '%F{green}%b%f'
 #prompt redhat
 
 # Custom prompt formatting
-CWD="${PWD##*/}"
-CWD="${CWD:-/}"     # handle when at root / case
 
-PROMPT=$'\n''%F{cyan}${${PWD/#$HOME/~}##*/}/%f'  # cwd
+RPROMPT='%{'$'\e[${colour[faint]}m''%}''%n@%m%f'
+PROMPT=$'\n''%F{cyan}%2~%f'  # cwd
 PROMPT+='${PROMPT_VCS_BRANCH}'$'\n' # print git branch if exists
 PROMPT+='  > '   # actual command prompt
 
