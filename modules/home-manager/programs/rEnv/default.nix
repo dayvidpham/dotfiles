@@ -12,17 +12,27 @@ let
     mkIf
     ;
 
-  rstudio-env = pkgs.rstudioWrapper.override {
-    packages = with pkgs.rPackages; [
+  f-rstudio-env = (_pkgs: _pkgs.rstudioWrapper.override {
+    rstudio = (_pkgs.rstudio.overrideAttrs {
+      version = "2024.12.0+467";
+    }).override {
+      boost = _pkgs.boost186;
+    };
+    packages = with _pkgs.rPackages; [
       tidyverse
       knitr
       rmarkdown
       markdown
       reticulate
       formatR # used to style and format code chunks when rendered
+      arrow
     ];
-  };
+  });
 
+  f-renv = (_pkgs: with _pkgs; [
+    R
+    (f-rstudio-env _pkgs)
+  ]);
 in
 {
   options.CUSTOM.programs.rEnv = {
@@ -31,10 +41,13 @@ in
 
   config = mkIf cfg.enable {
     home.packages = [
-      rstudio-env
       pkgs.texliveFull
-      pkgs.R
       pkgs.pandoc
-    ];
+    ] ++ (f-renv pkgs-unstable);
+
+    xdg.configFile."rstudio/desktop.info".text = ''
+      [General]
+      desktop.renderingEngine=software
+    '';
   };
 }
