@@ -41,13 +41,8 @@ setopt PROMPT_SUBST
 # Formatting for git branch in prompt
 zstyle ':vcs_info:git:*' formats '%F{green}%b%f'
 
-# Alternate prompt formatting: set prompt theme (see prompt for details)
-#prompt fire black red black grey white white
-#prompt redhat
-
 # Custom prompt formatting
-
-RPROMPT='%{'$'\e[${colour[faint]}m''%}''%n@%m%f'
+RPROMPT=$'%{\e[${colour[faint]}m%}%n@%m%{${reset_color}%}'
 PROMPT=$'\n''%F{cyan}%2~%f'  # cwd
 PROMPT+='${PROMPT_VCS_BRANCH}'$'\n' # print git branch if exists
 PROMPT+='  > '   # actual command prompt
