@@ -43,62 +43,6 @@ in
           enable = true;
           config = {
             terminal = terminal;
-            output = {
-              "eDP-1" = {
-                mode = "1920x1200@119.90Hz";
-                scale = "1.25";
-              };
-
-              # NOTE: 3 monitor setup: |V|[ H ]|V|
-              "DP-3" = {
-                # left
-                mode = "2560x1440@169.831Hz";
-                scale = "1.5";
-                position = "0,0";
-                transform = "90";
-                adaptive_sync = "on";
-              };
-              "DP-2" = {
-                # center
-                mode = "2560x1440@169.831Hz";
-                scale = "1.5";
-                position = "960,300";
-                adaptive_sync = "on";
-              };
-              "DP-1" = {
-                # right
-                mode = "2560x1440@169.831Hz";
-                scale = "1.5";
-                position = "2666,0";
-                transform = "90";
-                adaptive_sync = "on";
-              };
-
-              # NOTE: 3 monitor setup: |V|[ H ]|V|
-              "DP-6" = {
-                # left
-                mode = "2560x1440@169.831Hz";
-                scale = "1.5";
-                position = "0,0";
-                transform = "90";
-                adaptive_sync = "on";
-              };
-              "DP-5" = {
-                # center
-                mode = "2560x1440@169.831Hz";
-                scale = "1.5";
-                position = "960,300";
-                adaptive_sync = "on";
-              };
-              "DP-4" = {
-                # right
-                mode = "2560x1440@169.831Hz";
-                scale = "1.5";
-                position = "2666,0";
-                transform = "90";
-                adaptive_sync = "on";
-              };
-            };
             bars = [
               {
                 command = "${getExe waybar-themed-sway}";
