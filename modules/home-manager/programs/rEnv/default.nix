@@ -13,11 +13,6 @@ let
     ;
 
   f-rstudio-env = (_pkgs: _pkgs.rstudioWrapper.override {
-    rstudio = (_pkgs.rstudio.overrideAttrs {
-      version = "2024.12.0+467";
-    }).override {
-      boost = _pkgs.boost186;
-    };
     packages = with _pkgs.rPackages; [
       tidyverse
       knitr
@@ -43,7 +38,7 @@ in
     home.packages = [
       pkgs.texliveFull
       pkgs.pandoc
-    ] ++ (f-renv pkgs-unstable);
+    ] ++ (f-renv pkgs);
 
     xdg.configFile."rstudio/desktop.info".text = ''
       [General]
