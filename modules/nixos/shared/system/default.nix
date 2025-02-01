@@ -102,11 +102,11 @@ in
   #####################################################
   # Package management
   nixpkgs.config.allowUnfree = true;
-  environment.systemPackages = with pkgs; [
+  environment.systemPackages = [
     # greeter
-    greetd.tuigreet
+    pkgs.greetd.tuigreet
     # remote wayland
-    waypipe
+    pkgs-unstable.waypipe
   ];
 
   CUSTOM.programs.git.enable = true;
