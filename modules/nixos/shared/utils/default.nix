@@ -24,13 +24,17 @@
     hwinfo # lower-level hardware (cpu/pci/usb) info
     file # returns device/file type and info
     lshw # list connected hardware devices
+    btop # modern top/htop alternative
+
     # compression stuff
     zip
     unzip
     unrar
+
     # disk
     gparted # GUI disk partitioning
     polkit_gnome
+
     # getters
     wget
     curl
