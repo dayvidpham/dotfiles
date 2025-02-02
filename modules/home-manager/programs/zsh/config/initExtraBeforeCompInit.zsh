@@ -12,12 +12,7 @@ zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
 # | Plugins |
 # +---------+
 
-
-# # Load fzf
-# [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
-# # Load fzf-tab plugin
-# NOTE: fzf-tab needs to be loaded after compinit, but before plugins which will wrap widgets, such as zsh-autosuggestions or fast-syntax-highlighting!!
-# source ${ZDOTDIR}/fzf-tab/fzf-tab.plugin.zsh
+# Plugin loading handled by antidote in zsh/default.nix home-manager module
 
 # +----------------+
 # | Prompt Options |
@@ -41,11 +36,12 @@ setopt PROMPT_SUBST
 # Formatting for git branch in prompt
 zstyle ':vcs_info:git:*' formats '%F{green}%b%f'
 
+
 # Custom prompt formatting
 RPROMPT=$'%{\e[${colour[faint]}m%}%n@%m%{${reset_color}%}'
 PROMPT=$'\n''%F{cyan}%2~%f'  # cwd
-PROMPT+='${PROMPT_VCS_BRANCH}'$'\n' # print git branch if exists
-PROMPT+='  > '   # actual command prompt
+PROMPT+=$'${PROMPT_VCS_BRANCH}\n' # print git branch if exists
+PROMPT+='${VI_MODE} -> '   # actual command prompt
 
 # +------------------+
 # | Antidote Options |

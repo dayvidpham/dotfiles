@@ -104,8 +104,13 @@ rec {
   # Manual setup: don't like how home-manager currently sets up zsh
   CUSTOM.programs.zsh.enable = true;
   programs.atuin = {
-    enable = true;
-    enableZshIntegration = config.programs.zsh.enable;
+    enable = false;
+    enableZshIntegration = false;
+    settings = {
+      style = "compact";
+      inline_height = 30;
+      enter_accept = false;
+    };
   };
   programs.zoxide = {
     enable = true;
@@ -118,6 +123,41 @@ rec {
   programs.fzf = {
     enable = true;
     enableZshIntegration = config.programs.zsh.enable;
+    colors = {
+      "fg" = "#d0d0d0";
+      "fg+" = "#d0d0d0";
+      "bg" = "-1";
+      "bg+" = "#262626";
+
+      "hl" = "#5f87af";
+      "hl+" = "#5fd7ff";
+      "info" = "#afaf87";
+      "marker" = "#80c9b8";
+
+      "prompt" = "#80c9b8";
+      "spinner" = "#9fffd9";
+      "pointer" = "#e27739";
+      "header" = "#87afaf";
+
+      "border" = "#374142";
+      "preview-scrollbar" = "#000000";
+      "label" = "#aeaeae";
+      "query" = "#d9d9d9";
+    };
+    defaultOptions = [
+      "--border='rounded'"
+      "--border-label='~ (fuzzy)'"
+      "--border-label-pos='1'"
+      "--preview-window='border-rounded'"
+      "--prompt='> '"
+      "--marker='>'"
+      "--pointer='◆'"
+      "--separator='─'"
+      "--scrollbar='│'"
+      "--info='right'"
+      "--height 40%"
+      "--layout='reverse'"
+    ];
   };
   programs.eza = {
     enable = true;
