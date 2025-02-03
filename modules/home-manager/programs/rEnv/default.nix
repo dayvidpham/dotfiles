@@ -1,6 +1,7 @@
 { config
 , pkgs
 , pkgs-unstable
+, pkgs-stable
 , lib ? pkgs.lib
 , ...
 }:
@@ -38,7 +39,7 @@ in
     home.packages = [
       pkgs.texliveFull
       pkgs.pandoc
-    ] ++ (f-renv pkgs);
+    ] ++ (f-renv pkgs-stable);
 
     xdg.configFile."rstudio/desktop.info".text = ''
       [General]

@@ -19,8 +19,9 @@
   inputs = {
     #############################
     # NixOS-related inputs
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-24.11";
 
     nixpkgs-wsl.url = "github:NixOS/nixpkgs/nixos-24.05";
     nixos-wsl.url = "github:nix-community/NixOS-WSL/main";
@@ -38,7 +39,7 @@
     };
 
     home-manager = {
-      url = "github:nix-community/home-manager/release-24.11";
+      url = "github:nix-community/home-manager/master";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     home-manager-wsl = {
@@ -60,6 +61,7 @@
       # NixOS-related
     , nixpkgs
     , nixpkgs-unstable
+    , nixpkgs-stable
     , nixpkgs-wsl
     , nixos-wsl
     , flake-registry
@@ -103,6 +105,7 @@
 
       pkgs = import nixpkgs nixpkgs-options;
       pkgs-unstable = import nixpkgs-unstable nixpkgs-options;
+      pkgs-stable = import nixpkgs-stable nixpkgs-options;
       pkgs-wsl = import nixpkgs-wsl nixpkgs-options;
 
       lib = pkgs.lib;
@@ -114,21 +117,25 @@
         nix.settings.experimental-features = [ "nix-command" "flakes" "fetch-closure" ];
         nix.channel.enable = false;
 
-        #nix.registry.nixpkgs.flake = lib.mkDefault nixpkgs;
+        nix.registry.nixpkgs.flake = nixpkgs;
         nix.registry.home-manager.flake = home-manager;
         nix.registry.nixpkgs-unstable.flake = nixpkgs-unstable;
+        nix.registry.nixpkgs-stable.flake = nixpkgs-stable;
         environment.etc."nix/inputs/nixpkgs".source = "${nixpkgs}";
         environment.etc."nix/inputs/nixpkgs-unstable".source = "${nixpkgs-unstable}";
+        environment.etc."nix/inputs/nixpkgs-stable".source = "${nixpkgs-stable}";
         environment.etc."nix/inputs/home-manager".source = "${home-manager}";
 
         nix.nixPath = lib.mkForce [
           "nixpkgs=/etc/nix/inputs/nixpkgs"
           "nixpkgs-unstable=/etc/nix/inputs/nixpkgs-unstable"
+          "nixpkgs-stable=/etc/nix/inputs/nixpkgs-stable"
           "home-manager=/etc/nix/inputs/home-manager"
         ];
         nix.settings.nix-path = lib.mkForce [
           "nixpkgs=/etc/nix/inputs/nixpkgs"
           "nixpkgs-unstable=/etc/nix/inputs/nixpkgs-unstable"
+          "nixpkgs-stable=/etc/nix/inputs/nixpkgs-stable"
           "home-manager=/etc/nix/inputs/home-manager"
         ];
 
@@ -148,6 +155,7 @@
         inherit
           pkgs
           pkgs-unstable
+          pkgs-stable
           libmint
           ;
       };
@@ -155,6 +163,7 @@
       extraSpecialArgs = {
         inherit
           pkgs-unstable
+          pkgs-stable
           nil-lsp
           ;
       };
