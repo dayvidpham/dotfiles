@@ -1,6 +1,7 @@
 { config
 , pkgs
 , pkgs-unstable
+, lib ? pkgs.lib
 , ...
 }:
 
@@ -108,7 +109,12 @@ rec {
   };
   programs.bat = {
     enable = true;
-    extraPackages = with pkgs.bat-extras; [ batdiff batman batgrep batwatch ];
+    extraPackages =
+      let
+        batPkgAttrs = lib.filterAttrs (key: val: lib.isType "package" val) pkgs.bat-extras;
+        batPkgs = lib.mapAttrsToList (key: val: val) batPkgAttrs;
+      in
+      batPkgs;
   };
   programs.fzf = {
     enable = true;

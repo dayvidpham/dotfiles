@@ -44,4 +44,12 @@
 
   programs.nix-index.enable = true;
   programs.nix-index.enableZshIntegration = true;
+
+  programs.bat.enable = true;
+  programs.bat.extraPackages =
+    let
+      batPkgAttrs = lib.filterAttrs (key: val: lib.isType "package" val) pkgs.bat-extras;
+      batPkgs = lib.mapAttrsToList (key: val: val) batPkgAttrs;
+    in
+    batPkgs;
 }
