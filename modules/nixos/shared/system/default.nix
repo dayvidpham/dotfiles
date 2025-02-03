@@ -10,16 +10,6 @@ let
     ;
 in
 {
-  nix = {
-    # NOTE: Nix store gc, optimisation
-    gc = {
-      automatic = true;
-      persistent = false;
-      dates = "7 days";
-    };
-    settings.auto-optimise-store = true;
-  };
-
   #########################
   # Boot loader
   boot = {
@@ -38,6 +28,16 @@ in
 
   #########################
   # General system-config
+  nix = {
+    gc = {
+      automatic = true;
+      persistent = true;
+      dates = "weekly";
+    };
+    settings.auto-optimise-store = true;
+  };
+
+  documentation.enable = true;
 
   ######################################
   # Allow firmware with unfree licenses
