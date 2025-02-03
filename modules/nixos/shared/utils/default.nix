@@ -48,7 +48,8 @@
   programs.bat.enable = true;
   programs.bat.extraPackages =
     let
-      batPkgAttrs = lib.filterAttrs (key: val: lib.isType "package" val) pkgs.bat-extras;
+      isPackage = lib.types.package.check;
+      batPkgAttrs = lib.filterAttrs (key: val: isPackage val) pkgs.bat-extras;
       batPkgs = lib.mapAttrsToList (key: val: val) batPkgAttrs;
     in
     batPkgs;
