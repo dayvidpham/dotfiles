@@ -38,6 +38,7 @@ in
   };
 
   documentation.enable = true;
+  documentation.man.generateCaches = config.documentation.man.enable;
 
   ######################################
   # Allow firmware with unfree licenses
