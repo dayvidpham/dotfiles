@@ -202,7 +202,7 @@ vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper win
 
 -- Paste most recently yanked text, not from unnamed register.
 -- Unnamed register gets constantly overwritten by deletes.
-vim.keymap.set('n', 'p', '"0p', { desc = 'Paste last yanked text' })
+vim.keymap.set('n', '<leader>p', '"0p', { desc = 'Paste last yanked text' })
 
 -- Neovide
 if vim.g.neovide == true then
