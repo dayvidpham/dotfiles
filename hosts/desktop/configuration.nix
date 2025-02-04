@@ -82,13 +82,6 @@
     videoDrivers = [ "nvidia" "amdgpu" "modesetting" ];
   };
 
-
-  ######################################
-  # Gaming
-  programs.steam.enable = true;
-  programs.steam.gamescopeSession.enable = true;
-  programs.gamemode.enable = true;
-
   ######################################
   # Some user setup: Most user-stuff will be in home-manager
   users.users.minttea = {

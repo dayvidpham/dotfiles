@@ -175,13 +175,6 @@ rec {
   CUSTOM.programs.rEnv.enable = true;
   programs.lazygit.enable = true;
 
-  ######################################
-  # NOTE: Gaming
-  home.sessionVariables = {
-    STEAM_EXTRA_COMPAT_TOOLS_PATHS = "${home.homeDirectory}/.steam/root/compatibilitytools.d";
-  };
-
-
   # SSH config
   home.file.".ssh/config".text = ''
     Host csil-server
