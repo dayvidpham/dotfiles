@@ -17,6 +17,7 @@ let
     packages = with _pkgs.rPackages; [
       tidyverse
       knitr
+      bookdown
       rmarkdown
       markdown
       reticulate
