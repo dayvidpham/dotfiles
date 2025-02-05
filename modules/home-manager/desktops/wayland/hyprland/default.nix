@@ -88,6 +88,7 @@ in
     # TODO: Move notification daemon into CUSTOM.theme too
     services.mako = {
       enable = true;
+      defaultTimeout = 5000;
     };
 
 
