@@ -31,7 +31,7 @@ in
   nix = {
     gc = {
       automatic = true;
-      persistent = true;
+      persistent = lib.mkDefault true;
       dates = "weekly";
     };
     settings.auto-optimise-store = true;

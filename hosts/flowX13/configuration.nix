@@ -16,8 +16,8 @@
     # NOTE: Nix store gc, optimisation
     gc = {
       automatic = true;
-      persistent = false;
-      dates = "7 days";
+      persistent = true;
+      dates = "weekly";
     };
     settings.auto-optimise-store = true;
   };
