@@ -60,6 +60,7 @@ rec {
     # Wayland stuff
     wdisplays # gui for display settings
     wl-clipboard-rs # Rust CLI clipboard utility
+    clipse # CLI clipboard manager
     pw-volume # for volume control w/ sway
     grim # screenshot
     slurp # select region on screen
