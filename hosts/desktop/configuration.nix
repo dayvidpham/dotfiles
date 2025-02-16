@@ -38,6 +38,7 @@
       10003
       10020
     ];
+    firewall.allowPing = true;
   };
 
   # Cross-compile for aarch64
@@ -48,6 +49,8 @@
 
   # Enable SSH daemon
   CUSTOM.services.openssh.enable = true;
+
+  services.gitlab-runner.enable = true;
 
   #####################################################
   # Package management
@@ -87,6 +90,42 @@
   users.users.minttea = {
     isNormalUser = true;
     description = "the guy";
-    extraGroups = [ "networkmanager" "wheel" "libvirtd" "video" "gamemode" ];
+    extraGroups = [ "networkmanager" "wheel" "libvirtd" "video" "gamemode" "gitlab-runner" ];
+    subUidRanges = [
+      {
+        startUid = 100000;
+        count = 165535;
+      }
+    ];
+    subGidRanges = [
+      {
+        startGid = 100000;
+        count = 165535;
+      }
+    ];
   };
+
+  users.extraUsers.gitlab-runner = {
+    isNormalUser = false;
+    isSystemUser = true;
+    createHome = false;
+    linger = true;
+    subUidRanges = [
+      {
+        startUid = 100000;
+        count = 165535;
+      }
+    ];
+    subGidRanges = [
+      {
+        startGid = 100000;
+        count = 165535;
+      }
+    ];
+    name = "gitlab-runner";
+    group = "gitlab-runner";
+    extraGroups = [ "wheel" "network" ];
+    description = "For the SFURS GitLab Runner";
+  };
+  users.extraGroups.gitlab-runner = { };
 }
