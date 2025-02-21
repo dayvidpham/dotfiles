@@ -5,6 +5,8 @@
 
 # No longer beeps on ambiguous completion
 unsetopt LIST_BEEP
+# no CLI beep
+unsetopt beep
 
 # Enable colors (???)
 autoload -U colors; colors
