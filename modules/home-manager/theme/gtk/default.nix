@@ -47,7 +47,7 @@
       gtk.themes = {
         breeze = {
           name = "Breeze-Dark";
-          package = pkgs.breeze-gtk;
+          package = pkgs.kdePackages.breeze-gtk;
         };
 
         dracula = {
@@ -59,7 +59,7 @@
       gtk.iconThemes = {
         breeze = {
           name = "Breeze Dark";
-          package = pkgs.breeze-icons;
+          package = pkgs.kdePackages.breeze-icons;
         };
       };
 
