@@ -86,6 +86,7 @@ rec {
     discord
     discord-screenaudio
     zotero
+    ladybird
 
     # Gaming
     protonup
