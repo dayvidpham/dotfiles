@@ -86,7 +86,7 @@ rec {
     discord
     discord-screenaudio
     zotero
-    ladybird
+    vivaldi # alternative Chromium browser
 
     # Gaming
     protonup
