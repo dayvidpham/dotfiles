@@ -87,6 +87,7 @@ rec {
     discord-screenaudio
     zotero
     vivaldi # alternative Chromium browser
+    anytype # proj management/knowledge base
 
     # Gaming
     protonup
@@ -96,6 +97,14 @@ rec {
     neovide # Rust-based native nvim text editor
     nix-search # Fast, indexed replacement for awful builtin `nix search`
   ]);
+
+  #########################
+  # Programming Envs
+
+  CUSTOM.programs.nodejs.enable = true;
+  CUSTOM.programs.rEnv.enable = true;
+
+  # //
 
   programs.direnv = {
     enable = true;
@@ -183,7 +192,6 @@ rec {
   CUSTOM.programs.ghostty.enable = true;
 
   programs.obs-studio.enable = true;
-  CUSTOM.programs.rEnv.enable = true;
   programs.lazygit.enable = true;
 
   # SSH config

@@ -10,5 +10,6 @@
     ./rEnv
     ./zsh
     ./ghostty
+    ./nodejs
   ];
 }
