@@ -101,8 +101,9 @@ in
   services.gnome.gnome-keyring.enable = true;
 
   #####################################################
-  # Package management
+  # Package management, packages
   nixpkgs.config.allowUnfree = true;
+
   environment.systemPackages = [
     # greeter
     pkgs.greetd.tuigreet
@@ -114,6 +115,10 @@ in
   CUSTOM.programs.zsh.enable = true;
   # For OBS and screen sharing/recording
   CUSTOM.v4l2loopback.enable = true;
+
+  # For AppImage compatibility
+  programs.appimage.enable = true;
+  programs.appimage.binfmt = true;
 
   ######################################
   # Greeter
