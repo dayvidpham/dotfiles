@@ -79,6 +79,7 @@ rec {
     mpv # CLI media player
     haruna # mpv Qt/QML frontend for mpv
     vimiv-qt # image viewer with vim bindings
+    xdragon # X/Wayland drag and drop
 
     # Typical user applications
     google-chrome
