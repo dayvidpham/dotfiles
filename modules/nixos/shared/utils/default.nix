@@ -25,6 +25,8 @@
     file # returns device/file type and info
     lshw # list connected hardware devices
     btop # modern top/htop alternative
+    ripgrep # modern grep
+    ripgrep-all # fast search on cli; rg and rga
 
     # compression stuff
     zip
