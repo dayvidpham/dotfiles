@@ -80,6 +80,7 @@ rec {
     haruna # mpv Qt/QML frontend for mpv
     vimiv-qt # image viewer with vim bindings
     xdragon # X/Wayland drag and drop
+    steam-run-free # run things in steam's FHS env
 
     # Typical user applications
     google-chrome
@@ -99,19 +100,22 @@ rec {
     nix-search # Fast, indexed replacement for awful builtin `nix search`
   ]);
 
+
   #########################
   # Programming Envs
 
   CUSTOM.programs.nodejs.enable = true;
   CUSTOM.programs.rEnv.enable = true;
 
-  # //
-
   programs.direnv = {
     enable = true;
     enableZshIntegration = true;
     nix-direnv.enable = true;
   };
+
+
+  #########################
+  # General CLI tools
 
   # NOTE: Zsh setup
   # Manual setup: don't like how home-manager currently sets up zsh
