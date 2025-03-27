@@ -56,6 +56,12 @@
   # Package management
   nixpkgs.config.cudaSupport = true;
 
+  # Use desktop's /nix/ store as nix cache served over ssh
+  nix.sshServe.enable = true;
+  nix.sshServe.keys = [
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFE9Bzi5oGzx9d68d4lVLgo/d1GypUwE7MhAQ7Z32LlR minttea@flowX13"
+  ];
+
   ######################################
   # Window manager & GPU
   programs.hyprland.enable = true;
