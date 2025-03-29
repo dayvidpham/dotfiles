@@ -24,6 +24,9 @@
   nix.settings.extra-allowed-users = [
     "minttea"
   ];
+  nix.settings.extra-builders = [
+    "ssh://desktop"
+  ];
 
 
   #########################
