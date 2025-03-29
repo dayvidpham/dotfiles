@@ -61,6 +61,9 @@
   nix.sshServe.keys = [
     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFE9Bzi5oGzx9d68d4lVLgo/d1GypUwE7MhAQ7Z32LlR minttea@flowX13"
   ];
+  nix.settings.extra-allowed-users = [
+    "minttea"
+  ];
 
   ######################################
   # Window manager & GPU

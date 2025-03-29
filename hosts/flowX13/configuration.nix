@@ -21,6 +21,10 @@
     };
     settings.auto-optimise-store = true;
   };
+  nix.settings.extra-allowed-users = [
+    "minttea"
+  ];
+
 
   #########################
   # Boot loader
