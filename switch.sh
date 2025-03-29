@@ -7,4 +7,3 @@ elif [[ "$1" = "nixos" ]]; then
 elif [[ $# -gt 1 ]]; then
    echo 'ERROR: Zero or one argument [home|nixos] only, home if no arguments given'
 fi
-
