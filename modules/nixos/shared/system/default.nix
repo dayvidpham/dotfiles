@@ -142,6 +142,29 @@ in
   # NOTE: For GTK config, e.g. cursor configuration
   services.dbus.enable = true;
 
+  ##############
+  # Networking
+  #systemd.network.enable = true;
+  services.resolved.enable = true;
+  services.resolved.dnssec = "true";
+  services.resolved.dnsovertls = "true";
+  networking.nameservers = [
+    "2a07:e340::4#base.dns.mullvad.net."
+    "2620:fe::fe#dns.quad9.net."
+    "194.242.2.4#base.dns.mullvad.net."
+    "9.9.9.9#dns.quad9.net."
+  ]
+  ++
+  (lib.optional
+    (config.networking.defaultGateway != null)
+    config.networking.defaultGateway)
+  ;
+
+  services.resolved.fallbackDns = [
+    "1.1.1.1#one.one.one.one."
+  ];
+
+
   # Virtualisation
   # TODO: Split this into separate module
   programs.dconf.enable = true; # virt-manager requires dconf to be enabled

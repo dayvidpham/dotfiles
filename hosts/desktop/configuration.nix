@@ -39,7 +39,34 @@
       10020
     ];
     firewall.allowPing = true;
+    wireguard = {
+      enable = true;
+      useNetworkd = true;
+    };
   };
+
+  systemd.network.links."50-eth-wol" = {
+    matchConfig = {
+      MACAddress = "9c:6b:00:2d:05:1b";
+      Type = "ether";
+    };
+    linkConfig = {
+      MACAddressPolicy = "persistent";
+      NamePolicy = "kernel database onboard slot path";
+      WakeOnLan = "magic";
+    };
+  };
+
+  systemd.network.networks."50-enp8s0" = {
+    matchConfig.Name = "enp8s0";
+    networkConfig = {
+      Description = "eth 2.5 Gbit iface";
+      DHCP = "yes";
+      IPv6AcceptRA = true;
+    };
+    linkConfig.RequiredForOnline = "routable";
+  };
+
 
   # Cross-compile for aarch64
   boot.binfmt.emulatedSystems = [ "aarch64-linux" ];

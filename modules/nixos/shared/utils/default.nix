@@ -27,6 +27,8 @@
     btop # modern top/htop alternative
     ripgrep # modern grep
     ripgrep-all # fast search on cli; rg and rga
+    ethtool # NIC config
+    dig # DNS lookups
 
     # compression stuff
     zip
