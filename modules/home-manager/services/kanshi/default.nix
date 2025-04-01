@@ -53,7 +53,7 @@ in
               mode = "2560x1440";
               scale = 1.00;
               position = "0,0";
-              adaptiveSync = true;
+              adaptiveSync = false;
               transform = "270";
             }
             {
@@ -62,7 +62,7 @@ in
               mode = "2560x1440";
               scale = 1.00;
               position = "1440,374";
-              adaptiveSync = true;
+              adaptiveSync = false;
             }
             {
               # right
@@ -70,7 +70,7 @@ in
               mode = "2560x1440";
               scale = 1.00;
               position = "4000,0";
-              adaptiveSync = true;
+              adaptiveSync = false;
               transform = "270";
             }
 
@@ -119,7 +119,7 @@ in
             {
               criteria = "eDP-1";
               mode = "1920x1200@120.00Hz";
-              scale = 1.25;
+              scale = 1.0;
             }
           ];
         }
