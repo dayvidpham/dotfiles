@@ -24,8 +24,19 @@
   nix.settings.extra-allowed-users = [
     "minttea"
   ];
-  nix.settings.extra-builders = [
+
+
+  ###############################
+  # Locally-hosted binary cache settings
+  nix.settings.builders = pkgs.lib.mkForce [
     "ssh://desktop"
+    "@/etc/nix/machines"
+  ];
+  nix.settings.extra-trusted-substituters = [
+    "ssh://desktop"
+  ];
+  nix.settings.extra-trusted-public-keys = [
+    "cache.desktop.org:Sds3S8EjsjypNfQQekd7gmHg19PFZwbjR7Dko/r9mfY="
   ];
 
 
