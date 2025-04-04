@@ -144,10 +144,40 @@ in
 
   ##############
   # Networking
-  #systemd.network.enable = true;
+  #
+  # man systemd.network 
+  systemd.network.enable = true;
+
+  # returns an attrset
+  CUSTOM.generate.systemd.network = override: lib.mkMerge [
+    override
+    {
+      # Default
+      networkConfig = {
+        DHCP = "yes";
+        IPv6AcceptRA = true;
+      };
+      dhcpV4Config = {
+        UseDNS = false;
+      };
+      dhcpV6Config = {
+        UseDNS = false;
+      };
+      ipv6AcceptRAConfig = {
+        UseDNS = false;
+      };
+    }
+  ];
+
+
+  # man resolved.conf
   services.resolved.enable = true;
-  services.resolved.dnssec = "true";
-  services.resolved.dnsovertls = "true";
+  services.resolved.dnssec = "allow-downgrade";
+  services.resolved.dnsovertls = "opportunistic";
+  services.resolved.domains = [
+    "~."
+  ];
+
   networking.nameservers = [
     "2a07:e340::4#base.dns.mullvad.net."
     "2620:fe::fe#dns.quad9.net."

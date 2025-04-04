@@ -61,8 +61,6 @@
     matchConfig.Name = "enp8s0";
     networkConfig = {
       Description = "eth 2.5 Gbit iface";
-      DHCP = "yes";
-      IPv6AcceptRA = true;
     };
     linkConfig.RequiredForOnline = "routable";
   };

@@ -70,7 +70,22 @@
       10003
       10020
     ];
+    wireguard = {
+      enable = true;
+      useNetworkd = true;
+    };
   };
+
+  systemd.network.networks."50-wlp6s0" = (
+    config.CUSTOM.generate.systemd.network
+      {
+        matchConfig.Name = "wlp6s0";
+        networkConfig = {
+          Description = "Wireless 802.11 WiFi iface";
+        };
+        linkConfig.RequiredForOnline = "routable";
+      }
+  );
 
   # Virtualisation
   programs.dconf.enable = true; # virt-manager requires dconf to be enabled

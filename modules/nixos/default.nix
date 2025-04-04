@@ -13,6 +13,7 @@
     ./programs
     ./shared
     ./virtualisation
+    ./generate
   ];
 
   config = {
