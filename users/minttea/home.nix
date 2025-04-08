@@ -73,6 +73,7 @@ rec {
     tree # fs vis
     ranger # CLI file explorer
     zathura # pdf viewer
+    kdePackages.okular # fully-featured pdf viewer
     jq # CLI json explorer
     fastfetch # C implmentation of neofetch
     nvtopPackages.full # htop but for GPUs
@@ -82,12 +83,16 @@ rec {
     xdragon # X/Wayland drag and drop
     steam-run-free # run things in steam's FHS env
 
+    # For SFU
+    openfortivpn
+    openfortivpn-webview-qt
+
     # Typical user applications
     google-chrome
     spotify
     discord
     discord-screenaudio
-    zotero
+    zotero # ref/citation/bib manager
     vivaldi # alternative Chromium browser
     anytype # proj management/knowledge base
 
