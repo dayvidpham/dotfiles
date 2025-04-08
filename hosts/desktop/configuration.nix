@@ -65,6 +65,9 @@
     linkConfig.RequiredForOnline = "routable";
   };
 
+  programs.wireshark.enable = true;
+  programs.wireshark.dumpcap.enable = true;
+
 
   # Cross-compile for aarch64
   boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
@@ -128,7 +131,7 @@
   users.users.minttea = {
     isNormalUser = true;
     description = "the guy";
-    extraGroups = [ "networkmanager" "wheel" "libvirtd" "video" "gamemode" "gitlab-runner" ];
+    extraGroups = [ "networkmanager" "wheel" "libvirtd" "video" "gamemode" "gitlab-runner" "wireshark" ];
     subUidRanges = [
       {
         startUid = 100000;
