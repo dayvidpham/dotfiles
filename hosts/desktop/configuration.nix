@@ -57,13 +57,15 @@
     };
   };
 
-  systemd.network.networks."50-enp8s0" = {
-    matchConfig.Name = "enp8s0";
-    networkConfig = {
-      Description = "eth 2.5 Gbit iface";
-    };
-    linkConfig.RequiredForOnline = "routable";
-  };
+  systemd.network.networks."50-enp8s0" = (
+    config.CUSTOM.generate.systemd.network {
+      matchConfig.Name = "enp8s0";
+      networkConfig = {
+        Description = "eth 2.5 Gbit iface";
+      };
+      linkConfig.RequiredForOnline = "routable";
+    }
+  );
 
   programs.wireshark.enable = true;
   programs.wireshark.dumpcap.enable = true;
