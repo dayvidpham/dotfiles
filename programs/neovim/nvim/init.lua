@@ -1025,17 +1025,23 @@ require('lazy').setup({
   },
   { -- Highlight, edit, and navigate code
     name = 'nvim-treesitter/nvim-treesitter',
+    dependencies = {
+      'nvim-treesitter/nvim-treesitter-context',
+    },
     dir = vim.g.NIX_DATA_HOME .. '/nvim-treesitter',
     build = ':TSUpdate',
     opts = {
       ensure_installed = {
         'bash',
         'c',
+        'cpp',
+        'cmake',
         'html',
         'lua',
         'luadoc',
         'markdown',
         'nix',
+        'python',
         'typescript',
         'vim',
         'vimdoc',
@@ -1050,6 +1056,11 @@ require('lazy').setup({
         additional_vim_regex_highlighting = { 'ruby' },
       },
       indent = { enable = true, disable = { 'ruby' } },
+
+      -- Incremental selection: Included, see `:help nvim-treesitter-incremental-selection-mod`
+      incremental_selection = {
+        enable = true,
+      },
     },
     config = function(_, opts)
       -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
@@ -1062,9 +1073,10 @@ require('lazy').setup({
       -- TODO: There are additional nvim-treesitter modules that you can use to interact
       -- with nvim-treesitter. You should go explore a few and see what interests you:
       --
-      --    - Incremental selection: Included, see `:help nvim-treesitter-incremental-selection-mod`
-      --    - Show your current context: https://github.com/nvim-treesitter/nvim-treesitter-context
       --    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
+      --
+      --    - Show your current context: https://github.com/nvim-treesitter/nvim-treesitter-context
+      require 'treesitter-context'
     end,
   },
 
