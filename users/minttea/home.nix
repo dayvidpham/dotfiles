@@ -2,6 +2,7 @@
 , pkgs
 , pkgs-unstable
 , lib
+, osConfig
 , ...
 }:
 
@@ -205,36 +206,6 @@ rec {
   programs.lazygit.enable = true;
 
   # SSH config
-  home.file.".ssh/config".text = ''
-    Host csil-server
-        HostName csil-cpu2.csil.sfu.ca
-        User dhpham
-        Port 24
-        ControlPath ${home.homeDirectory}/.ssh/socket.%r@%h:%p
-        ControlMaster auto
-        ControlPersist 2h
 
-    Host csil-tunnel
-        HostName csil-cpu3.csil.sfu.ca
-        User dhpham
-        Port 24
-        ControlPath ${home.homeDirectory}/.ssh/socket.%r@%h:%p
-        ControlMaster auto
-        ControlPersist 2h
-
-    Host csil-client
-        HostName csil-cpu6.csil.sfu.ca
-        User dhpham
-        Port 24
-        ControlPath ${home.homeDirectory}/.ssh/socket.%r@%h:%p
-        ControlMaster auto
-        ControlPersist 2h
-
-    Host *.csil.sfu.ca
-        User dhpham
-        Port 24
-        ControlPath ${home.homeDirectory}/.ssh/socket.%r@%h:%p
-        ControlMaster auto
-        ControlPersist 2h
-  '';
+  home.file.".ssh/config".source = config.lib.file.mkOutOfStoreSymlink ./ssh/config;
 }
