@@ -31,7 +31,7 @@ in
   nix = {
     gc = {
       automatic = true;
-      persistent = lib.mkDefault true;
+      persistent = true;
       dates = "weekly";
     };
     settings.auto-optimise-store = true;
@@ -183,16 +183,16 @@ in
     "2620:fe::fe#dns.quad9.net."
     "194.242.2.4#base.dns.mullvad.net."
     "9.9.9.9#dns.quad9.net."
+  ];
+
+  services.resolved.fallbackDns = [
+    "1.1.1.1#one.one.one.one."
   ]
   ++
   (lib.optional
     (config.networking.defaultGateway != null)
     config.networking.defaultGateway)
   ;
-
-  services.resolved.fallbackDns = [
-    "1.1.1.1#one.one.one.one."
-  ];
 
 
   # Virtualisation
@@ -203,7 +203,7 @@ in
     enable = true;
   };
   virtualisation.libvirtd = {
-    enable = true;
+    enable = false;
     qemu = {
       package = pkgs.qemu_kvm;
       runAsRoot = true;

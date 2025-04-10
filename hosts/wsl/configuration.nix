@@ -21,6 +21,7 @@
   #########################
   # Defines sane defaults
   CUSTOM.shared.enable = true;
+  services.resolved.enable = false;
 
   # Set time zone.
   time.timeZone = "America/Vancouver";

@@ -22,6 +22,10 @@ let
     utils
     keyboards
   ];
+
+  mkDefaults = (defset:
+    lib.mapAttrsRecursive (_: value: mkDefault value) defset
+  );
 in
 {
   options.CUSTOM.shared = {
@@ -29,9 +33,9 @@ in
   };
 
   config =
-    mkIf (cfg.enable) (
-      #mkMerge defaults
-      mkMerge shared-config
-    )
-  ;
+    mkIf (cfg.enable)
+      (
+        #mkMerge defaults
+        (mkMerge (map mkDefaults shared-config))
+      );
 }
