@@ -15,7 +15,6 @@
   wsl.enable = true;
   wsl.defaultUser = "minttea";
   wsl.wslConf.network.hostname = "flowX13-wsl";
-  wsl.wslConf.wsl2.swap = "16GB";
   wsl.interop.register = true;
   wsl.docker-desktop.enable = true;
   networking.hostName = "flowX13-wsl";
