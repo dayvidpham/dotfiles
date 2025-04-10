@@ -216,6 +216,20 @@
             ./modules/nixos
           ];
         };
+        flowX13-wsl = nixpkgs.lib.nixosSystem {
+          inherit
+            system
+            specialArgs
+            ;
+          modules = [
+            (nixos-wsl.nixosModules.default // {
+              system.build.installBootLoader = lib.mkForce "${pkgs.coreutils}/bin/true";
+            })
+            ./hosts/flowX13-wsl/configuration.nix
+            ./modules/nixos
+            noChannelModule
+          ];
+        };
       };
 
       homeConfigurations = {
