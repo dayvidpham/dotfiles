@@ -10,9 +10,37 @@
 {
   "height" = 56; # Waybar height (to be removed for auto height)
   "layer" = "top"; # Waybar at top layer
-  "modules-left" = [ "custom/launcher" "cpu" "memory" "hyprland/workspaces" "custom/weather" ];
-  "modules-center" = [ "custom/spotify" ];
-  "modules-right" = [ "tray" "network" "backlight" "battery" "wireplumber" "clock" "custom/lock" "custom/power-menu" ];
+  "modules-left" = [
+    "custom/launcher"
+    "cpu"
+    "memory"
+    "hyprland/workspaces"
+    "sway/workspaces"
+    "sway/mode"
+    "custom/weather"
+  ];
+  "modules-center" = [
+    "custom/spotify"
+    "sway/window"
+  ];
+  "modules-right" = [
+    "tray"
+    "network"
+    "backlight"
+    "battery"
+    "wireplumber"
+    "clock"
+    "custom/lock"
+    "custom/power-menu"
+  ];
+
+  # NOTE: In case we run sway
+  "sway/mode" = { format = ''<span style="italic">{}</span>''; };
+
+
+  ########
+  # Continue as normal with Hyprland
+
   "hyprland/workspaces" = {
     "format" = "{}";
     "on-click" = "activate";

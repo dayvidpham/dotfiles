@@ -45,11 +45,11 @@ rec {
 
   # NOTE: Hyprland
   CUSTOM.wayland.windowManager.hyprland = {
-    enable = true;
+    enable = false;
   };
   # NOTE: Sway, for remote desktop & waypipe
   CUSTOM.wayland.windowManager.sway = {
-    enable = false;
+    enable = true;
   };
   CUSTOM.services.kanshi.enable = true;
 
@@ -98,6 +98,11 @@ rec {
     enable = true;
     enableZshIntegration = true;
     nix-direnv.enable = true;
+    config = {
+      global = {
+        hide_env_diff = true;
+      };
+    };
   };
 
   # NOTE: Zsh setup

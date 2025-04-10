@@ -16,13 +16,31 @@
   wsl.defaultUser = "minttea";
   wsl.wslConf.network.hostname = "wsl";
   wsl.interop.register = true;
+  wsl.docker-desktop.enable = true;
   networking.hostName = "wsl";
+
+
+  ########
+  # Apparently most recent commit removed this and broke Wayland
+  systemd.services."user-runtime-dir@" = {
+    overrideStrategy = "asDropin";
+    serviceConfig.ExecStart = [
+      "" # unset old value
+      "${pkgs.coreutils}/bin/true"
+    ];
+  };
 
   #########################
   # Defines sane defaults
   CUSTOM.shared.enable = true;
+
+  # Does WSL support running Sway?
+  CUSTOM.programs.sway.enable = true;
+
+  # WSL manages own networking
   services.resolved.enable = false;
   systemd.network.enable = false;
+
 
   # Set time zone.
   time.timeZone = "America/Vancouver";
