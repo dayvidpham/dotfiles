@@ -8,8 +8,12 @@ let
   inherit (lib)
     mkDefault
     ;
+
+  mkDefaults = (defset:
+    lib.mapAttrsRecursive (_: value: mkDefault value) defset
+  );
 in
-{
+mkDefaults {
   #########################
   # Boot loader
   boot = {

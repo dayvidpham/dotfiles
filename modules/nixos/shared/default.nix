@@ -33,9 +33,9 @@ in
   };
 
   config =
-    mkIf (cfg.enable)
-      (
-        #mkMerge defaults
-        (mkMerge (map mkDefaults shared-config))
-      );
+    mkIf (cfg.enable) (
+      #mkMerge defaults
+      mkMerge shared-config
+    )
+  ;
 }

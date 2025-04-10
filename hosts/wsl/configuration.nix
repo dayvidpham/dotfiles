@@ -22,6 +22,7 @@
   # Defines sane defaults
   CUSTOM.shared.enable = true;
   services.resolved.enable = false;
+  systemd.network.enable = false;
 
   # Set time zone.
   time.timeZone = "America/Vancouver";
