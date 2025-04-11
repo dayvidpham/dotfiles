@@ -7,10 +7,17 @@
 let
   inherit (lib)
     mkDefault
+    isAttrs# To check if a value is an attribute set
+    isList# To check if a value is a list
+    isFunction# To check if a value is a function
     ;
 
+  # Condition function: Returns true only for non-nested types
+  # We want to apply mkDefault ONLY IF the value is NOT an attrset, NOT a list, and NOT a function.
+  shouldMakeDefault = value: !(isAttrs value || isList value || isFunction value);
+
   mkDefaults = (defset:
-    lib.mapAttrsRecursive (_: value: mkDefault value) defset
+    lib.mapAttrsRecursiveCond shouldMakeDefault (_: value: mkDefault value) defset
   );
 in
 mkDefaults {

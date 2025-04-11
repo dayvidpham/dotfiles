@@ -23,9 +23,6 @@ let
     keyboards
   ];
 
-  mkDefaults = (defset:
-    lib.mapAttrsRecursive (_: value: mkDefault value) defset
-  );
 in
 {
   options.CUSTOM.shared = {
