@@ -191,9 +191,9 @@ mkIf (config.CUSTOM.shared.enable) {
   ];
 
   networking.nameservers = [
-    "194.242.2.4#base.dns.mullvad.net."
+    #"194.242.2.4#base.dns.mullvad.net."
     "9.9.9.9#dns.quad9.net."
-    "2a07:e340::4#base.dns.mullvad.net."
+    #"2a07:e340::4#base.dns.mullvad.net."
     "2620:fe::fe#dns.quad9.net."
   ];
 
