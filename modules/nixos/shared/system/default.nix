@@ -7,6 +7,7 @@
 let
   inherit (lib)
     mkDefault
+    mkIf
     isAttrs# To check if a value is an attribute set
     isList# To check if a value is a list
     isFunction# To check if a value is a function
@@ -20,7 +21,7 @@ let
     lib.mapAttrsRecursiveCond shouldMakeDefault (_: value: mkDefault value) defset
   );
 in
-mkDefaults {
+mkIf (config.CUSTOM.shared.enable) {
   #########################
   # Boot loader
   boot = {

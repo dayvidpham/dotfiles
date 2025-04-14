@@ -4,8 +4,7 @@
 , lib ? pkgs.lib
 , ...
 }:
-
-{
+lib.mkIf (config.CUSTOM.shared.enable) {
   programs.command-not-found.enable = false;
   #imports = [
   #  ./nix

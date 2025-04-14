@@ -25,14 +25,13 @@ let
 
 in
 {
+  imports = [
+    ./system
+    ./utils
+    ./keyboards
+  ];
+
   options.CUSTOM.shared = {
     enable = mkEnableOption "shared config, tools, and utils between hosts";
   };
-
-  config =
-    mkIf (cfg.enable) (
-      #mkMerge defaults
-      mkMerge shared-config
-    )
-  ;
 }
