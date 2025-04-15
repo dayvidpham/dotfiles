@@ -6,7 +6,12 @@
 # https://github.com/nix-community/NixOS-WSL
 
 { config, lib, pkgs, ... }:
-
+let
+  inherit (lib)
+    mkOverride
+    mkForce
+    ;
+in
 {
   /**
    * nixos-wsl config
@@ -38,8 +43,8 @@
   CUSTOM.programs.sway.enable = true;
 
   # WSL manages own networking
-  services.resolved.enable = false;
-  systemd.network.enable = false;
+  services.resolved.enable = mkForce false;
+  systemd.network.enable = mkForce false;
 
 
   # Set time zone.
