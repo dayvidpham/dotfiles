@@ -113,6 +113,14 @@
     proprietaryDrivers.enable = true;
   };
 
+  ############################
+  # Steam
+
+  programs.steam.enable = true;
+
+  # /Steam
+  ############################
+
   # Virtualisation
   CUSTOM.podman.enable = true;
   # Try getting AMD iGPU to work @_@
