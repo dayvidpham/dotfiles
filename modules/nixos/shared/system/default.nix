@@ -105,6 +105,7 @@ mkIf (config.CUSTOM.shared.enable) {
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
   security.rtkit.enable = true;
+  security.polkit.enable = true;
   programs.mtr.enable = true;
   programs.gnupg.agent = {
     enable = true;
@@ -115,6 +116,7 @@ mkIf (config.CUSTOM.shared.enable) {
   #####################################################
   # Package management, packages
   nixpkgs.config.allowUnfree = true;
+  services.flatpak.enable = true;
 
   environment.systemPackages = [
     # greeter
