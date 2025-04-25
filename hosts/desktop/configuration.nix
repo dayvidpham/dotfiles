@@ -117,6 +117,17 @@
   # Steam
 
   programs.steam.enable = true;
+  programs.steam.gamescopeSession.enable = true;
+  programs.steam.gamescopeSession.args = [
+    "--xwayland-count 2"
+    "-e"
+    "--prefer-output 'DP-5,DP-2'"
+    "-W 2560"
+    "-H 1440"
+    "-r 170"
+  ];
+  programs.gamescope.enable = true;
+  programs.gamescope.capSysNice = true;
 
   # /Steam
   ############################
