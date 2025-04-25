@@ -42,7 +42,6 @@ in
       enable = true;
       systemdTarget = cfg.systemdTarget;
       settings = [
-
         {
           profile.name = "desktop-1-nvidia";
           profile.outputs = [
@@ -73,47 +72,10 @@ in
               adaptiveSync = false;
               transform = "270";
             }
-
           ];
         }
-
-        /* {
-          profile.name = "desktop-2-nvidia";
-          profile.outputs = [
-
-            # NOTE: Desktop, 3 monitor setup: |V|[ H ]|V|
-            {
-              # left
-              criteria = "DP-6";
-              mode = "2560x1440";
-              scale = 1.00;
-              position = "0,0";
-              adaptiveSync = true;
-              transform = "270";
-            }
-            {
-              # center
-              criteria = "DP-5";
-              mode = "2560x1440";
-              scale = 1.00;
-              position = "1440,374";
-              adaptiveSync = true;
-            }
-            {
-              # right
-              criteria = "DP-4";
-              mode = "2560x1440";
-              scale = 1.00;
-              position = "4000,0";
-              adaptiveSync = true;
-              transform = "270";
-            }
-
-          ];
-        } */
-
-        # NOTE: Laptop
         {
+          # NOTE: Laptop
           profile.name = "flowX13";
           profile.outputs = [
             {
