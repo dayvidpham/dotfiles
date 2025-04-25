@@ -7,5 +7,6 @@
     ./theme
     ./services
     ./programs
+    ./games
   ];
 }

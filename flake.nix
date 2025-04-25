@@ -241,6 +241,9 @@
             ./modules/home-manager
             ./programs/neovim
             ./users/minttea/home.nix
+            {
+              CUSTOM.games.minecraft.enable = true;
+            }
           ];
           extraSpecialArgs = extraSpecialArgs // {
             GLOBALS.hostName = "desktop";
