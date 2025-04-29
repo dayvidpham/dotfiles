@@ -188,7 +188,7 @@ rec {
       "--separator='─'"
       "--scrollbar='│'"
       "--info='right'"
-      "--height 40%"
+      "--height '40%'"
     ];
   };
   programs.eza = {
