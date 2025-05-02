@@ -1,30 +1,22 @@
 Host csil-server
     HostName csil-cpu2.csil.sfu.ca
-    User dhpham
-    Port 24
-    ControlPath /home/minttea/.ssh/socket.%r@%h:%p
-    ControlMaster auto
-    ControlPersist 2h
 
 Host csil-tunnel
     HostName csil-cpu3.csil.sfu.ca
-    User dhpham
-    Port 24
-    ControlPath /home/minttea/.ssh/socket.%r@%h:%p
-    ControlMaster auto
-    ControlPersist 2h
 
 Host csil-client
     HostName csil-cpu6.csil.sfu.ca
-    User dhpham
-    Port 24
-    ControlPath /home/minttea/.ssh/socket.%r@%h:%p
-    ControlMaster auto
-    ControlPersist 2h
 
 Host *.csil.sfu.ca
     User dhpham
     Port 24
-    ControlPath /home/minttea/.ssh/socket.%r@%h:%p
+
+Host *.alliancecan.ca
+    User dhpham
+    Port 22
+
+Host *
+    ControlPath ~/.ssh/socket.%r@h:%p
     ControlMaster auto
     ControlPersist 2h
+
