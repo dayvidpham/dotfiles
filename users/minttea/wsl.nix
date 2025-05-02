@@ -94,6 +94,12 @@ rec {
     nix-search # Fast, indexed replacement for awful builtin `nix search`
   ]);
 
+  #########################
+  # Programming Envs
+
+  CUSTOM.programs.nodejs.enable = true;
+  CUSTOM.programs.rEnv.enable = true;
+
   programs.direnv = {
     enable = true;
     enableZshIntegration = true;
@@ -105,9 +111,22 @@ rec {
     };
   };
 
+
+  #########################
+  # General CLI tools
+
   # NOTE: Zsh setup
   # Manual setup: don't like how home-manager currently sets up zsh
   CUSTOM.programs.zsh.enable = true;
+  programs.atuin = {
+    enable = false;
+    enableZshIntegration = false;
+    settings = {
+      style = "compact";
+      inline_height = 30;
+      enter_accept = false;
+    };
+  };
   programs.zoxide = {
     enable = true;
     enableZshIntegration = config.programs.zsh.enable;
@@ -156,8 +175,7 @@ rec {
       "--separator='─'"
       "--scrollbar='│'"
       "--info='right'"
-      "--height 40%"
-      "--layout='reverse'"
+      "--height '40%'"
     ];
   };
   programs.eza = {
@@ -177,40 +195,9 @@ rec {
   CUSTOM.programs.ghostty.enable = true;
 
   programs.obs-studio.enable = false;
-  CUSTOM.programs.rEnv.enable = true;
   programs.lazygit.enable = true;
 
   # SSH config
-  home.file.".ssh/config".text = ''
-    Host csil-server
-        HostName csil-cpu2.csil.sfu.ca
-        User dhpham
-        Port 24
-        ControlPath ${home.homeDirectory}/.ssh/socket.%r@%h:%p
-        ControlMaster auto
-        ControlPersist 2h
 
-    Host csil-tunnel
-        HostName csil-cpu3.csil.sfu.ca
-        User dhpham
-        Port 24
-        ControlPath ${home.homeDirectory}/.ssh/socket.%r@%h:%p
-        ControlMaster auto
-        ControlPersist 2h
-
-    Host csil-client
-        HostName csil-cpu6.csil.sfu.ca
-        User dhpham
-        Port 24
-        ControlPath ${home.homeDirectory}/.ssh/socket.%r@%h:%p
-        ControlMaster auto
-        ControlPersist 2h
-
-    Host *.csil.sfu.ca
-        User dhpham
-        Port 24
-        ControlPath ${home.homeDirectory}/.ssh/socket.%r@%h:%p
-        ControlMaster auto
-        ControlPersist 2h
-  '';
+  home.file.".ssh/config".source = config.lib.file.mkOutOfStoreSymlink ./ssh/config;
 }
