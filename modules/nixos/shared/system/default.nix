@@ -117,6 +117,7 @@ mkIf (config.CUSTOM.shared.enable) {
   # Package management, packages
   nixpkgs.config.allowUnfree = true;
   services.flatpak.enable = true;
+  xdg.portal.enable = true;
 
   environment.systemPackages = [
     # greeter

@@ -28,6 +28,8 @@ lib.mkIf (config.CUSTOM.shared.enable) {
     ripgrep-all # fast search on cli; rg and rga
     ethtool # NIC config
     dig # DNS lookups
+    git
+    git-lfs
 
     # compression stuff
     zip
