@@ -186,7 +186,7 @@ mkIf (config.CUSTOM.shared.enable) {
 
 
   # man resolved.conf
-  services.resolved.enable = true;
+  services.resolved.enable = false;
   services.resolved.dnssec = "allow-downgrade";
   services.resolved.dnsovertls = "opportunistic";
   services.resolved.domains = [
