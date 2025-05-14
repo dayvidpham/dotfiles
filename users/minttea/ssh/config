@@ -16,7 +16,7 @@ Host *.alliancecan.ca
     Port 22
 
 Host *
-    ControlPath ~/.ssh/socket.%r@h:%p
+    ControlPath ~/.ssh/socket.%r@%h:%p
     ControlMaster auto
     ControlPersist 2h
 
