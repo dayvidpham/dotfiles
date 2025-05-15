@@ -72,9 +72,10 @@
     ];
     wireguard = {
       enable = true;
-      useNetworkd = true;
+      useNetworkd = false;
     };
   };
+  services.resolved.enable = false;
 
   systemd.network.networks."50-wlp6s0" = (
     config.CUSTOM.generate.systemd.network {
