@@ -38,10 +38,14 @@ zstyle ':vcs_info:git:*' formats '%F{green}%b%f'
 
 
 # Custom prompt formatting
+# print "<user>@<host>" on right side of terminal
 RPROMPT=$'%{\e[${colour[faint]}m%}%n@%m%{${reset_color}%}'
-PROMPT=$'\n''%F{cyan}%2~%f'  # cwd
-PROMPT+=$'${PROMPT_VCS_BRANCH}\n' # print git branch if exists
-PROMPT+='${VI_MODE} -> '   # actual command prompt
+# cwd
+PROMPT=$'\n''%F{cyan}%2~%f'
+# print git branch if exists
+PROMPT+=$'${PROMPT_VCS_BRANCH}\n'
+# actual command prompt
+PROMPT+='${VI_MODE} -> '
 
 # +------------------+
 # | Antidote Options |
