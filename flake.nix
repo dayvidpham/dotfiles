@@ -26,7 +26,7 @@
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-24.11";
 
-    nixpkgs-wsl.url = "github:NixOS/nixpkgs/nixos-24.05";
+    nixpkgs-wsl.url = "github:NixOS/nixpkgs/nixos-24.11";
     nixos-wsl.url = "github:nix-community/NixOS-WSL/main";
 
     flake-registry = {
@@ -47,7 +47,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     home-manager-wsl = {
-      url = "github:nix-community/home-manager/release-24.05";
+      url = "github:nix-community/home-manager/release-24.11";
       inputs.nixpkgs.follows = "nixpkgs-wsl";
     };
 
@@ -183,6 +183,7 @@
             specialArgs
             ;
           modules = [
+            determinate.nixosModules.default
             ./hosts/flowX13/configuration.nix
             ./modules/nixos
             noChannelModule
@@ -195,6 +196,7 @@
             specialArgs
             ;
           modules = [
+            determinate.nixosModules.default
             ./hosts/desktop/configuration.nix
             ./modules/nixos
             noChannelModule
