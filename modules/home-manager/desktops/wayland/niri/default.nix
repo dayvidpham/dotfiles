@@ -1,8 +1,6 @@
 { config
 , pkgs
 , lib ? pkgs.lib
-, terminal
-, menu
 , GLOBALS
 , niri
 , ...
@@ -13,6 +11,7 @@ let
     mkIf
     mkOption
     mkEnableOption
+    mkPackageOption
     mkMerge
     types
     getExe
@@ -29,29 +28,34 @@ in
 {
   options.CUSTOM.wayland.windowManager.niri = {
     enable = mkEnableOption "complete, personal niri setup";
+    terminalPackage = mkPackageOption pkgs "ghostty" { };
   };
 
-  config = {
-    programs.niri.enable = true;
+  config =
+    let
+      terminal = getExe cfg.terminalPackage;
+    in
+    {
+      programs.niri.enable = true;
 
-    /*
-     * niri config settings found at:
-     * https://github.com/sodiboo/niri-flake/blob/main/docs.md#programsnirisettings
-     */
-    # For overriding
-    #{
-    #  programs.niri.config = with niri.lib.kdl; [
-    #      (node "output" "eDP-1" [
-    #        (leaf "scale" 2.0)
-    #      ])
-    #  ];
-    #}
-    programs.niri.setting = with config.lib.niri.actions; {
-      binds = mergeAttrsList [
-        {
-          "Mod+Enter".action = spawn "${terminal}";
-        }
-      ];
+      /*
+       * niri config settings found at:
+       * https://github.com/sodiboo/niri-flake/blob/main/docs.md#programsnirisettings
+       */
+      # For overriding
+      #{
+      #  programs.niri.config = with niri.lib.kdl; [
+      #      (node "output" "eDP-1" [
+      #        (leaf "scale" 2.0)
+      #      ])
+      #  ];
+      #}
+      programs.niri.settings = with config.lib.niri.actions; {
+        binds = lib.mergeAttrsList [
+          {
+            #"Super+Enter".action = spawn "${terminal}";
+          }
+        ];
+      };
     };
-  };
 }

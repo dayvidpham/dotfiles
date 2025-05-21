@@ -77,13 +77,13 @@
     , nixos-wsl
     , flake-registry
       # Package management
+    , determinate
     , nix
     , nix-multithreaded
     , home-manager
     , home-manager-wsl
       # Community tools
     , nil-lsp
-    , determinate
     , niri
     , ...
     }:
@@ -166,7 +166,6 @@
       # NOTE: Common args to be passed to nixosConfigs and homeConfigurations
       specialArgs = {
         inherit
-          pkgs
           pkgs-unstable
           pkgs-stable
           libmint
