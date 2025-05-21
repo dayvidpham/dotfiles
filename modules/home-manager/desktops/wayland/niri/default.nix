@@ -35,7 +35,7 @@ in
     let
       terminal = getExe cfg.terminalPackage;
     in
-    {
+    mkIf cfg.enable {
       programs.niri.enable = true;
 
       /*
