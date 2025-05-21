@@ -40,6 +40,7 @@
     nix = {
       url = "github:NixOS/nix/2.25-maintenance";
     };
+    determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/*";
 
     home-manager = {
       url = "github:nix-community/home-manager/master";
@@ -75,6 +76,7 @@
     , home-manager-wsl
       # Community tools
     , nil-lsp
+    , determinate
     , ...
     }:
     let
@@ -115,7 +117,7 @@
 
       # NOTE: Needs to be defined here to have access to nixpkgs and home-manager inputs
       noChannelModule = {
-        nix.package = nix.packages."${system}".nix;
+        #nix.package = nix.packages."${system}".nix;
 
         nix.settings.experimental-features = [ "nix-command" "flakes" "fetch-closure" ];
         nix.channel.enable = false;
@@ -208,6 +210,7 @@
           #  pkgs = pkgs-wsl;
           #};
           modules = [
+            determinate.nixosModules.default
             (nixos-wsl.nixosModules.default // {
               system.build.installBootLoader = lib.mkForce "${pkgs.coreutils}/bin/true";
             })
