@@ -12,6 +12,7 @@ in
   imports = [
     ./hyprland
     ./sway
+    ./niri
   ];
 
   config = {

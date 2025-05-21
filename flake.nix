@@ -58,6 +58,13 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    #############################
+    # Other software
+    niri = {
+      url = "github:sodiboo/niri-flake";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+      inputs.nixpkgs-stable.follows = "nixpkgs-stable";
+    };
   };
 
   outputs =
@@ -77,6 +84,7 @@
       # Community tools
     , nil-lsp
     , determinate
+    , niri
     , ...
     }:
     let
@@ -162,6 +170,7 @@
           pkgs-unstable
           pkgs-stable
           libmint
+          niri
           ;
       };
 
@@ -170,6 +179,7 @@
           pkgs-unstable
           pkgs-stable
           nil-lsp
+          niri
           ;
       };
     in
@@ -197,6 +207,7 @@
             ;
           modules = [
             determinate.nixosModules.default
+            niri.nixosModules.niri
             ./hosts/desktop/configuration.nix
             ./modules/nixos
             noChannelModule
@@ -243,6 +254,7 @@
         "minttea@desktop" = home-manager.lib.homeManagerConfiguration {
           inherit pkgs;
           modules = [
+            niri.homeModules.niri
             ./modules/home-manager
             ./programs/neovim
             ./users/minttea/home.nix
