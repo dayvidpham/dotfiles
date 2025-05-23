@@ -193,6 +193,7 @@
             ;
           modules = [
             determinate.nixosModules.default
+            niri.nixosModules.niri
             ./hosts/flowX13/configuration.nix
             ./modules/nixos
             noChannelModule
@@ -237,6 +238,7 @@
         "minttea@flowX13" = home-manager.lib.homeManagerConfiguration {
           inherit pkgs;
           modules = [
+            niri.homeModules.niri
             ./modules/home-manager
             ./programs/neovim
             ./users/minttea/home.nix
