@@ -194,9 +194,9 @@
           modules = [
             determinate.nixosModules.default
             niri.nixosModules.niri
-            ./hosts/flowX13/configuration.nix
             ./modules/nixos
             noChannelModule
+            ./hosts/flowX13/configuration.nix
           ];
         };
 
@@ -208,9 +208,9 @@
           modules = [
             determinate.nixosModules.default
             niri.nixosModules.niri
-            ./hosts/desktop/configuration.nix
             ./modules/nixos
             noChannelModule
+            ./hosts/desktop/configuration.nix
           ];
         };
 

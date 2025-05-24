@@ -14,14 +14,14 @@ let
 in
 {
   options = {
-    cfg.enable = mkEnableOption "Setup for niri env";
+    CUSTOM.programs.niri.enable = mkEnableOption "Setup for niri env";
   };
 
   config = mkIf cfg.enable {
     programs.niri.enable = true;
     security.polkit.enable = true;
 
-    CUSTOM.programs.swaylock.enable = true;
+    CUSTOM.programs.hyprlock.enable = true;
     CUSTOM.programs.eww.enable = true;
   };
 }

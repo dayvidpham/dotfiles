@@ -32,6 +32,7 @@ in
   imports = [
     ./sway
     ./hyprland
+    ./niri
   ];
 
   config = mkIf wayland-enabled {

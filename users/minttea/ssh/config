@@ -15,6 +15,10 @@ Host *.alliancecan.ca
     User dhpham
     Port 22
 
+Host desktop
+    User minttea
+    Port 8108
+
 Host *
     ControlPath ~/.ssh/socket.%r@%h:%p
     ControlMaster auto

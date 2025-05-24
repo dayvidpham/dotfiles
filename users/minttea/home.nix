@@ -43,6 +43,7 @@ rec {
 
   #####################
   # NOTE: Desktop Environment
+  CUSTOM.services.kanshi.enable = true;
 
   # NOTE: Hyprland
   CUSTOM.wayland.windowManager.hyprland = {
@@ -52,7 +53,10 @@ rec {
   CUSTOM.wayland.windowManager.sway = {
     enable = true;
   };
-  CUSTOM.services.kanshi.enable = true;
+
+  # NOTE: niri, experimental
+  CUSTOM.wayland.windowManager.niri.enable = true;
+
 
   #####################
   # NOTE: General programs and packages

@@ -60,6 +60,10 @@
   # General system-config
   CUSTOM.shared.enable = true;
 
+  # ################################
+  # Desktop
+  CUSTOM.programs.niri.enable = true;
+
   # Networking
   networking = {
     hostName = "flowX13"; # Define your hostname.
