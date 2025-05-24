@@ -216,5 +216,5 @@ rec {
 
   # SSH config
 
-  home.file.".ssh/config".source = config.lib.file.mkOutOfStoreSymlink ./ssh/config;
+  home.file.".ssh/config".source = config.lib.file.mkOutOfStoreSymlink /home/minttea/dotfiles/users/minttea/ssh/config;
 }
