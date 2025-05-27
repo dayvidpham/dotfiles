@@ -24,8 +24,6 @@
       [ "gtk" "enable" ])
   ];
 
-  options.CUSTOM.theme = { };
-
   config =
     let
       cfg = config.CUSTOM.theme;
@@ -57,6 +55,7 @@
       };
 
       gtk.iconThemes = {
+
         breeze = {
           name = "Breeze Dark";
           package = pkgs.kdePackages.breeze-icons;

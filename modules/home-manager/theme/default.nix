@@ -18,6 +18,7 @@ in
 {
   imports = [
     ./gtk
+    ./qt
   ];
 
   options.CUSTOM.theme = {
