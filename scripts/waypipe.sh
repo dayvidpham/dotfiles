@@ -1,9 +1,7 @@
 #!/usr/bin/env sh
 
-hidedir="${0%/*}/_hide"
-homeip=$(cat "${hidedir}/home/ip.txt")
-sshport=$(cat "${hidedir}/home/sshport.txt")
+source ./lib.sh
 
 waypipe --no-gpu \
-    ssh -t -p ${sshport} minttea@${homeip} 'sway --unsupported-gpu'
+    ssh -t -p ${ssh_port} minttea@${home_ip} 'sway --unsupported-gpu'
 
