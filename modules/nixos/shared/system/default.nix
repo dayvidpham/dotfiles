@@ -157,6 +157,9 @@ mkIf (config.CUSTOM.shared.enable) {
   # NOTE: For GTK config, e.g. cursor configuration
   services.dbus.enable = true;
 
+  # Terminal multiplexer
+  programs.screen.enable = lib.mkDefault true;
+
   ##############
   # Networking
   #
