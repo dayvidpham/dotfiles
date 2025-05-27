@@ -17,7 +17,7 @@
     "hyprland/workspaces"
     "sway/workspaces"
     "sway/mode"
-    "custom/weather"
+    "niri/workspaces"
   ];
   "modules-center" = [
     "custom/spotify"
@@ -29,6 +29,7 @@
     "backlight"
     "battery"
     "wireplumber"
+    "custom/weather"
     "clock"
     "custom/lock"
     "custom/power-menu"
@@ -52,6 +53,17 @@
   "hyprland/window" = {
     "format" = "{}";
   };
+
+  ########
+  # Niri
+
+  "niri/workspaces" = {
+    "format" = "{index}";
+    #"on-click" = "activate";
+  };
+
+  ########
+
   "tray" = {
     "spacing" = 10;
   };
@@ -62,13 +74,13 @@
   };
 
   "cpu" = {
-    "interval" = 10;
+    "interval" = 5;
     "format" = " {}%";
     "max-length" = 10;
     "on-click" = "";
   };
   "memory" = {
-    "interval" = 30;
+    "interval" = 5;
     "format" = " {}%"; #       
     "format-alt" = " {used:0.1f}GB";
     "max-length" = 10;

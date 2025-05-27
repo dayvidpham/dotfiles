@@ -108,6 +108,9 @@
   # Sway for remote desktop & waypipe
   CUSTOM.programs.sway.enable = true;
 
+  # niri, experimental
+  CUSTOM.programs.niri.enable = true;
+
   CUSTOM.hardware.nvidia = {
     enable = true;
     proprietaryDrivers.enable = true;
