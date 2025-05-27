@@ -713,7 +713,7 @@ require('lazy').setup({
 
         ---------------
         -- Python
-        pyright = {},
+        --pyright = {},
         ruff = {},
         pylsp = {
           plugins = {
