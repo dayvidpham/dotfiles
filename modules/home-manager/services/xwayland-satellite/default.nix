@@ -54,13 +54,13 @@ let
 
       # Parse from journalctl
       JOURNAL_DISPLAY_LINE=$(echo "$JOURNAL_OUTPUT" | grep -o 'Connected to Xwayland on :[[:alnum:]]*')
-      DISPLAY="$(echo "$JOURNAL_DISPLAY_LINE" | sed 's/.*\(:.*\)/\1/')"
+      DISPLAY="$(expr "$JOURNAL_DISPLAY_LINE" : '.*\(:[0-9.]*\)$' )"
       export DISPLAY
 
       echo "[INFO] Extracted this line from journalctl: '$JOURNAL_DISPLAY_LINE'"
       echo "[INFO] Extracted variable DISPLAY='$DISPLAY' from the above line"
 
-      dbus-update-activation-environment --verbose --systemd DBUS_SESSION_BUS_ADDRESS DISPLAY="$DISPLAY"
+      dbus-update-activation-environment --verbose --systemd DBUS_SESSION_BUS_ADDRESS DISPLAY
     '';
   };
 
@@ -74,7 +74,7 @@ let
     };
     Service = {
       Type = "oneshot";
-      ExecStart = "${xwayland-satellite-ready_sh}";
+      ExecStart = "${xwayland-satellite-ready_sh}/bin/${xwayland-satellite-ready_sh.name}";
       StandardOutput = "journal";
     };
     Install = {
