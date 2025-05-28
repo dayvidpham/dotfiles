@@ -8,5 +8,6 @@
     ./hypridle
     ./swww
     ./podman
+    ./xwayland-satellite
   ];
 }

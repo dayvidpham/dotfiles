@@ -148,7 +148,7 @@ mkIf (config.CUSTOM.shared.enable) {
     settings = {
       default_session = {
         command = ''
-          ${pkgs.greetd.tuigreet}/bin/tuigreet --remember-session --remember --time --asterisks --cmd "Hyprland"
+          ${pkgs.greetd.tuigreet}/bin/tuigreet --remember-session --remember --time --asterisks --cmd "niri-session"
         '';
         user = "greeter";
       };
@@ -159,6 +159,7 @@ mkIf (config.CUSTOM.shared.enable) {
 
   # Terminal multiplexer
   programs.screen.enable = lib.mkDefault true;
+  programs.xwayland.enable = true;
 
   ##############
   # Networking

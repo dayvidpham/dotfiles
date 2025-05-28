@@ -22,9 +22,9 @@ in
       mkEnableOption "setup Wayland displays to personal preference";
     systemdTarget = mkOption {
       type = lib.types.str;
-      default = "graphical-session.target";
+      default = config.wayland.systemd.target;
       description = "systemd desktop unit dependency";
-      example = "graphical-session.target";
+      example = "config.wayland.systemd.target";
     };
   };
 

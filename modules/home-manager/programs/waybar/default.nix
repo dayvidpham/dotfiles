@@ -22,7 +22,7 @@ in
       "Customized waybar, dependant on the current window manager";
 
     windowManager = mkOption {
-      type = lib.types.enum [ "hyprland" "sway" ];
+      type = lib.types.enum [ "niri" "hyprland" "sway" ];
       description = "Which Wayland window manager is enabled";
       example = "hyprland";
     };
@@ -39,7 +39,7 @@ in
   };
 
   config = mkMerge [
-    (mkIf (cfg.enable && cfg.windowManager == "hyprland")
+    (mkIf (cfg.enable)
       (mkIf (cfg.theme == "balcony") (
         let
           waybar-themed = pkgs.waybar-balcony;

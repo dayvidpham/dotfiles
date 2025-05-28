@@ -134,8 +134,6 @@ in
       nvidiaSettings = true;
     } // (configureHost cfg.hostName nvidia);
 
-    programs.xwayland.enable = true;
-
     services.xserver = {
       enable = true;
       # NOTE: If not set, will use nouveau drivers

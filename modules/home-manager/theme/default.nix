@@ -36,10 +36,13 @@ in
       cfg = config.CUSTOM.theme;
     in
     mkIf cfg.enable (mkMerge [
+      {
+        services.xsettingsd.enable = true;
+      }
       (mkIf (cfg.name == "balcony") {
         CUSTOM.programs.waybar = {
           enable = true;
-          windowManager = "hyprland";
+          windowManager = "niri";
           theme = "balcony";
         };
         # Needed for waybar spotify module

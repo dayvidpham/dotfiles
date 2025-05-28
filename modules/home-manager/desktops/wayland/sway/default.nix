@@ -30,7 +30,7 @@ in
         enable = true;
         # WARN: Deprecated
         #windowManager = "sway";
-        windowManager = "hyprland"; # WARN: VERY HACKY
+        #windowManager = "hyprland"; # WARN: VERY HACKY
         theme = "balcony";
       };
 

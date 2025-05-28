@@ -36,6 +36,8 @@ in
       terminal = getExe cfg.terminalPackage;
     in
     mkIf cfg.enable {
+      CUSTOM.services.xwayland-satellite.enable = true;
+
       programs.niri.enable = true;
       programs.niri.config = null;
       programs.niri.settings = null;
