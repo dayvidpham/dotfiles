@@ -12,6 +12,7 @@
     in
     lib.mkIf cfg.enable {
       home.packages = with pkgs; [
+        kdePackages.breeze
         gnome-settings-daemon
         gsettings-desktop-schemas
         gsettings-qt

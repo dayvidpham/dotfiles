@@ -24,6 +24,64 @@ let
     hasAttr
     ;
 
+  xwayland-satellite_service = (target: {
+    Unit = {
+      Description = "Standalone rootless Xwayland compositor running in Wayland";
+      BindsTo = target;
+      PartOf = target;
+      After = target;
+      Requisite = target;
+    };
+    Service = {
+      Type = "notify";
+      NotifyAccess = "all";
+      ExecStart = "${cfg.package}/bin/xwayland-satellite";
+      StandardOutput = "journal";
+    };
+    Install = {
+      WantedBy = [ target ];
+    };
+  });
+
+  xwayland-satellite-ready_sh = pkgs.writeShellApplication {
+    name = "xwayland-satellite-ready";
+    runtimeInputs = [ pkgs.dbus pkgs.systemd ];
+    text = ''
+      #!/usr/bin/env sh
+
+      XWAYLAND_SATELLITE_START_TIME="$(systemctl --user show xwayland-satellite.service --property=ExecMainStartTimestamp --value)"
+      JOURNAL_OUTPUT="$(journalctl --user -u xwayland-satellite.service --since="$XWAYLAND_SATELLITE_START_TIME" -o "cat")"
+
+      # Parse from journalctl
+      JOURNAL_DISPLAY_LINE=$(echo "$JOURNAL_OUTPUT" | grep -o 'Connected to Xwayland on :[[:alnum:]]*')
+      DISPLAY="$(echo "$JOURNAL_DISPLAY_LINE" | sed 's/.*\(:.*\)/\1/')"
+      export DISPLAY
+
+      echo "[INFO] Extracted this line from journalctl: '$JOURNAL_DISPLAY_LINE'"
+      echo "[INFO] Extracted variable DISPLAY='$DISPLAY' from the above line"
+
+      dbus-update-activation-environment --verbose --systemd DBUS_SESSION_BUS_ADDRESS DISPLAY="$DISPLAY"
+    '';
+  };
+
+  xwayland-satellite-ready_service = (target: {
+    Unit = {
+      Description = "Exports the DBUS_SESSION_BUS_ADDRESS, DISPLAY variables";
+      BindsTo = target;
+      PartOf = target;
+      After = target;
+      Requisite = target;
+    };
+    Service = {
+      Type = "oneshot";
+      ExecStart = "${xwayland-satellite-ready_sh}";
+      StandardOutput = "journal";
+    };
+    Install = {
+      WantedBy = [ target ];
+    };
+  });
+
 in
 {
   options.CUSTOM.services.xwayland-satellite = {
@@ -37,9 +95,9 @@ in
     };
     systemd.target = mkOption {
       type = lib.types.str;
-      default = config.wayland.systemd.target;
+      default = "graphical-session-pre.target";
       description = "systemd desktop unit dependency";
-      example = "graphical-session.target";
+      example = "graphical-session-pre.target";
     };
   };
 
@@ -48,23 +106,9 @@ in
       cfg.package
     ];
 
-    systemd.user.services.xwayland-satellite = mkIf cfg.systemd.enable {
-      Unit = {
-        Description = "Standalone rootless Xwayland compositor running in Wayland";
-        BindsTo = cfg.systemd.target;
-        PartOf = cfg.systemd.target;
-        After = cfg.systemd.target;
-        Requisite = cfg.systemd.target;
-      };
-      Service = {
-        Type = "notify";
-        NotifyAccess = "all";
-        ExecStart = "${cfg.package}/bin/xwayland-satellite";
-        StandardOutput = "journal";
-      };
-      Install = {
-        WantedBy = [ cfg.systemd.target ];
-      };
+    systemd.user.services = {
+      xwayland-satellite = mkIf cfg.systemd.enable (xwayland-satellite_service cfg.systemd.target);
+      xwayland-satellite-ready = mkIf cfg.systemd.enable (xwayland-satellite-ready_service "xwayland-satellite.service");
     };
   };
 }
