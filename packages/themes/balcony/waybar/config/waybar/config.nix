@@ -58,7 +58,7 @@
   # Niri
 
   "niri/workspaces" = {
-    "format" = "{index}";
+    "format" = "{}";
     #"on-click" = "activate";
   };
 

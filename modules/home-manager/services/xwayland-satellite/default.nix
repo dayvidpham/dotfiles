@@ -11,7 +11,6 @@ let
     mkOption
     mkEnableOption
     mkPackageOption
-    mkDefaultOption
     mkMerge
     types
     getExe
@@ -24,12 +23,18 @@ let
   inherit (builtins)
     hasAttr
     ;
+
 in
 {
   options.CUSTOM.services.xwayland-satellite = {
     enable = mkEnableOption "enable xwayland-satellite";
     package = mkPackageOption pkgs "xwayland-satellite" { };
-    systemd.enable = mkEnableOption "enable as systemd service";
+    systemd.enable = mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "enable the systemd 'xwayland-satellite.service' to launch on start";
+      example = "true";
+    };
     systemd.target = mkOption {
       type = lib.types.str;
       default = config.wayland.systemd.target;
@@ -58,7 +63,7 @@ in
         StandardOutput = "journal";
       };
       Install = {
-        WantedBy = cfg.systemd.target;
+        WantedBy = [ cfg.systemd.target ];
       };
     };
   };
