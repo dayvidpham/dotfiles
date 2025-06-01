@@ -95,9 +95,9 @@ in
     };
     systemd.target = mkOption {
       type = lib.types.str;
-      default = "graphical-session-pre.target";
+      default = config.wayland.systemd.target;
       description = "systemd desktop unit dependency";
-      example = "graphical-session-pre.target";
+      example = "graphical-session.target";
     };
   };
 
