@@ -33,7 +33,9 @@ in
           init.defaultBranch = "main";
           user.name = "dayvidpham";
           user.email = "dayvidpham@gmail.com";
-          #credential.helper = "${pkgs.gitFull}/bin/git-credential-libsecret";
+          credential.helper = "${pkgs.gitFull}/bin/git-credential-libsecret";
+          push.autoSetupRemote = "true";
+          worktree.guessRemote = "true";
         };
       };
     };
