@@ -44,7 +44,6 @@ in
       programs.niri.settings = null;
       xdg.configFile."niri/config.kdl".source = config.lib.file.mkOutOfStoreSymlink /home/minttea/dotfiles/modules/home-manager/desktops/wayland/niri/config.kdl;
 
-      programs.xwayland.enable = true;
       home.packages = [ init-xwayland-satellite ];
       # WARN: deprecated
       #CUSTOM.services.xwayland-satellite.enable = true;
