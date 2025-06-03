@@ -49,10 +49,6 @@ return {
     --- Duplicate for Ctrl
     ---
 
-    vim.keymap.set('n', '<C-l>', function()
-      harpoon.ui:toggle_quick_menu(harpoon:list())
-    end, { desc = 'Harpoon: Show [l]ist' })
-
     -- Convenient 1-4 harpoon select
     vim.keymap.set('n', '<C-1>', function()
       harpoon:list():select(1)
