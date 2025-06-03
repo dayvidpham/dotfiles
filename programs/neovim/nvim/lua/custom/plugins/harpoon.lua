@@ -38,10 +38,40 @@ return {
     end, { desc = 'Harpoon: Select file 4' })
 
     -- Toggle previous & next buffers stored within Harpoon list
-    vim.keymap.set('n', '<m-k>', function()
+    vim.keymap.set('n', '<M-k>', function()
       harpoon:list():prev()
     end)
-    vim.keymap.set('n', '<m-j>', function()
+    vim.keymap.set('n', '<M-j>', function()
+      harpoon:list():next()
+    end)
+
+    --------------------------
+    --- Duplicate for Ctrl
+    ---
+
+    vim.keymap.set('n', '<C-l>', function()
+      harpoon.ui:toggle_quick_menu(harpoon:list())
+    end, { desc = 'Harpoon: Show [l]ist' })
+
+    -- Convenient 1-4 harpoon select
+    vim.keymap.set('n', '<C-1>', function()
+      harpoon:list():select(1)
+    end, { desc = 'Harpoon: Select file 1' })
+    vim.keymap.set('n', '<C-2>', function()
+      harpoon:list():select(2)
+    end, { desc = 'Harpoon: Select file 2' })
+    vim.keymap.set('n', '<C-3>', function()
+      harpoon:list():select(3)
+    end, { desc = 'Harpoon: Select file 3' })
+    vim.keymap.set('n', '<C-4>', function()
+      harpoon:list():select(4)
+    end, { desc = 'Harpoon: Select file 4' })
+
+    -- Toggle previous & next buffers stored within Harpoon list
+    vim.keymap.set('n', '<C-k>', function()
+      harpoon:list():prev()
+    end)
+    vim.keymap.set('n', '<C-j>', function()
       harpoon:list():next()
     end)
   end,
