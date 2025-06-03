@@ -1,6 +1,6 @@
 { config
 , pkgs
-, lib ? pkgs.lib
+, lib ? config.lib
 , ...
 }:
 let
@@ -24,10 +24,7 @@ in
     programs.ghostty.installVimSyntax = true;
     programs.ghostty.enableZshIntegration = config.programs.zsh.enable;
     programs.ghostty.enableBashIntegration = true;
-    programs.ghostty.settings = {
-      theme = mkDefault "Ghostty Default Dark";
-      command = mkDefault "${pkgs.zsh}/bin/zsh";
-      font-size = mkDefault 14;
-    };
+
+    xdg.configFile."ghostty/config".source = mkDefault (config.lib.file.mkOutOfStoreSymlink "/home/minttea/dotfiles/modules/home-manager/programs/ghostty/config");
   };
 }
