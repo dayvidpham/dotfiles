@@ -84,6 +84,7 @@ let
 
 in
 {
+  # WARN: Depcrecated
   options.CUSTOM.services.xwayland-satellite = {
     enable = mkEnableOption "enable xwayland-satellite";
     package = mkPackageOption pkgs "xwayland-satellite" { };
