@@ -25,6 +25,6 @@ in
     programs.ghostty.enableZshIntegration = config.programs.zsh.enable;
     programs.ghostty.enableBashIntegration = true;
 
-    xdg.configFile."ghostty/config".source = mkDefault (config.lib.file.mkOutOfStoreSymlink "/home/minttea/dotfiles/modules/home-manager/programs/ghostty/config");
+    xdg.configFile."ghostty/config".source = lib.mkForce (config.lib.file.mkOutOfStoreSymlink "/home/minttea/dotfiles/modules/home-manager/programs/ghostty/config");
   };
 }
