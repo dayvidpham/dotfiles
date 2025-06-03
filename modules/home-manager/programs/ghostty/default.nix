@@ -25,8 +25,8 @@ in
     programs.ghostty.enableZshIntegration = config.programs.zsh.enable;
     programs.ghostty.enableBashIntegration = true;
     programs.ghostty.settings = {
-      theme = mkDefault "catppuccin-mocha";
-      command = mkDefault "${pkgs.bash}/bin/bash";
+      theme = mkDefault "Ghostty-Default-Dark";
+      command = mkDefault "${pkgs.zsh}/bin/zsh";
       font-size = mkDefault 14;
     };
   };
