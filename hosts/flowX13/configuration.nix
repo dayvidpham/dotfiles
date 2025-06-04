@@ -99,7 +99,7 @@
   };
 
   # Virtualisation
-  CUSTOM.podman.enable = true;
+  CUSTOM.virtualisation.podman.enable = true;
 
   # Set time zone.
   time.timeZone = "America/Vancouver";

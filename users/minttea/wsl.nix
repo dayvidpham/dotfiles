@@ -30,7 +30,7 @@ rec {
   };
 
   # Virtualisation
-  CUSTOM.podman.enable = true;
+  CUSTOM.services.podman.enable = true;
 
   dconf.enable = true;
   dconf.settings = {

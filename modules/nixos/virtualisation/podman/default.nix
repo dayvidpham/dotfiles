@@ -4,7 +4,7 @@
 , ...
 }:
 let
-  cfg = config.CUSTOM.podman;
+  cfg = config.CUSTOM.virtualisation.podman;
 
   inherit (lib)
     mkIf
@@ -15,7 +15,7 @@ let
 
 in
 {
-  options.CUSTOM.podman = {
+  options.CUSTOM.virtualisation.podman = {
     enable = mkEnableOption "custom system-level podman config";
   };
 

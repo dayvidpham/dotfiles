@@ -136,7 +136,7 @@
   ############################
 
   # Virtualisation
-  CUSTOM.podman.enable = true;
+  CUSTOM.virtualisation.podman.enable = true;
   # Try getting AMD iGPU to work @_@
   # hardware.amdgpu = {
   #   amdvlk.enable = true;
@@ -189,7 +189,7 @@
     ];
     name = "gitlab-runner";
     group = "gitlab-runner";
-    extraGroups = [ "wheel" "network" ];
+    extraGroups = [ "network" ];
     description = "For the SFURS GitLab Runner";
   };
   users.extraGroups.gitlab-runner = { };
