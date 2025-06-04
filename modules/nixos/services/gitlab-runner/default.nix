@@ -106,6 +106,12 @@ in
       serviceConfig = {
         User = "gitlab-runner";
         Group = "gitlab-runner";
+
+        UpheldBy = "multi-user.target";
+        Requisite = "multi-user.target";
+        BindsTo = "multi-user.target";
+        After = "multi-user.target";
+
       };
     };
 
