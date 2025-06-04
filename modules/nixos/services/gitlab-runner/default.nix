@@ -108,12 +108,10 @@ in
         Group = "gitlab-runner";
       };
 
-      unitConfig = {
-        upheldBy = [ "network-online.target" ];
-        requisite = [ "network-online.target" ];
-        bindsTo = [ "network-online.target" ];
-        after = [ "network-online.target" ];
-      };
+      upheldBy = [ "network-online.target" ];
+      requisite = [ "network-online.target" ];
+      bindsTo = [ "network-online.target" ];
+      after = [ "network-online.target" ];
     };
 
     security.sudo = mkIf (cfg.sudoInto.enable) {
