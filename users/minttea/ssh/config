@@ -1,3 +1,5 @@
+Include config.d/*
+
 Host csil-server
     HostName csil-cpu2.csil.sfu.ca
 
