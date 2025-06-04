@@ -81,7 +81,11 @@
   CUSTOM.services.openssh.enable = true;
 
   # For non-root gitlab-runner running from systemd user service
-  CUSTOM.setup.gitlab-runner-podman.enable = true;
+  CUSTOM.services.gitlab-runner = {
+    enable = true;
+    sudoInto.enable = true;
+    sudoInto.fromUser = "minttea";
+  };
 
   #####################################################
   # Package management

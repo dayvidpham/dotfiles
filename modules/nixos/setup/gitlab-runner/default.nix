@@ -4,7 +4,7 @@
 , ...
 }:
 let
-  cfg = config.CUSTOM.setup.gitlab-runner-podman;
+  cfg = config.CUSTOM.services.gitlab-runner;
 
   inherit (lib)
     mkIf
@@ -16,13 +16,23 @@ let
   runnerUid = 2000;
 in
 {
-  options.CUSTOM.setup.gitlab-runner-podman = {
+  options.CUSTOM.services.gitlab-runner = {
     enable = mkEnableOption "Adds and configures gitlab-runner user, and enables podman";
     user.uid = lib.mkOption {
       type = lib.types.int;
       default = runnerUid;
       description = "the uid of the gitlab-runner account";
       example = "2000 (must be between 1000 and 655534)";
+    };
+
+    sudoInto = {
+      enable = mkEnableOption "Allows the user {option}sudoerUser to call sudo -u gitlab-runner -i without password";
+      fromUser = mkOption {
+        type = lib.types.str;
+        default = null;
+        description = "the user that can call sudo and login to gitlab-runner without password";
+        example = "minttea";
+      };
     };
   };
 
@@ -74,23 +84,45 @@ in
         };
       };
 
-      services.sfurs.executor = "docker";
-      services.sfurs.dockerImage = "quay.io/podman/stable";
-      services.sfurs.dockerAllowedServices = [ "docker:27-dind" ];
-      services.sfurs.dockerVolumes = [
-        "/run/user/${toString cfg.user.uid}/podman.sock:/var/run/podman.sock"
-        "/home/gitlab-runner/volumes/gitlab-runner-config:/etc/gitlab-runner"
-      ];
-      services.sfurs.authenticationTokenConfigFile = "/home/gitlab-runner/secrets/auth_token.env";
-      services.sfurs.registrationFlags = [
-        "--name dhpham-nixos-desktop"
-      ];
+      services.sfurs = {
+        executor = "docker";
+        dockerImage = "quay.io/podman/stable";
+        dockerAllowedServices = [ "docker:27-dind" ];
+        dockerVolumes =
+          [
+            "/run/user/${toString cfg.user.uid}/podman.sock:/var/run/podman.sock"
+            "/home/gitlab-runner/volumes/gitlab-runner-config:/etc/gitlab-runner"
+          ];
+        authenticationTokenConfigFile = "/home/gitlab-runner/secrets/auth_token.env";
+        registrationFlags =
+          [
+            "--name dhpham-nixos-desktop"
+          ];
+      };
     };
+
     systemd.services.gitlab-runner = {
+      # Run the service as the gitlab-runner user
       serviceConfig = {
         User = "gitlab-runner";
         Group = "gitlab-runner";
       };
+    };
+
+    security.sudo = mkIf (cfg.sudoInto.enable) {
+      enable = true; # Ensure sudo is enabled (usually is by default if you have users)
+      extraRules = [
+        {
+          users = [ cfg.sudoInto.fromUser ]; # The user who can sudo in
+          runAs = "gitlab-runner"; # The target user
+          commands = [
+            {
+              command = "ALL"; # Allows running any command as gitlab-runner
+              options = [ "NOPASSWD" "SETENV" ]; # No password, allow setting environment
+            }
+          ];
+        }
+      ];
     };
   };
 }
