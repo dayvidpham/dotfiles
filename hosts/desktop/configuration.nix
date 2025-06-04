@@ -80,7 +80,8 @@
   # Enable SSH daemon
   CUSTOM.services.openssh.enable = true;
 
-  services.gitlab-runner.enable = true;
+  # For non-root gitlab-runner running from systemd user service
+  CUSTOM.setup.gitlab-runner-podman.enable = true;
 
   #####################################################
   # Package management
@@ -137,6 +138,7 @@
 
   # Virtualisation
   CUSTOM.virtualisation.podman.enable = true;
+
   # Try getting AMD iGPU to work @_@
   # hardware.amdgpu = {
   #   amdvlk.enable = true;
@@ -170,27 +172,4 @@
     ];
   };
 
-  users.extraUsers.gitlab-runner = {
-    isNormalUser = false;
-    isSystemUser = true;
-    createHome = false;
-    linger = true;
-    subUidRanges = [
-      {
-        startUid = 100000;
-        count = 165535;
-      }
-    ];
-    subGidRanges = [
-      {
-        startGid = 100000;
-        count = 165535;
-      }
-    ];
-    name = "gitlab-runner";
-    group = "gitlab-runner";
-    extraGroups = [ "network" ];
-    description = "For the SFURS GitLab Runner";
-  };
-  users.extraGroups.gitlab-runner = { };
 }
