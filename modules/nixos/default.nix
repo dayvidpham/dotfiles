@@ -12,7 +12,6 @@
     ./fonts
     ./programs
     ./shared
-    ./setup
     ./virtualisation
     ./generate
   ];

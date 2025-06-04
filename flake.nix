@@ -1,22 +1,6 @@
 {
   description = "Base configuration using flake to manage NixOS";
 
-  nixConfig = {
-    extra-experimental-features = [ "nix-command" "flakes" "fetch-closure" ];
-    #extra-substituters = [
-    #  "https://cache.nixos.org"
-    #  "https://nix-community.cachix.org"
-    #];
-    #extra-trusted-substituters = [
-    #  "https://cache.nixos.org"
-    #  "https://nix-community.cachix.org"
-    #];
-    #extra-trusted-public-keys = [
-    #  "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
-    #  "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-    #];
-  };
-
   # Inputs
   # https://nixos.org/manual/nix/unstable/command-ref/new-cli/nix3-flake.html#flake-inputs
   inputs = {
@@ -37,14 +21,11 @@
     #############################
     # Nix package management
     nix-multithreaded.url = "github:DeterminateSystems/nix-src/multithreaded-eval";
-    nix = {
-      url = "github:NixOS/nix/2.25-maintenance";
-    };
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/*";
 
     home-manager = {
       url = "github:nix-community/home-manager/master";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
     home-manager-wsl = {
       url = "github:nix-community/home-manager/release-24.11";
@@ -55,7 +36,7 @@
     # Community tools
     nil-lsp = {
       url = "github:oxalica/nil";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs.follows = "nixpkgs-stable";
     };
 
     #############################
@@ -78,7 +59,6 @@
     , flake-registry
       # Package management
     , determinate
-    , nix
     , nix-multithreaded
     , home-manager
     , home-manager-wsl
@@ -94,7 +74,7 @@
 
         config = {
           allowUnfree = true;
-          cudaSuport = true;
+          cudaSupport = true;
         };
 
         overlays = [

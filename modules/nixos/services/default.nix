@@ -3,5 +3,6 @@
 {
   imports = [
     ./openssh
+    ./gitlab-runner
   ];
 }

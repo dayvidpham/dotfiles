@@ -2,7 +2,7 @@
 # https://github.com/Mic92/dotfiles/blob/a1b8a16b393d4396a0f41144d3cf308453d66048/nixos/modules/nix-ld.nix
 { pkgs, ... }: {
   programs.nix-ld.enable = true;
-  programs.nix-ld.package = pkgs.nix-ld-rs;
+  programs.nix-ld.package = pkgs.nix-ld;
   programs.nix-ld.libraries = with pkgs; [
     alsa-lib
     at-spi2-atk
@@ -35,6 +35,7 @@
     libva1
     nvidia-vaapi-driver
     mesa
+    libgbm
     nspr
     nss
     openssl

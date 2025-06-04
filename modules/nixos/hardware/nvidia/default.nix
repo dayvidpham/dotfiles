@@ -29,7 +29,7 @@ let
     mkOutOfStoreSymlink
     ;
 
-  nvidiaDriver = config.boot.kernelPackages.nvidia_x11_beta;
+  nvidiaDriver = config.boot.kernelPackages.nvidia_x11;
 
   # NOTE: Config
   nvidia = {
@@ -56,7 +56,7 @@ let
       };
 
       desktop = default // {
-        sync.enable = true; # Use dGPU for everything
+        sync.enable = false; # Use dGPU for everything
         nvidiaBusId = "PCI:1:0:0";
         amdgpuBusId = "PCI:16:0:0";
       };
@@ -71,7 +71,7 @@ let
 
     # NOTE: Open kernel module: this is not the nouveau driver
     open = {
-      default = false; # GTX 10XX gen is unsupported
+      default = true; # GTX 10XX gen is unsupported
       # we on the RTX 4090 now though!
     };
 
@@ -79,7 +79,7 @@ let
     nvidiaPersistenced = {
       default = false;
       desktop = true;
-      flowX13 = true;
+      flowX13 = false;
     };
 
     # NOTE: For laptops: enable better balancing between CPU and iGPU
@@ -149,9 +149,6 @@ in
       card-igpu.source =
         mkOutOfStoreSymlink gpu-paths."${cfg.hostName}".card-igpu;
     };
-
-    # CUDA support?
-    #boot.kernelModules = [ "nvidia-uvm" ];
 
     environment.variables =
       let

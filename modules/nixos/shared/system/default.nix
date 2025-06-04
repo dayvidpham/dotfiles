@@ -55,6 +55,11 @@ mkIf (config.CUSTOM.shared.enable) {
   ######################################
   # Allow firmware with unfree licenses
   hardware.enableAllFirmware = true;
+
+  # Enable hardware accelerated graphics
+  hardware.graphics.enable = true;
+  hardware.graphics.enable32Bit = true;
+
   # Bluetooth
   hardware.bluetooth = {
     enable = true;
