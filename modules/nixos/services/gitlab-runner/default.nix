@@ -106,12 +106,13 @@ in
       serviceConfig = {
         User = "gitlab-runner";
         Group = "gitlab-runner";
+      };
 
-        UpheldBy = "multi-user.target";
-        Requisite = "multi-user.target";
-        BindsTo = "multi-user.target";
-        After = "multi-user.target";
-
+      unitConfig = {
+        upheldBy = [ "network-online.target" ];
+        requisite = [ "network-online.target" ];
+        bindsTo = [ "network-online.target" ];
+        after = [ "network-online.target" ];
       };
     };
 
