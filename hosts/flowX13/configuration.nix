@@ -37,7 +37,6 @@
   ];
   nix.settings.extra-trusted-public-keys = [
     "cache.desktop.org:Sds3S8EjsjypNfQQekd7gmHg19PFZwbjR7Dko/r9mfY="
-    "ssh://desktop:c3NoLWVkMjU1MTkgQUFBQUMzTnphQzFsWkRJMU5URTVBQUFBSU8xZDIrbGhDemRocnhhTDhxckE1VVc5V0N6SUN5VXBWbHQrZXJCWkZkazEgcm9vdEBkZXNrdG9wCg=="
   ];
 
   nix.buildMachines = [{
@@ -140,8 +139,11 @@
     enable = true;
     xkb.variant = "";
     xkb.layout = "us";
-    videoDrivers = [ "nouveau" "amdgpu" ];
+    videoDrivers = [ "nvidia" "amdgpu" ];
   };
+
+  # enables switching between dGPU and iGPU
+  services.supergfxd.enable = true;
 
   ######################################
   # Some user setup: Most user-stuff will be in home-manager

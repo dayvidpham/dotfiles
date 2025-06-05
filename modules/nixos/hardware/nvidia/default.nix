@@ -51,7 +51,7 @@ let
     prime = rec {
       default = {
         # NOTE: Sync and Offload mode cannot be used at the same time
-        sync.enable = false; # Enable offloading to dGPU
+        sync.enable = true; # Enable offloading to dGPU
         offload.enable = false; # convenience script to run on dGPU
       };
 
