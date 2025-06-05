@@ -29,11 +29,11 @@
   ###############################
   # Locally-hosted binary cache settings
   nix.settings.builders = pkgs.lib.mkForce [
-    "ssh://desktop"
+    "ssh://nix-ssh@desktop"
     "@/etc/nix/machines"
   ];
-  nix.settings.extra-trusted-substituters = [
-    "ssh://desktop"
+  nix.settings.trusted-substituters = [
+    "ssh://nix-ssh@desktop"
   ];
   nix.settings.extra-trusted-public-keys = [
     "cache.desktop.org:Sds3S8EjsjypNfQQekd7gmHg19PFZwbjR7Dko/r9mfY="
