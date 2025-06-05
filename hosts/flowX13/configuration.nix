@@ -142,6 +142,10 @@
     videoDrivers = [ "nvidia" "amdgpu" ];
   };
 
+  CUSTOM.hardware.nvidia.enable = true;
+  CUSTOM.hardware.nvidia.hostName = "laptop";
+  CUSTOM.hardware.nvidia.proprietaryDrivers.enable = true;
+
   # enables switching between dGPU and iGPU
   services.supergfxd.enable = true;
 

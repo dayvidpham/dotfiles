@@ -40,7 +40,7 @@ let
       };
 
       laptop = {
-        finegrained = true;
+        finegrained = false;
       };
       desktop = {
         enable = true;
@@ -56,14 +56,15 @@ let
       };
 
       desktop = default // {
-        sync.enable = false; # Use dGPU for everything
+        sync.enable = true; # Use dGPU for everything
         nvidiaBusId = "PCI:1:0:0";
         amdgpuBusId = "PCI:16:0:0";
       };
 
       laptop = default // {
-        offload.enable = true;
-        offload.enableOffloadCmd = true;
+        sync.enable = true;
+        #offload.enable = true;
+        #offload.enableOffloadCmd = true;
         nvidiaBusId = "PCI:1:0:0";
         amdgpuBusId = "PCI:8:0:0";
       };
