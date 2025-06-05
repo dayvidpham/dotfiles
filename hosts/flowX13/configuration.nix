@@ -29,15 +29,44 @@
   ###############################
   # Locally-hosted binary cache settings
   nix.settings.builders = pkgs.lib.mkForce [
-    "ssh://desktop"
+    "ssh://nix-ssh@desktop"
     "@/etc/nix/machines"
   ];
-  nix.settings.extra-trusted-substituters = [
-    "ssh://desktop"
+  nix.settings.trusted-substituters = [
+    "ssh://nix-ssh@desktop"
   ];
   nix.settings.extra-trusted-public-keys = [
     "cache.desktop.org:Sds3S8EjsjypNfQQekd7gmHg19PFZwbjR7Dko/r9mfY="
   ];
+
+  nix.buildMachines = [{
+    # Will be used to call "ssh builder" to connect to the builder machine.
+    # The details of the connection (user, port, url etc.)
+    # are taken from your "~/.ssh/config" file.
+    hostName = "desktop";
+    # CPU architecture of the builder, and the operating system it runs.
+    system = "x86_64-linux";
+    # Nix custom ssh-variant that avoids lots of "trusted-users" settings pain
+    protocol = "ssh-ng";
+
+    sshUser = "nix-ssh";
+    publicHostKey = "c3NoLWVkMjU1MTkgQUFBQUMzTnphQzFsWkRJMU5URTVBQUFBSU8xZDIrbGhDemRocnhhTDhxckE1VVc5V0N6SUN5VXBWbHQrZXJCWkZkazEgcm9vdEBkZXNrdG9wCg==";
+
+    # default is 1 but may keep the builder idle in between builds
+    maxJobs = 16;
+    # how fast is the builder compared to your local machine
+    speedFactor = 8;
+    supportedFeatures = [ "nixos-test" "benchmark" "big-parallel" "kvm" ]
+      #++ [ "nix-command" "flakes" "fetch-closure" ]
+    ;
+    mandatoryFeatures = [ ];
+  }];
+  # required, otherwise remote buildMachines above aren't used
+  nix.distributedBuilds = true;
+  # optional, useful when the builder has a faster internet connection than yours
+  nix.settings = {
+    builders-use-substitutes = true;
+  };
 
 
   #########################
@@ -110,8 +139,15 @@
     enable = true;
     xkb.variant = "";
     xkb.layout = "us";
-    videoDrivers = [ "nouveau" "amdgpu" ];
+    videoDrivers = [ "nvidia" "amdgpu" ];
   };
+
+  CUSTOM.hardware.nvidia.enable = true;
+  CUSTOM.hardware.nvidia.hostName = "laptop";
+  CUSTOM.hardware.nvidia.proprietaryDrivers.enable = true;
+
+  # enables switching between dGPU and iGPU
+  services.supergfxd.enable = true;
 
   ######################################
   # Some user setup: Most user-stuff will be in home-manager

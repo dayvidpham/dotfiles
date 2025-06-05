@@ -40,7 +40,7 @@ let
       };
 
       laptop = {
-        finegrained = true;
+        finegrained = false;
       };
       desktop = {
         enable = true;
@@ -51,19 +51,20 @@ let
     prime = rec {
       default = {
         # NOTE: Sync and Offload mode cannot be used at the same time
-        sync.enable = false; # Enable offloading to dGPU
+        sync.enable = true; # Enable offloading to dGPU
         offload.enable = false; # convenience script to run on dGPU
       };
 
       desktop = default // {
-        sync.enable = false; # Use dGPU for everything
+        sync.enable = true; # Use dGPU for everything
         nvidiaBusId = "PCI:1:0:0";
         amdgpuBusId = "PCI:16:0:0";
       };
 
       laptop = default // {
-        offload.enable = true;
-        offload.enableOffloadCmd = true;
+        sync.enable = true;
+        #offload.enable = true;
+        #offload.enableOffloadCmd = true;
         nvidiaBusId = "PCI:1:0:0";
         amdgpuBusId = "PCI:8:0:0";
       };
