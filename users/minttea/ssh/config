@@ -1,3 +1,5 @@
+Include config.d/*
+
 Host csil-server
     HostName csil-cpu2.csil.sfu.ca
 
@@ -14,10 +16,6 @@ Host *.csil.sfu.ca
 Host *.alliancecan.ca
     User dhpham
     Port 22
-
-Host desktop
-    User minttea
-    Port 8108
 
 Host *
     ControlPath ~/.ssh/socket.%r@%h:%p
