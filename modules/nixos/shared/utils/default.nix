@@ -26,6 +26,7 @@ lib.mkIf (config.CUSTOM.shared.enable) {
     btop # modern top/htop alternative
     ripgrep # modern grep
     ripgrep-all # fast search on cli; rg and rga
+    ast-grep # structured search
     ethtool # NIC config
     dig # DNS lookups
     git
