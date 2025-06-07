@@ -107,9 +107,9 @@ in
       cfg.package
     ];
 
-    systemd.user.services = {
-      xwayland-satellite = mkIf cfg.systemd.enable (xwayland-satellite_service cfg.systemd.target);
-      xwayland-satellite-ready = mkIf cfg.systemd.enable (xwayland-satellite-ready_service "xwayland-satellite.service");
-    };
+    #systemd.user.services = {
+    #  xwayland-satellite = mkIf cfg.systemd.enable (xwayland-satellite_service cfg.systemd.target);
+    #  xwayland-satellite-ready = mkIf cfg.systemd.enable (xwayland-satellite-ready_service "xwayland-satellite.service");
+    #};
   };
 }
