@@ -254,7 +254,7 @@ environment {
 }
 
 spawn-at-startup "xwayland-satellite"
-spawn-at-startup "ghostty" "-e" "'zsh -i -c \"fastfetch && exec zsh -i\"'" 
+spawn-at-startup "ghostty" "-e" "fastfetch && exec zsh -i -l" 
 
 
 // Uncomment this line to ask the clients to omit their client-side decorations if possible.
