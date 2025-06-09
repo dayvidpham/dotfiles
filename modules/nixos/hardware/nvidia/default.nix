@@ -40,6 +40,7 @@ let
       };
 
       laptop = {
+        enable = true;
         finegrained = false;
       };
       desktop = {
