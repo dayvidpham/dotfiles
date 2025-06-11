@@ -45,6 +45,7 @@ let
       };
       desktop = {
         enable = true;
+        finegrained = false;
       };
     };
 
