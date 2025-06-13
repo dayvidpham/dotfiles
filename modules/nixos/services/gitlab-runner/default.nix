@@ -72,46 +72,78 @@ in
     };
     users.extraGroups.gitlab-runner = { };
 
-    services.gitlab-runner = {
+    #services.gitlab-runner = {
+    #  enable = true;
+    #  gracefulTermination = true;
+    #  gracefulTimeout = "10s";
+
+    #  settings = {
+    #    concurrent = 8;
+    #    environment = {
+    #      FF_NETWORK_PER_BUILD = "true";
+    #    };
+    #  };
+
+    #  services.sfurs = {
+    #    executor = "docker";
+    #    dockerImage = "quay.io/podman/stable";
+    #    dockerAllowedServices = [ "docker:27-dind" ];
+    #    dockerVolumes =
+    #      [
+    #        "/run/user/${toString cfg.user.uid}/podman.sock:/var/run/podman.sock"
+    #        "/home/gitlab-runner/volumes/gitlab-runner-config:/etc/gitlab-runner"
+    #      ];
+    #    authenticationTokenConfigFile = "/home/gitlab-runner/secrets/auth_token.env";
+    #    registrationFlags =
+    #      [
+    #        "--name dhpham-nixos-desktop"
+    #      ];
+    #  };
+    #};
+
+    systemd.user.services.sfurs-gitlab-runner = {
       enable = true;
-      gracefulTermination = true;
-      gracefulTimeout = "10s";
-
-      settings = {
-        concurrent = 8;
-        environment = {
-          FF_NETWORK_PER_BUILD = "true";
-        };
-      };
-
-      services.sfurs = {
-        executor = "docker";
-        dockerImage = "quay.io/podman/stable";
-        dockerAllowedServices = [ "docker:27-dind" ];
-        dockerVolumes =
-          [
-            "/run/user/${toString cfg.user.uid}/podman.sock:/var/run/podman.sock"
-            "/home/gitlab-runner/volumes/gitlab-runner-config:/etc/gitlab-runner"
-          ];
-        authenticationTokenConfigFile = "/home/gitlab-runner/secrets/auth_token.env";
-        registrationFlags =
-          [
-            "--name dhpham-nixos-desktop"
-          ];
-      };
-    };
-
-    systemd.services.gitlab-runner = {
       # Run the service as the gitlab-runner user
-      serviceConfig = {
-        User = "gitlab-runner";
-        Group = "gitlab-runner";
+      wantedBy = [ "podman.socket" ];
+      after = [ "podman.socket" ];
+      requisite = [ "podman.socket" ];
+
+      #requisite = [ "network-online.target" ];
+      #bindsTo = [ "network-online.target" ];
+
+      unitConfig = {
+        ConditionUser = "gitlab-runner";
       };
 
-      upheldBy = [ "network-online.target" ];
-      requisite = [ "network-online.target" ];
-      bindsTo = [ "network-online.target" ];
-      after = [ "network-online.target" ];
+      serviceConfig = {
+        Type = "simple";
+        Restart = "on-failure";
+        RestartSec = "5s";
+
+        ExecStartPre = (if config.networking.networkmanager.enable then
+          let
+            nm-online = "${config.networking.networkmanager.package}/bin/nm-online";
+          in
+          ''
+            ${nm-online} -s
+          ''
+        else
+          let
+            # assume using networkd
+            networkctl = "${pkgs.systemd}/bin/networkctl";
+          in
+          ''
+            ${networkctl} wait-online
+          ''
+        );
+
+        ExecStart = ''
+          ${pkgs.podman}/bin/podman run --name sfurs --restart=always --replace \
+            -v "%t/podman/podman.sock:/var/run/podman/podman.sock" \
+            -v gitlab-runner-config:/etc/gitlab-runner \
+            gitlab/gitlab-runner:latest
+        '';
+      };
     };
 
     security.sudo = mkIf (cfg.sudoInto.enable) {
