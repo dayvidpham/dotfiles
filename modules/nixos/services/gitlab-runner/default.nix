@@ -139,6 +139,7 @@ in
 
         ExecStart = ''
           ${pkgs.podman}/bin/podman run --name sfurs --restart=always --replace \
+            --user root \
             -v "%t/podman/podman.sock:/var/run/podman/podman.sock" \
             -v gitlab-runner-config:/etc/gitlab-runner \
             gitlab/gitlab-runner:latest
