@@ -45,6 +45,8 @@ let
       ;;
         *) windowCtl=""
       ;;
+      esac
+
       centerDisplay="$windowCtl"
       echo "INFO: Using swww-cache for $centerDisplay"
 
