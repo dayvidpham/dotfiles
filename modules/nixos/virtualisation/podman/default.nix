@@ -23,6 +23,10 @@ in
     virtualisation.podman.enable = true;
     virtualisation.podman.dockerCompat = true;
     virtualisation.podman.dockerSocket.enable = true;
+    virtualisation.podman.extraPackages = [
+      pkgs.su
+    ];
+
     virtualisation.docker.enable = false; # conflicts with podmanSocket
 
     systemd.services.podman-restart.enable = true;

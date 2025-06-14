@@ -14,6 +14,8 @@ let
     ;
 
   runnerUid = 2000;
+
+  podman = "${config.virtualisation.podman.package}/bin/podman";
 in
 {
   options.CUSTOM.services.gitlab-runner = {
@@ -72,35 +74,6 @@ in
     };
     users.extraGroups.gitlab-runner = { };
 
-    #services.gitlab-runner = {
-    #  enable = true;
-    #  gracefulTermination = true;
-    #  gracefulTimeout = "10s";
-
-    #  settings = {
-    #    concurrent = 8;
-    #    environment = {
-    #      FF_NETWORK_PER_BUILD = "true";
-    #    };
-    #  };
-
-    #  services.sfurs = {
-    #    executor = "docker";
-    #    dockerImage = "quay.io/podman/stable";
-    #    dockerAllowedServices = [ "docker:27-dind" ];
-    #    dockerVolumes =
-    #      [
-    #        "/run/user/${toString cfg.user.uid}/podman.sock:/var/run/podman.sock"
-    #        "/home/gitlab-runner/volumes/gitlab-runner-config:/etc/gitlab-runner"
-    #      ];
-    #    authenticationTokenConfigFile = "/home/gitlab-runner/secrets/auth_token.env";
-    #    registrationFlags =
-    #      [
-    #        "--name dhpham-nixos-desktop"
-    #      ];
-    #  };
-    #};
-
     systemd.user.services.sfurs-gitlab-runner = {
       enable = true;
       # Run the service as the gitlab-runner user
@@ -138,7 +111,7 @@ in
         );
 
         ExecStart = ''
-          ${pkgs.podman}/bin/podman run --name sfurs --restart=always --replace \
+          ${podman} run --name sfurs --restart=always --replace \
             --user root \
             -v "%t/podman/podman.sock:/var/run/podman/podman.sock" \
             -v gitlab-runner-config:/etc/gitlab-runner \
