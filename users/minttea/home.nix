@@ -106,6 +106,7 @@ rec {
 
     # Cloud
     oci-cli
+    openssl
   ])
   ++ (with pkgs-unstable; [
     # Utils

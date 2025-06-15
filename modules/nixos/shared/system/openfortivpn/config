@@ -1,0 +1,5 @@
+host = vpn.its.sfu.ca
+port = 10443
+username = dhpham
+trusted-cert = 898badf111cf1052974a421497e48ff5b945fbfba75d37516d1b068b1636b744
+
