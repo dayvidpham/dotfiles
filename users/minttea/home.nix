@@ -103,6 +103,9 @@ rec {
 
     # Gaming
     protonup
+
+    # Cloud
+    oci-cli
   ])
   ++ (with pkgs-unstable; [
     # Utils
