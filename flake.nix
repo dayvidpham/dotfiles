@@ -269,19 +269,6 @@
         };
       };
 
-      libmint =
-        (
-          { lib
-          , home-manager
-          , pkgs
-          , ...
-          }:
-          (import ./modules/nixos/libmint.nix {
-            inherit lib;
-            lib-hm = home-manager.outputs.lib.hm;
-            inherit (pkgs) runCommandLocal;
-          })
-        );
 
       nixosModules = {
         system = (
