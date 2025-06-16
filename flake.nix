@@ -271,25 +271,25 @@
 
       nixosModules = {
         system = (
-          { config
+          args@{ config
           , lib ? config.lib
           , pkgs
           , ...
           }:
           {
-            modules = [
+            imports = [
               ./modules/nixos
             ];
           }
         );
         home-manager = (
-          { config
+          args@{ config
           , lib ? config.lib
           , pkgs
           , ...
           }:
           {
-            modules = [
+            imports = [
               ./modules/home-manager
             ];
           }
