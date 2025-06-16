@@ -271,18 +271,6 @@
 
 
       nixosModules = {
-        system = (
-          args@{ config
-          , lib ? config.lib
-          , pkgs
-          , ...
-          }:
-          {
-            imports = [
-              ./modules/nixos
-            ];
-          }
-        );
         home-manager = (
           args@{ config
           , lib ? config.lib
