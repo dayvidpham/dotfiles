@@ -270,8 +270,8 @@
       };
 
 
-      nixosModules = {
-        home-manager = (
+      homeModules = {
+        default = (
           args@{ config
           , lib ? config.lib
           , pkgs
