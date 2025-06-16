@@ -268,5 +268,32 @@
           };
         };
       };
+
+      nixosModules = {
+        system = (
+          { config
+          , lib ? config.lib
+          , pkgs
+          , ...
+          }:
+          {
+            modules = [
+              ./modules/nixos
+            ];
+          }
+        );
+        home-manager = (
+          { config
+          , lib ? config.lib
+          , pkgs
+          , ...
+          }:
+          {
+            modules = [
+              ./modules/home-manager
+            ];
+          }
+        );
+      };
     };
 }
