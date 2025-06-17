@@ -118,14 +118,17 @@
         environment.etc."nix/inputs/nixpkgs-unstable".source = "${nixpkgs-unstable}";
         environment.etc."nix/inputs/nixpkgs-stable".source = "${nixpkgs-stable}";
         environment.etc."nix/inputs/home-manager".source = "${home-manager}";
+        environment.etc."nixos/flake.nix".source = "/home/minttea/dotfiles/flake.nix";
 
         nix.nixPath = lib.mkForce [
+          "nixos-config=/etc/nixos/flake.nix"
           "nixpkgs=/etc/nix/inputs/nixpkgs"
           "nixpkgs-unstable=/etc/nix/inputs/nixpkgs-unstable"
           "nixpkgs-stable=/etc/nix/inputs/nixpkgs-stable"
           "home-manager=/etc/nix/inputs/home-manager"
         ];
         nix.settings.nix-path = lib.mkForce [
+          "nixos-config=/etc/nixos/flake.nix"
           "nixpkgs=/etc/nix/inputs/nixpkgs"
           "nixpkgs-unstable=/etc/nix/inputs/nixpkgs-unstable"
           "nixpkgs-stable=/etc/nix/inputs/nixpkgs-stable"
