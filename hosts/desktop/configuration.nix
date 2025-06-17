@@ -106,7 +106,7 @@
 
   ######################################
   # Window manager & GPU
-  programs.hyprland.enable = true;
+  #programs.hyprland.enable = false;
   CUSTOM.programs.hyprlock.enable = true;
   CUSTOM.programs.eww.enable = true;
 
