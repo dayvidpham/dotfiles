@@ -47,5 +47,17 @@ in
       home.packages = [ init-xwayland-satellite ];
 
       CUSTOM.services.xwayland-satellite.enable = true;
+
+      xdg.portal.enable = true;
+      xdg.portal.xdgOpenUsePortal = true;
+      xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
+      xdg.portal.configPackages = [ pkgs.xdg-desktop-portal-gtk ];
+      xdg.portal.config = {
+        niri = {
+          default = [
+            "gtk"
+          ];
+        };
+      };
     };
 }
