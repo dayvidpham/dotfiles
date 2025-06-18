@@ -47,7 +47,7 @@
 
   systemd.network.links."50-eth-wol" = {
     matchConfig = {
-      MACAddress = "9c:6b:00:2d:05:1b";
+      MACAddress = "9c:1e:95:9c:4f:50";
       Type = "ether";
     };
     linkConfig = {
