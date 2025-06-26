@@ -22,7 +22,16 @@ in
   wsl.wslConf.network.hostname = "wsl";
   wsl.interop.register = true;
   wsl.docker-desktop.enable = true;
+
+  ############
+  # Use Windows OpenGL drivers?
+  #wsl.useWindowsDriver = true;
+  boot.kernelModules = [
+    "vgem"
+  ];
+
   networking.hostName = "wsl";
+  networking.usePredictableInterfaceNames = true;
 
 
   ########
@@ -45,6 +54,7 @@ in
   # WSL manages own networking
   services.resolved.enable = mkForce false;
   systemd.network.enable = mkForce false;
+  networking.nameservers = mkForce [ ];
 
 
   # Set time zone.

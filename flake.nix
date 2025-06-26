@@ -207,12 +207,13 @@
           #};
           modules = [
             determinate.nixosModules.default
+            niri.nixosModules.niri
             (nixos-wsl.nixosModules.default // {
               system.build.installBootLoader = lib.mkForce "${pkgs.coreutils}/bin/true";
             })
+            noChannelModule
             ./hosts/wsl/configuration.nix
             ./modules/nixos
-            noChannelModule
           ];
         };
       };
@@ -258,6 +259,7 @@
         "minttea@wsl" = home-manager.lib.homeManagerConfiguration {
           inherit pkgs;
           modules = [
+            niri.homeModules.niri
             ./modules/home-manager
             ./programs/neovim
             ./users/minttea/wsl.nix

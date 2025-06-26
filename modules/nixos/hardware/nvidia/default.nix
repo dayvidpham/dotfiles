@@ -70,6 +70,14 @@ let
         nvidiaBusId = "PCI:1:0:0";
         amdgpuBusId = "PCI:8:0:0";
       };
+
+      wsl = default // {
+        sync.enable = false;
+        #offload.enable = true;
+        #offload.enableOffloadCmd = true;
+        nvidiaBusId = "PCI:1:0:0";
+        amdgpuBusId = "PCI:16:0:0";
+      };
     };
 
     # NOTE: Open kernel module: this is not the nouveau driver
@@ -83,6 +91,7 @@ let
       default = false;
       desktop = true;
       flowX13 = false;
+      wsl = true;
     };
 
     # NOTE: For laptops: enable better balancing between CPU and iGPU
@@ -101,6 +110,9 @@ let
     flowX13 = {
       card-igpu = "/dev/dri/by-path/pci-0000:08:00.0-card";
       card-dgpu = "/dev/dri/by-path/pci-0000:01:00.0-card";
+    };
+    wsl = {
+      card-dgpu = "/dev/dri/by-path/platform-vgem-card";
     };
   };
 in
@@ -129,55 +141,60 @@ in
 
   };
 
-  config = mkIf cfg.enable {
+  config = mkIf cfg.enable
+    {
 
-    hardware.nvidia = {
-      package = nvidiaDriver;
-      modesetting.enable = true; # NOTE: Wayland requires this to be true
-      nvidiaSettings = true;
-    } // (configureHost cfg.hostName nvidia);
+      hardware.nvidia = {
+        package = nvidiaDriver;
+        modesetting.enable = true; # NOTE: Wayland requires this to be true
+        nvidiaSettings = true;
+      } // (configureHost cfg.hostName nvidia);
 
-    services.xserver = {
-      enable = true;
-      # NOTE: If not set, will use nouveau drivers
-      videoDrivers =
-        if cfg.proprietaryDrivers.enable
-        then [ "nvidia" ]
-        else [ "nouveau" ];
+      services.xserver = {
+        enable = true;
+        # NOTE: If not set, will use nouveau drivers
+        videoDrivers =
+          if cfg.proprietaryDrivers.enable
+          then [ "nvidia" ]
+          else [ "nouveau" ];
+      };
+
+      environment.etc = mkIf (hasAttr cfg.hostName gpu-paths)
+        (
+          lib.mapAttrs
+            (key: val: { source = (mkOutOfStoreSymlink val); })
+            gpu-paths."${cfg.hostName}"
+        );
+      #{
+      #  card-dgpu.source = mkIf (gpu-paths."${cfg.hostName}" ? card-dgpu) (mkOutOfStoreSymlink gpu-paths."${cfg.hostName}".card-dgpu);
+      #  card-igpu.source = mkIf (gpu-paths."${cfg.hostName}" ? card-igpu) (mkOutOfStoreSymlink gpu-paths."${cfg.hostName}".card-igpu);
+      #};
+
+      environment.variables =
+        let
+          hyprRenderer = mkMerge [
+            (mkIf (config.programs.hyprland.enable && cfg.hostName == "desktop") {
+              # Fuck it: use dGPU for everything
+              WLR_DRM_DEVICES = "/etc/card-dgpu";
+            })
+            (mkIf (config.programs.hyprland.enable && cfg.hostName == "flowX13") {
+              # TODO: Must test which value is correct for laptop
+              # Use iGPU for everything
+              WLR_DRM_DEVICES = "/etc/card-igpu";
+            })
+          ];
+        in
+        {
+          # https://wiki.hyprland.org/Nvidia/#environment-variables
+          LIBVA_DRIVER_NAME = "nvidia";
+          GBM_BACKEND = "nvidia-drm";
+          __GLX_VENDOR_LIBRARY_NAME = "nvidia";
+          __GL_GSYNC_ALLOWED = "1";
+
+          # https://wiki.hyprland.org/Nvidia/#va-api-hardware-video-acceleration
+          NVD_BACKEND = "direct";
+        }
+        // hyprRenderer;
+
     };
-
-    environment.etc = mkIf (hasAttr cfg.hostName gpu-paths) {
-      card-dgpu.source =
-        mkOutOfStoreSymlink gpu-paths."${cfg.hostName}".card-dgpu;
-      card-igpu.source =
-        mkOutOfStoreSymlink gpu-paths."${cfg.hostName}".card-igpu;
-    };
-
-    environment.variables =
-      let
-        hyprRenderer = mkMerge [
-          (mkIf (config.programs.hyprland.enable && cfg.hostName == "desktop") {
-            # Fuck it: use dGPU for everything
-            WLR_DRM_DEVICES = "/etc/card-dgpu";
-          })
-          (mkIf (config.programs.hyprland.enable && cfg.hostName == "flowX13") {
-            # TODO: Must test which value is correct for laptop
-            # Use iGPU for everything
-            WLR_DRM_DEVICES = "/etc/card-igpu";
-          })
-        ];
-      in
-      {
-        # https://wiki.hyprland.org/Nvidia/#environment-variables
-        LIBVA_DRIVER_NAME = "nvidia";
-        GBM_BACKEND = "nvidia-drm";
-        __GLX_VENDOR_LIBRARY_NAME = "nvidia";
-        __GL_GSYNC_ALLOWED = "1";
-
-        # https://wiki.hyprland.org/Nvidia/#va-api-hardware-video-acceleration
-        NVD_BACKEND = "direct";
-      }
-      // hyprRenderer;
-
-  };
 }
