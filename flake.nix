@@ -286,6 +286,21 @@
             };
           };
         };
+        "minttea@flowX13-wsl" = home-manager.lib.homeManagerConfiguration {
+          inherit pkgs;
+          modules = [
+            ./modules/home-manager
+            ./programs/neovim
+            ./users/minttea/wsl.nix
+          ];
+          extraSpecialArgs = extraSpecialArgs // {
+            GLOBALS.hostName = "wsl";
+            GLOBALS.theme = {
+              name = "balcony";
+              basePath = ./packages/themes/balcony;
+            };
+          };
+        };
       };
 
 
