@@ -6,7 +6,12 @@
 # https://github.com/nix-community/NixOS-WSL
 
 { config, lib, pkgs, ... }:
-
+let
+  inherit (lib)
+    mkOverride
+    mkForce
+    ;
+in
 {
   /**
    * nixos-wsl config
@@ -17,7 +22,16 @@
   wsl.wslConf.network.hostname = "flowX13-wsl";
   wsl.interop.register = true;
   wsl.docker-desktop.enable = true;
+
+  ############
+  # Use Windows OpenGL drivers?
+  #wsl.useWindowsDriver = true;
+  boot.kernelModules = [
+    "vgem"
+  ];
+
   networking.hostName = "flowX13-wsl";
+  networking.usePredictableInterfaceNames = true;
 
 
   ########
@@ -38,9 +52,11 @@
   CUSTOM.programs.sway.enable = true;
 
   # WSL manages own networking
-  services.resolved.enable = false;
-  systemd.network.enable = false;
+  services.resolved.enable = mkForce false;
+  systemd.network.enable = mkForce false;
+  networking.nameservers = mkForce [ ];
 
+  CUSTOM.services.tailscale.enable = true;
 
   # Set time zone.
   time.timeZone = "America/Vancouver";
@@ -68,5 +84,5 @@
 
   ######################################
   # Cross-compilation
-  #boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
+  boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
 }
