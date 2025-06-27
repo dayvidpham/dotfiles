@@ -50,7 +50,7 @@ let
       centerDisplay="$windowCtl"
       echo "INFO: Using swww-cache for $centerDisplay"
 
-      centerDisplayCache="$(find "$${XDG_CACHE_HOME}/swww" -type f -regex ".*/$centerDisplay\$" -regextype posix-extended -print -quit)"
+      centerDisplayCache="$(find "''${XDG_CACHE_HOME}/swww" -type f -regex ".*/$centerDisplay\$" -regextype posix-extended -print -quit)"
       echo "INFO: Using cached image at $centerDisplayCache"
 
       ${getExe cfg.package} img --resize fit -t center --transition-fps 60 "$(cat "$centerDisplayCache")"
