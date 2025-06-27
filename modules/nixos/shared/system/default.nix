@@ -234,10 +234,15 @@ in
       enable = true;
     };
     virtualisation.libvirtd = {
-      enable = false;
+      enable = true;
       qemu = {
         package = pkgs.qemu_kvm;
         runAsRoot = true;
+        ovmf = {
+          # Open Virtual Machine Firmware: enables UEFI support for VMs
+          # Use UEFI over traditional BIOS
+          enable = true;
+        };
         # swtpm.enable = true; # Software Trusted Platform Module: virtualized cryptoprocessor
         # ovmf = {
         #   # Open Virtual Machine Firmware: enables UEFI support for VMs
