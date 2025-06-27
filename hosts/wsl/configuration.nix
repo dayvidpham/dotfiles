@@ -56,6 +56,7 @@ in
   systemd.network.enable = mkForce false;
   networking.nameservers = mkForce [ ];
 
+  CUSTOM.services.tailscale.enable = true;
 
   # Set time zone.
   time.timeZone = "America/Vancouver";
@@ -83,5 +84,5 @@ in
 
   ######################################
   # Cross-compilation
-  #boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
+  boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
 }
