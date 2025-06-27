@@ -78,6 +78,15 @@ let
         nvidiaBusId = "PCI:1:0:0";
         amdgpuBusId = "PCI:16:0:0";
       };
+
+      # TODO: fix the IDs
+      flowX13-wsl = default // {
+        sync.enable = false;
+        offload.enable = true;
+        offload.enableOffloadCmd = true;
+        nvidiaBusId = "PCI:1:0:0";
+        amdgpuBusId = "PCI:8:0:0";
+      };
     };
 
     # NOTE: Open kernel module: this is not the nouveau driver
@@ -90,14 +99,16 @@ let
     nvidiaPersistenced = {
       default = false;
       desktop = true;
-      flowX13 = false;
       wsl = true;
+      flowX13 = false;
+      flowX13-wsl = true;
     };
 
     # NOTE: For laptops: enable better balancing between CPU and iGPU
     dynamicBoost = {
       default.enable = false;
       flowX13.enable = true;
+      flowX13-wsl.enable = true;
     };
 
   };
@@ -107,11 +118,14 @@ let
       card-igpu = "/dev/dri/by-path/pci-0000:16:00.0-card";
       card-dgpu = "/dev/dri/by-path/pci-0000:01:00.0-card";
     };
+    wsl = {
+      card-dgpu = "/dev/dri/by-path/platform-vgem-card";
+    };
     flowX13 = {
       card-igpu = "/dev/dri/by-path/pci-0000:08:00.0-card";
       card-dgpu = "/dev/dri/by-path/pci-0000:01:00.0-card";
     };
-    wsl = {
+    flowX13-wsl = {
       card-dgpu = "/dev/dri/by-path/platform-vgem-card";
     };
   };
