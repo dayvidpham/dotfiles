@@ -1,18 +1,18 @@
-{
-  config
-  , pkgs
-  , lib ? pkgs.lib
-  , ... 
+{ config
+, pkgs
+, lib ? pkgs.lib
+, ...
 }:
 let
   cfg = config.CUSTOM.services.openssh;
 
-  inherit (lib) 
+  inherit (lib)
     mkIf
     mkEnableOption
     mkPackageOption
-  ;
-in {
+    ;
+in
+{
   options = {
     CUSTOM.services.openssh = {
       enable = mkEnableOption "openssh";
@@ -26,7 +26,8 @@ in {
     services.openssh = {
       enable = true;
       ports = [ 8108 ];
-      
+      openFirewall = false;
+
       sftpFlags = [
         "-f AUTHPRIV"
         "-l INFO"
@@ -47,7 +48,7 @@ in {
           "aes128-gcm@openssh.com"
         ];
 
-        X11Forwarding = true;
+        X11Forwarding = false;
       };
     };
   };

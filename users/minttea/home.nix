@@ -103,6 +103,7 @@ rec {
 
     # Gaming
     protonup
+    godot
 
     # Cloud
     oci-cli
