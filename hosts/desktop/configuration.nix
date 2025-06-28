@@ -44,6 +44,7 @@
       useNetworkd = true;
     };
   };
+  CUSTOM.services.tailscale.enable = true;
 
   systemd.network.links."50-eth-wol" = {
     matchConfig = {

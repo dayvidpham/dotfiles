@@ -21,18 +21,11 @@ in
 
   config = mkIf cfg.enable {
     services.tailscale.enable = true;
-    services.tailscale.openFirewall = true;
     services.tailscale.authKeyParameters.baseUrl = "https://hs0.vpn.dhpham.com";
 
     networking.firewall = {
       checkReversePath = "loose";
       trustedInterfaces = [ "tailscale0" ];
-      allowedUDPPorts = [
-        config.services.tailscale.port
-      ];
-      allowedTCPPorts = [
-        config.services.tailscale.port
-      ];
     };
   };
 }
