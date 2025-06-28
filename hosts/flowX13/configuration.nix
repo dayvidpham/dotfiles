@@ -109,6 +109,7 @@
     };
   };
   services.resolved.enable = false;
+  CUSTOM.services.tailscale.enable = true;
 
   systemd.network.networks."50-wlp6s0" = (
     config.CUSTOM.generate.systemd.network {
