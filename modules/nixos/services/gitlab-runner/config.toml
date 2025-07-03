@@ -13,15 +13,13 @@ shutdown_timeout = 0
   token_obtained_at = 2025-06-13T00:17:07Z
   token_expires_at = 0001-01-01T00:00:00Z
   executor = "docker"
-  dns = [ "100.100.100.100" ]
-  environment = [ "DOCKER_DRIVER=overlay2" ]
   [runners.cache]
     MaxUploadedArchiveSize = 0
     [runners.cache.s3]
     [runners.cache.gcs]
     [runners.cache.azure]
   [runners.docker]
-    host = "unix:///var/run/docker.sock"
+    host = "unix:///var/run/podman/podman.sock"
     tls_verify = false
     image = "quay.io/podman/stable"
     privileged = true

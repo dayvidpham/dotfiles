@@ -13,7 +13,7 @@ let
     mkEnableOption
     ;
 
-  runnerUid = 2000;
+  runnerUid = 980;
 
   podman = "${config.virtualisation.podman.package}/bin/podman";
 in
@@ -52,12 +52,14 @@ in
     users.extraUsers.gitlab-runner = {
       name = "gitlab-runner";
       group = "gitlab-runner";
-      extraGroups = [ "network" ];
+      extraGroups = [ "network" "podman" ];
       description = "For the GitLab Runner";
       uid = cfg.user.uid;
-      isNormalUser = true;
-      isSystemUser = false;
+      isNormalUser = false;
+      isSystemUser = true;
       createHome = true;
+      home = "/var/lib/gitlab-runner";
+      homeMode = "0770";
       linger = true; # NOTE: requires security.polkit.enable = true
       subUidRanges = [
         {
@@ -72,9 +74,9 @@ in
         }
       ];
     };
-    users.extraGroups.gitlab-runner = { };
+    users.groups.gitlab-runner = { };
 
-    systemd.user.services.sfurs-gitlab-runner = {
+    systemd.services.sfurs-gitlab-runner = {
       enable = true;
       # Run the service as the gitlab-runner user
       wantedBy = [ "podman.socket" ];
@@ -84,14 +86,14 @@ in
       #requisite = [ "network-online.target" ];
       #bindsTo = [ "network-online.target" ];
 
-      unitConfig = {
-        ConditionUser = "gitlab-runner";
-      };
-
       serviceConfig = {
         Type = "simple";
         Restart = "on-failure";
         RestartSec = "5s";
+        User = "gitlab-runner";
+        Group = "gitlab-runner";
+
+        Environment = "";
 
         ExecStartPre = (if config.networking.networkmanager.enable then
           let
@@ -113,8 +115,8 @@ in
         ExecStart = ''
           ${podman} run --name sfurs --restart=always --replace \
             --user root \
-            -v "%t/podman/podman.sock:/var/run/podman/podman.sock" \
-            -v gitlab-runner-config:/etc/gitlab-runner \
+            -v "/var/run/user/${toString runnerUid}/podman/podman.sock:/var/run/podman/podman.sock" \
+            -v /var/lib/gitlab-runner/config:/etc/gitlab-runner \
             gitlab/gitlab-runner:latest
         '';
       };
