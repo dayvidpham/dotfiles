@@ -49,21 +49,23 @@ in
     # Podman setup, to be used by default
 
     CUSTOM.virtualisation.podman.enable = true;
+    virtualisation.podman.defaultNetwork.settings.networkmode = "host";
     virtualisation.podman.defaultNetwork.settings = {
       dns_enabled = true;
-      network_interface = "podman0";
       ipv6_enabled = true;
-      subnets = [
-        {
-          gateway = "10.88.0.1";
-          subnet = "10.88.0.0/16";
-        }
-        {
-          gateway = "fd00:0bed:bead:f00d::1";
-          subnet = "fd00:0bed:bead:f00d::/64";
-        }
-      ];
+      network_interface = "podman0";
     };
+    #   subnets = [
+    #     {
+    #       gateway = "10.88.0.1";
+    #       subnet = "10.88.0.0/16";
+    #     }
+    #     {
+    #       gateway = "fd00:0bed:bead:f00d::1";
+    #       subnet = "fd00:0bed:bead:f00d::/64";
+    #     }
+    #   ];
+    # };
     networking.nat.enable = true;
     networking.nat.enableIPv6 = true;
     networking.nat.internalInterfaces = [ "podman0" ];
