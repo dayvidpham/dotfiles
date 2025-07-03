@@ -86,7 +86,6 @@
     enable = true;
     sudoInto.enable = true;
     sudoInto.fromUser = "minttea";
-    networking.nat.externalInterface = "enp5s0";
   };
 
   #####################################################

@@ -13,7 +13,7 @@ let
     mkEnableOption
     ;
 
-  runnerUid = 980;
+  runnerUid = 2000;
 
   podman = "${config.virtualisation.podman.package}/bin/podman";
 in
@@ -24,13 +24,7 @@ in
       type = lib.types.int;
       default = runnerUid;
       description = "the uid of the gitlab-runner account";
-      example = "980 (below 1000 typical for system services)";
-    };
-
-    networking.nat.externalInterface = mkOption {
-      type = lib.types.str;
-      description = "the network interface that internal requests will be routed to?";
-      example = "enp5s0 or tailscale0";
+      example = "2000 (must be between 1000 and 655534)";
     };
 
     sudoInto = {
@@ -49,28 +43,6 @@ in
     # Podman setup, to be used by default
 
     CUSTOM.virtualisation.podman.enable = true;
-    virtualisation.podman.defaultNetwork.settings.networkmode = "host";
-    virtualisation.podman.defaultNetwork.settings = {
-      dns_enabled = true;
-      ipv6_enabled = true;
-      network_interface = "podman0";
-    };
-    #   subnets = [
-    #     {
-    #       gateway = "10.88.0.1";
-    #       subnet = "10.88.0.0/16";
-    #     }
-    #     {
-    #       gateway = "fd00:0bed:bead:f00d::1";
-    #       subnet = "fd00:0bed:bead:f00d::/64";
-    #     }
-    #   ];
-    # };
-    networking.nat.enable = true;
-    networking.nat.enableIPv6 = true;
-    networking.nat.internalInterfaces = [ "podman0" ];
-    networking.nat.externalInterface = cfg.networking.nat.externalInterface;
-
 
     ###############
     # User setup
@@ -80,14 +52,12 @@ in
     users.extraUsers.gitlab-runner = {
       name = "gitlab-runner";
       group = "gitlab-runner";
-      extraGroups = [ "network" "podman" ];
+      extraGroups = [ "network" ];
       description = "For the GitLab Runner";
       uid = cfg.user.uid;
-      isNormalUser = false;
-      isSystemUser = true;
+      isNormalUser = true;
+      isSystemUser = false;
       createHome = true;
-      home = "/var/lib/gitlab-runner";
-      homeMode = "0770";
       linger = true; # NOTE: requires security.polkit.enable = true
       subUidRanges = [
         {
@@ -102,39 +72,53 @@ in
         }
       ];
     };
-    users.groups.gitlab-runner = { };
+    users.extraGroups.gitlab-runner = { };
 
-    virtualisation.oci-containers.containers.gitlab-runner = {
-      # This runs the container via the rootless Podman instance of the 'gitlab-runner' user.
-      user = "gitlab-runner";
-      image = "gitlab/gitlab-runner:latest";
-      # Restart the container if it stops.
-      autoStart = true;
-      extraOptions = [
-        # INFO: Maps the host user (gitlab-runner) to UID 0 (root) inside the container.
-        "--userns=keep-id"
-        # INFO: Runs command inside container as root
-        "--user=root"
-      ];
-      volumes = [
-        # Alternative to a podman volume
-        "/var/lib/gitlab-runner/config:/etc/gitlab-runner:z"
-        "/run/user/${toString cfg.user.uid}/podman/podman.sock:/var/run/docker.sock"
-      ];
+    systemd.user.services.sfurs-gitlab-runner = {
+      enable = true;
+      # Run the service as the gitlab-runner user
+      wantedBy = [ "podman.socket" ];
+      after = [ "podman.socket" ];
+      requisite = [ "podman.socket" ];
 
-      cmd = [
-        # Use the system config even in user mode
-        "run"
-        "--config"
-        "/etc/gitlab-runner/config.toml"
-      ];
+      #requisite = [ "network-online.target" ];
+      #bindsTo = [ "network-online.target" ];
+
+      unitConfig = {
+        ConditionUser = "gitlab-runner";
+      };
+
+      serviceConfig = {
+        Type = "simple";
+        Restart = "on-failure";
+        RestartSec = "5s";
+
+        ExecStartPre = (if config.networking.networkmanager.enable then
+          let
+            nm-online = "${config.networking.networkmanager.package}/bin/nm-online";
+          in
+          ''
+            ${nm-online} -s
+          ''
+        else
+          let
+            # assume using networkd
+            networkctl = "${pkgs.systemd}/bin/networkctl";
+          in
+          ''
+            ${networkctl} wait-online
+          ''
+        );
+
+        ExecStart = ''
+          ${podman} run --name sfurs --restart=always --replace \
+            --user root \
+            -v "%t/podman/podman.sock:/var/run/podman/podman.sock" \
+            -v gitlab-runner-config:/etc/gitlab-runner \
+            gitlab/gitlab-runner:latest
+        '';
+      };
     };
-
-    # INFO: To fix the bind mount failing when no folder exists
-    systemd.tmpfiles.rules = [
-      #  Type  Path                             Mode    Owner            Group            Age  Argument
-      "d       /var/lib/gitlab-runner/config    0770    gitlab-runner    gitlab-runner    -    -"
-    ];
 
     security.sudo = mkIf (cfg.sudoInto.enable) {
       enable = true; # Ensure sudo is enabled (usually is by default if you have users)
