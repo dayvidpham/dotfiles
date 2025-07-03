@@ -13,7 +13,7 @@ let
     mkEnableOption
     ;
 
-  runnerUid = 2000;
+  runnerUid = 980;
 
   podman = "${config.virtualisation.podman.package}/bin/podman";
 in
@@ -24,7 +24,7 @@ in
       type = lib.types.int;
       default = runnerUid;
       description = "the uid of the gitlab-runner account";
-      example = "2000 (must be between 1000 and 655534)";
+      example = "980 (below 1000 typical for system services)";
     };
 
     sudoInto = {
@@ -55,9 +55,10 @@ in
       extraGroups = [ "network" ];
       description = "For the GitLab Runner";
       uid = cfg.user.uid;
-      isNormalUser = true;
-      isSystemUser = false;
+      isNormalUser = false;
+      isSystemUser = true;
       createHome = true;
+      home = "/var/lib/gitlab-runner";
       linger = true; # NOTE: requires security.polkit.enable = true
       subUidRanges = [
         {
@@ -72,8 +73,27 @@ in
         }
       ];
     };
-    users.extraGroups.gitlab-runner = { };
+    users.groups.gitlab-runner = { };
 
+    virtualisation.oci-containers.containers.gitlab-runner = {
+      # This runs the container via the rootless Podman instance of the 'gitlab-runner' user.
+      user = "gitlab-runner";
+      image = "gitlab/gitlab-runner:latest";
+      # Restart the container if it stops.
+      autoStart = true;
+      extraOptions = [
+        # CRITICAL: Maps the host user (gitlab-runner) to UID 0 (root) inside the container.
+        "--userns=keep-id"
+      ];
+      volumes = [
+        # Persist the runner's config.toml on the host.
+        "/var/lib/gitlab-runner/config:/etc/gitlab-runner:Z"
+        # The key to "Docker-in-Docker": Mount the host's rootless Podman socket
+        # to the default Docker socket location inside the runner container.
+        # This simplifies the config.toml significantly.
+        "/run/user/${toString cfg.user.uid}/podman/podman.sock:/var/run/docker.sock:Z"
+      ];
+    };
     systemd.user.services.sfurs-gitlab-runner = {
       enable = true;
       # Run the service as the gitlab-runner user
