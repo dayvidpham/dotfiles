@@ -59,6 +59,7 @@ in
       isSystemUser = true;
       createHome = true;
       home = "/var/lib/gitlab-runner";
+      homeMode = "0770";
       linger = true; # NOTE: requires security.polkit.enable = true
       subUidRanges = [
         {
@@ -82,8 +83,10 @@ in
       # Restart the container if it stops.
       autoStart = true;
       extraOptions = [
-        # CRITICAL: Maps the host user (gitlab-runner) to UID 0 (root) inside the container.
+        # INFO: Maps the host user (gitlab-runner) to UID 0 (root) inside the container.
         "--userns=keep-id"
+        # INFO: Runs command inside container as root
+        "--user=root"
       ];
       volumes = [
         # Persist the runner's config.toml on the host.
@@ -94,51 +97,11 @@ in
         "/run/user/${toString cfg.user.uid}/podman/podman.sock:/var/run/docker.sock:Z"
       ];
     };
-    systemd.user.services.sfurs-gitlab-runner = {
-      enable = true;
-      # Run the service as the gitlab-runner user
-      wantedBy = [ "podman.socket" ];
-      after = [ "podman.socket" ];
-      requisite = [ "podman.socket" ];
 
-      #requisite = [ "network-online.target" ];
-      #bindsTo = [ "network-online.target" ];
-
-      unitConfig = {
-        ConditionUser = "gitlab-runner";
-      };
-
-      serviceConfig = {
-        Type = "simple";
-        Restart = "on-failure";
-        RestartSec = "5s";
-
-        ExecStartPre = (if config.networking.networkmanager.enable then
-          let
-            nm-online = "${config.networking.networkmanager.package}/bin/nm-online";
-          in
-          ''
-            ${nm-online} -s
-          ''
-        else
-          let
-            # assume using networkd
-            networkctl = "${pkgs.systemd}/bin/networkctl";
-          in
-          ''
-            ${networkctl} wait-online
-          ''
-        );
-
-        ExecStart = ''
-          ${podman} run --name sfurs --restart=always --replace \
-            --user root \
-            -v "%t/podman/podman.sock:/var/run/podman/podman.sock" \
-            -v gitlab-runner-config:/etc/gitlab-runner \
-            gitlab/gitlab-runner:latest
-        '';
-      };
-    };
+    systemd.tmpfiles.rules = [
+      #  Type  Path                             Mode    Owner            Group            Age  Argument
+      "d       /var/lib/gitlab-runner/config    0770    gitlab-runner    gitlab-runner    -    -"
+    ];
 
     security.sudo = mkIf (cfg.sudoInto.enable) {
       enable = true; # Ensure sudo is enabled (usually is by default if you have users)
