@@ -24,9 +24,6 @@
   nix.settings.extra-allowed-users = [
     "minttea"
   ];
-  hardware.enableRedistributableFirmware = true;
-  hardware.enableAllFirmware = true;
-  hardware.enableAllHardware = true;
 
 
   ###############################

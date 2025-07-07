@@ -41,6 +41,40 @@
   networking.useDHCP = lib.mkDefault true;
   # networking.interfaces.wlp6s0.useDHCP = lib.mkDefault true;
 
+  hardware.enableAllFirmware = true;
+  hardware.enableRedistributableFirmware = true;
+  hardware.enableAllHardware = true;
+
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
-  hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
+  hardware.cpu.amd.updateMicrocode = true;
+
+  boot.kernelParams = [ "amd_pstate=guided" ];
+  powerManagement.enable = true;
+  powerManagement.cpuFreqGovernor = "schedutil";
+  powerManagement.powertop.enable = true;
+
+  services.thermald.enable = true;
+  services.tlp.enable = true;
+  services.tlp.settings = {
+    # Stop charging at 85%
+    STOP_CHARGE_THRESH_BAT0 = 85;
+    # Start charging when the level drops to 80%
+    START_CHARGE_THRESH_BAT0 = 80;
+
+    # Set CPU to powersave on battery
+    CPU_ENERGY_PERF_POLICY_ON_BAT = "power";
+    PLATFORM_PROFILE_ON_BAT = "low-power";
+
+    # Set CPU boost settings
+    CPU_BOOST_ON_AC = 1;
+    CPU_BOOST_ON_BAT = 0;
+
+    # Set CPU to performance on AC
+    CPU_ENERGY_PERF_POLICY_ON_AC = "performance";
+    PLATFORM_PROFILE_ON_AC = "performance";
+
+    # Set the CPU governor for more control
+    CPU_SCALING_GOVERNOR_ON_BAT = "powersave";
+    CPU_SCALING_GOVERNOR_ON_AC = "performance";
+  };
 }
