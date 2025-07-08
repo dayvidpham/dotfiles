@@ -88,6 +88,7 @@
   # ################################
   # General system-config
   CUSTOM.shared.enable = true;
+  environment.systemPackages = [ pkgs.ryzenadj ];
 
   # ################################
   # Desktop
