@@ -103,29 +103,4 @@
     PCIE_ASPM_ON_AC = "default";
     PCIE_ASPM_ON_BAT = "powersupersave";
   };
-
-  #programs.auto-cpufreq.enable = false;
-  #programs.auto-cpufreq.settings = {
-  #  charger = {
-  #    governor = "performance";
-  #    energy_performance_preference = "balance_performance";
-  #    platform_profile = "performance";
-  #    turbo = "auto";
-
-  #    enable_thresholds = true;
-  #    start_threshold = 72;
-  #    stop_threshold = 80;
-  #  };
-
-  #  battery = {
-  #    governor = "powersave";
-  #    energy_performance_preference = "power";
-  #    platform_profile = "low-power";
-  #    turbo = "auto";
-
-  #    enable_thresholds = true;
-  #    start_threshold = 72;
-  #    stop_threshold = 80;
-  #  };
-  #};
 }

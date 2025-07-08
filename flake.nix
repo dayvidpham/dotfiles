@@ -46,11 +46,6 @@
       inputs.nixpkgs.follows = "nixpkgs-unstable";
       inputs.nixpkgs-stable.follows = "nixpkgs-stable";
     };
-
-    auto-cpufreq = {
-      url = "github:AdnanHodzic/auto-cpufreq";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
   outputs =
@@ -70,7 +65,6 @@
       # Community tools
     , nil-lsp
     , niri
-    , auto-cpufreq
     , ...
     }:
     let
@@ -183,7 +177,6 @@
           modules = [
             determinate.nixosModules.default
             niri.nixosModules.niri
-            auto-cpufreq.nixosModules.default
             ./modules/nixos
             noChannelModule
             ./hosts/flowX13/configuration.nix
