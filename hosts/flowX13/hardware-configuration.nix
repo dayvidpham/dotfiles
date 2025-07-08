@@ -48,33 +48,65 @@
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
   hardware.cpu.amd.updateMicrocode = true;
 
-  boot.kernelParams = [ "amd_pstate=guided" ];
+  #boot.kernelParams = [ "amd_pstate=active" ];
   powerManagement.enable = true;
   powerManagement.cpuFreqGovernor = "schedutil";
   powerManagement.powertop.enable = true;
 
   services.thermald.enable = true;
-  services.tlp.enable = true;
+  services.tlp.enable = false;
   services.tlp.settings = {
-    # Stop charging at 85%
-    STOP_CHARGE_THRESH_BAT0 = 85;
-    # Start charging when the level drops to 80%
-    START_CHARGE_THRESH_BAT0 = 80;
+    TLP_ENABLE = true;
+
+    # Stop charging at 80%
+    #STOP_CHARGE_THRESH_BAT0 = 80;
+    # Start charging when the level drops to 75%
+    #START_CHARGE_THRESH_BAT0 = 75;
 
     # Set CPU to powersave on battery
-    CPU_ENERGY_PERF_POLICY_ON_BAT = "power";
-    PLATFORM_PROFILE_ON_BAT = "low-power";
-
-    # Set CPU boost settings
-    CPU_BOOST_ON_AC = 1;
-    CPU_BOOST_ON_BAT = 0;
+    CPU_DRIVER_OPMODE_ON_BAT = "active";
+    #CPU_SCALING_GOVERNOR_ON_BAT = "powersave";
+    #CPU_ENERGY_PERF_POLICY_ON_BAT = "power";
+    #PLATFORM_PROFILE_ON_BAT = "low-power";
+    #CPU_BOOST_ON_BAT = 1;
+    CPU_MIN_PERF_ON_BAT = 0;
+    CPU_MAX_PERF_ON_BAT = 60;
 
     # Set CPU to performance on AC
-    CPU_ENERGY_PERF_POLICY_ON_AC = "performance";
-    PLATFORM_PROFILE_ON_AC = "performance";
+    CPU_DRIVER_OPMODE_ON_AC = "active";
+    #CPU_SCALING_GOVERNOR_ON_AC = "schedutil";
+    #CPU_ENERGY_PERF_POLICY_ON_AC = "performance";
+    #PLATFORM_PROFILE_ON_AC = "performance";
+    #CPU_BOOST_ON_AC = 1;
+    CPU_MIN_PERF_ON_AC = 0;
+    CPU_MAX_PERF_ON_AC = 100;
 
-    # Set the CPU governor for more control
-    CPU_SCALING_GOVERNOR_ON_BAT = "schedutil";
-    CPU_SCALING_GOVERNOR_ON_AC = "schedutil";
+    PCIE_ASPM_ON_AC = "default";
+    PCIE_ASPM_ON_BAT = "powersupersave";
+  };
+
+  programs.auto-cpufreq.enable = true;
+  programs.auto-cpufreq.settings = {
+    charger = {
+      governor = "performance";
+      energy_performance_preference = "balance_performance";
+      platform_profile = "performance";
+      turbo = "auto";
+
+      enable_thresholds = true;
+      start_threshold = 72;
+      stop_threshold = 80;
+    };
+
+    battery = {
+      governor = "powersave";
+      energy_performance_preference = "power";
+      platform_profile = "low-power";
+      turbo = "auto";
+
+      enable_thresholds = true;
+      start_threshold = 72;
+      stop_threshold = 80;
+    };
   };
 }
