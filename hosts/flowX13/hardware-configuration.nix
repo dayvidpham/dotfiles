@@ -54,59 +54,78 @@
   powerManagement.powertop.enable = true;
 
   services.thermald.enable = true;
-  services.tlp.enable = false;
+  services.tlp.enable = true;
   services.tlp.settings = {
     TLP_ENABLE = true;
 
     # Stop charging at 80%
-    #STOP_CHARGE_THRESH_BAT0 = 80;
+    STOP_CHARGE_THRESH_BAT0 = 80;
     # Start charging when the level drops to 75%
-    #START_CHARGE_THRESH_BAT0 = 75;
+    START_CHARGE_THRESH_BAT0 = 75;
 
     # Set CPU to powersave on battery
     CPU_DRIVER_OPMODE_ON_BAT = "active";
-    #CPU_SCALING_GOVERNOR_ON_BAT = "powersave";
-    #CPU_ENERGY_PERF_POLICY_ON_BAT = "power";
-    #PLATFORM_PROFILE_ON_BAT = "low-power";
-    #CPU_BOOST_ON_BAT = 1;
+    CPU_SCALING_GOVERNOR_ON_BAT = "powersave";
+    CPU_ENERGY_PERF_POLICY_ON_BAT = "power";
+    PLATFORM_PROFILE_ON_BAT = "quiet";
+    CPU_BOOST_ON_BAT = 1;
     CPU_MIN_PERF_ON_BAT = 0;
     CPU_MAX_PERF_ON_BAT = 60;
+    CPU_SCALING_MIN_FREQ_ON_BAT = 0;
+    CPU_SCALING_MAX_FREQ_ON_BAT = 2000000; # limit to 2 GHz on battery
 
     # Set CPU to performance on AC
     CPU_DRIVER_OPMODE_ON_AC = "active";
-    #CPU_SCALING_GOVERNOR_ON_AC = "schedutil";
-    #CPU_ENERGY_PERF_POLICY_ON_AC = "performance";
-    #PLATFORM_PROFILE_ON_AC = "performance";
-    #CPU_BOOST_ON_AC = 1;
+    CPU_SCALING_GOVERNOR_ON_AC = "schedutil";
+    CPU_ENERGY_PERF_POLICY_ON_AC = "performance";
+    PLATFORM_PROFILE_ON_AC = "performance";
+    CPU_BOOST_ON_AC = 1;
     CPU_MIN_PERF_ON_AC = 0;
     CPU_MAX_PERF_ON_AC = 100;
+    CPU_SCALING_MIN_FREQ_ON_AC = 0;
+    CPU_SCALING_MAX_FREQ_ON_AC = 9999999;
+
+    # only enable wifi on startup
+    DEVICES_TO_ENABLE_ON_STARTUP = "wifi";
+    DEVICES_TO_DISABLE_ON_STARTUP = "bluetooth wwan";
+
+    DEVICES_TO_DISABLE_ON_LAN_CONNECT = "wifi wwan";
+    DEVICES_TO_DISABLE_ON_WIFI_CONNECT = "wwan";
+    DEVICES_TO_DISABLE_ON_WWAN_CONNECT = "wifi";
+
+    DEVICES_TO_ENABLE_ON_LAN_DISCONNECT = "wifi wwan";
+    DEVICES_TO_ENABLE_ON_WIFI_DISCONNECT = "";
+    DEVICES_TO_ENABLE_ON_WWAN_DISCONNECT = "";
+
+    DEVICES_TO_ENABLE_ON_AC = "bluetooth wifi wwan";
+    DEVICES_TO_DISABLE_ON_BAT_NOT_IN_USE = "bluetooth wifi wwan";
 
     PCIE_ASPM_ON_AC = "default";
     PCIE_ASPM_ON_BAT = "powersupersave";
   };
 
-  programs.auto-cpufreq.enable = true;
-  programs.auto-cpufreq.settings = {
-    charger = {
-      governor = "performance";
-      energy_performance_preference = "balance_performance";
-      platform_profile = "performance";
-      turbo = "auto";
+  #programs.auto-cpufreq.enable = false;
+  #programs.auto-cpufreq.settings = {
+  #  charger = {
+  #    governor = "performance";
+  #    energy_performance_preference = "balance_performance";
+  #    platform_profile = "performance";
+  #    turbo = "auto";
 
-      enable_thresholds = true;
-      start_threshold = 72;
-      stop_threshold = 80;
-    };
+  #    enable_thresholds = true;
+  #    start_threshold = 72;
+  #    stop_threshold = 80;
+  #  };
 
-    battery = {
-      governor = "powersave";
-      energy_performance_preference = "power";
-      platform_profile = "low-power";
-      turbo = "auto";
+  #  battery = {
+  #    governor = "powersave";
+  #    energy_performance_preference = "power";
+  #    platform_profile = "low-power";
+  #    turbo = "auto";
 
-      enable_thresholds = true;
-      start_threshold = 72;
-      stop_threshold = 80;
-    };
-  };
+  #    enable_thresholds = true;
+  #    start_threshold = 72;
+  #    stop_threshold = 80;
+  #  };
+  #};
 }
