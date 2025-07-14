@@ -175,9 +175,9 @@ in
 
     ##############
     # Networking
-    #
+
     # man systemd.network 
-    systemd.network.enable = true;
+    systemd.network.enable = false;
 
     # returns an attrset
     CUSTOM.generate.systemd.network = override: lib.mkMerge [
@@ -189,13 +189,13 @@ in
           IPv6AcceptRA = true;
         };
         dhcpV4Config = {
-          UseDNS = false;
+          UseDNS = true;
         };
         dhcpV6Config = {
-          UseDNS = false;
+          UseDNS = true;
         };
         ipv6AcceptRAConfig = {
-          UseDNS = false;
+          UseDNS = true;
         };
       }
     ];

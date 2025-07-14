@@ -76,7 +76,7 @@
 
     # Set CPU to performance on AC
     CPU_DRIVER_OPMODE_ON_AC = "active";
-    CPU_SCALING_GOVERNOR_ON_AC = "schedutil";
+    CPU_SCALING_GOVERNOR_ON_AC = "performance";
     CPU_ENERGY_PERF_POLICY_ON_AC = "balance_performance";
     PLATFORM_PROFILE_ON_AC = "balanced";
     CPU_BOOST_ON_AC = 1;

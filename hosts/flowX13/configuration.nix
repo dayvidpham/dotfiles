@@ -97,19 +97,18 @@
   # Networking
   networking = {
     hostName = "flowX13"; # Define your hostname.
-    networkmanager.enable = true; # Easiest to use and most distros use this by default.
+    networkmanager.enable = false; # Easiest to use and most distros use this by default.
 
     # NOTE: For GrSim
     firewall.allowedUDPPorts = [
       10003
       10020
     ];
-    wireguard = {
-      enable = true;
-      useNetworkd = false;
-    };
   };
-  services.resolved.enable = false;
+
+  systemd.network.enable = true;
+  networking.useNetworkd = pkgs.lib.mkForce true;
+  services.resolved.enable = pkgs.lib.mkForce true;
   CUSTOM.services.tailscale.enable = true;
 
   systemd.network.networks."50-wlp6s0" = (
