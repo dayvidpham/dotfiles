@@ -97,7 +97,6 @@
   # Networking
   networking = {
     hostName = "flowX13"; # Define your hostname.
-    networkmanager.enable = false; # Easiest to use and most distros use this by default.
 
     # NOTE: For GrSim
     firewall.allowedUDPPorts = [
@@ -106,29 +105,66 @@
     ];
   };
 
-  systemd.network.enable = true;
-  networking.useNetworkd = pkgs.lib.mkForce true;
-  services.resolved.enable = pkgs.lib.mkForce true;
+  networking.usePredictableInterfaceNames = true;
   CUSTOM.services.tailscale.enable = true;
+
+  # Use systemd-networkd (eth) AND NetworkManager (wifi) AND resolved (dns)
+  # systemd-networkd
+  systemd.network.enable = true;
+  networking.useNetworkd = true;
+  systemd.network.wait-online.enable = false;
+
+  systemd.network.networks."99-wired" = {
+    matchConfig.Type = "ether";
+    networkConfig = {
+      Description = "Ethernet iface";
+      IPv6PrivacyExtensions = "kernel";
+    };
+    linkConfig.RequiredForOnline = "no";
+  };
+
+  # Keep names, wlans are unmanaged
+  systemd.network.links."10-wlan-names" = {
+    matchConfig.Type = "wlan";
+    linkConfig.NamePolicy = [ "keep" "database" "onboard" "slot" "path" ];
+  };
+  systemd.network.networks."10-wlan-unmanaged" = {
+    matchConfig.Type = "wlan";
+    linkConfig.Unmanaged = true;
+  };
+
+  # NetworkManager
+  networking.networkmanager.enable = true;
+  networking.networkmanager.wifi.powersave = true;
+  networking.networkmanager.wifi.macAddress = "stable-ssid";
+  networking.networkmanager.unmanaged = [
+    "device-type:ether"
+    "interface-name:tailscale*"
+  ];
+
+  # systemd-resolved
+  services.resolved.enable = true;
 
   systemd.network.networks."50-wlp6s0" = (
     config.CUSTOM.generate.systemd.network {
       matchConfig.Name = "wlp6s0";
       networkConfig = {
         Description = "Wireless 802.11 WiFi iface";
+        IPv6PrivacyExtensions = "kernel";
       };
-      linkConfig.RequiredForOnline = "routable";
+      linkConfig.RequiredForOnline = "no";
     }
   );
 
+  ######################################
   # Virtualisation
   programs.dconf.enable = true; # virt-manager requires dconf to be enabled
   programs.virt-manager = {
     # GUI for controlling QEMU/KVM VMs on libvirtd
     enable = true;
   };
+  virtualisation.libvirtd.enable = true;
 
-  # Virtualisation
   CUSTOM.virtualisation.podman.enable = true;
 
   # Set time zone.
@@ -158,4 +194,6 @@
     description = "the guy";
     extraGroups = [ "networkmanager" "wheel" "libvirtd" "video" "gamemode" ];
   };
+
+
 }

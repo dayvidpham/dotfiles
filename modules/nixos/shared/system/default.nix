@@ -178,6 +178,7 @@ in
 
     # man systemd.network 
     systemd.network.enable = lib.mkDefault false;
+    networking.usePredictableInterfaceNames = lib.mkDefault true;
 
     # returns an attrset
     CUSTOM.generate.systemd.network = override: lib.mkMerge [
@@ -231,10 +232,10 @@ in
     programs.dconf.enable = true; # virt-manager requires dconf to be enabled
     programs.virt-manager = {
       # GUI for controlling QEMU/KVM VMs on libvirtd
-      enable = true;
+      enable = lib.mkDefault false;
     };
     virtualisation.libvirtd = {
-      enable = true;
+      enable = lib.mkDefault false;
       qemu = {
         package = pkgs.qemu_kvm;
         runAsRoot = true;

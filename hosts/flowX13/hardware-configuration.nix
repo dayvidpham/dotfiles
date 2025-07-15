@@ -39,7 +39,7 @@
   # still possible to use this option, but it's recommended to use it in conjunction
   # with explicit per-interface declarations with `networking.interfaces.<interface>.useDHCP`.
   networking.useDHCP = lib.mkDefault true;
-  # networking.interfaces.wlp6s0.useDHCP = lib.mkDefault true;
+  #networking.interfaces.wlp6s0.useDHCP = lib.mkDefault true;
 
   hardware.enableAllFirmware = true;
   hardware.enableRedistributableFirmware = true;
@@ -54,7 +54,7 @@
   powerManagement.powertop.enable = true;
 
   services.thermald.enable = true;
-  services.tlp.enable = true;
+  services.tlp.enable = false;
   services.tlp.settings = {
     TLP_ENABLE = true;
 
@@ -75,8 +75,8 @@
     CPU_SCALING_MAX_FREQ_ON_BAT = 2000000; # limit to 2 GHz on battery
 
     # Set CPU to performance on AC
-    CPU_DRIVER_OPMODE_ON_AC = "active";
-    CPU_SCALING_GOVERNOR_ON_AC = "performance";
+    CPU_DRIVER_OPMODE_ON_AC = "guided";
+    CPU_SCALING_GOVERNOR_ON_AC = "schedutil";
     CPU_ENERGY_PERF_POLICY_ON_AC = "balance_performance";
     PLATFORM_PROFILE_ON_AC = "balanced";
     CPU_BOOST_ON_AC = 1;
@@ -86,21 +86,21 @@
     CPU_SCALING_MAX_FREQ_ON_AC = 9999999;
 
     # only enable wifi on startup
-    DEVICES_TO_ENABLE_ON_STARTUP = "wifi";
-    DEVICES_TO_DISABLE_ON_STARTUP = "bluetooth wwan";
+    #DEVICES_TO_ENABLE_ON_STARTUP = "bluetooth wifi";
+    #DEVICES_TO_DISABLE_ON_STARTUP = "";
 
-    DEVICES_TO_DISABLE_ON_LAN_CONNECT = "wifi wwan";
-    DEVICES_TO_DISABLE_ON_WIFI_CONNECT = "wwan";
-    DEVICES_TO_DISABLE_ON_WWAN_CONNECT = "wifi";
+    #DEVICES_TO_DISABLE_ON_LAN_CONNECT = "wifi wwan";
+    #DEVICES_TO_DISABLE_ON_WIFI_CONNECT = "wwan";
+    #DEVICES_TO_DISABLE_ON_WWAN_CONNECT = "wifi";
 
-    DEVICES_TO_ENABLE_ON_LAN_DISCONNECT = "wifi wwan";
-    DEVICES_TO_ENABLE_ON_WIFI_DISCONNECT = "";
-    DEVICES_TO_ENABLE_ON_WWAN_DISCONNECT = "";
+    #DEVICES_TO_ENABLE_ON_LAN_DISCONNECT = "wifi wwan";
+    #DEVICES_TO_ENABLE_ON_WIFI_DISCONNECT = "";
+    #DEVICES_TO_ENABLE_ON_WWAN_DISCONNECT = "";
 
-    DEVICES_TO_ENABLE_ON_AC = "bluetooth wifi wwan";
-    DEVICES_TO_DISABLE_ON_BAT_NOT_IN_USE = "bluetooth wifi wwan";
+    #DEVICES_TO_ENABLE_ON_AC = "bluetooth wifi wwan";
+    #DEVICES_TO_DISABLE_ON_BAT_NOT_IN_USE = "";
 
     PCIE_ASPM_ON_AC = "default";
-    PCIE_ASPM_ON_BAT = "powersupersave";
+    PCIE_ASPM_ON_BAT = "default";
   };
 }
