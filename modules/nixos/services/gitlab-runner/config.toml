@@ -23,6 +23,7 @@ shutdown_timeout = 0
     tls_verify = false
     image = "quay.io/podman/stable"
     privileged = true
+    pull_policy = "always"
     disable_entrypoint_overwrite = false
     oom_kill_disable = false
     disable_cache = false
@@ -31,7 +32,7 @@ shutdown_timeout = 0
     shm_size = 0
     network_mtu = 0
     [[runners.docker.services]]
-      name = "docker:27-dind"
+      name = "registry.gitlab.com/sfurs/software/docker:27-dind"
       alias = "docker"
   [runners.feature_flags]
     FF_NETWORK_PER_BUILD = true
