@@ -31,21 +31,20 @@
   # Networking
   networking = {
     hostName = "desktop"; # Define your hostname.
-    networkmanager.enable = true; # Easiest to use and most distros use this by default.
+    usePredictableInterfaceNames = true;
+    networkmanager.enable = false; # Easiest to use and most distros use this by default.
+    useNetworkd = true;
 
     # NOTE: For GrSim
     firewall.allowedUDPPorts = [
       10003
       10020
     ];
-    firewall.allowPing = true;
-    wireguard = {
-      enable = true;
-      useNetworkd = true;
-    };
+    firewall.allowPing = false;
   };
   CUSTOM.services.tailscale.enable = true;
 
+  systemd.network.enable = true;
   systemd.network.links."50-eth-wol" = {
     matchConfig = {
       MACAddress = "9c:1e:95:9c:4f:50";

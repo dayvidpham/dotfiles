@@ -177,7 +177,7 @@ in
     # Networking
 
     # man systemd.network 
-    systemd.network.enable = false;
+    systemd.network.enable = lib.mkDefault false;
 
     # returns an attrset
     CUSTOM.generate.systemd.network = override: lib.mkMerge [

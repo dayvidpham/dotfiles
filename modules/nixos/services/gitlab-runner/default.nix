@@ -79,12 +79,9 @@ in
     systemd.services.sfurs-gitlab-runner = {
       enable = true;
       # Run the service as the gitlab-runner user
-      wantedBy = [ "podman.socket" ];
-      after = [ "podman.socket" ];
-      requisite = [ "podman.socket" ];
-
-      #requisite = [ "network-online.target" ];
-      #bindsTo = [ "network-online.target" ];
+      wantedBy = [ "podman.socket" "network-online.target" ];
+      after = [ "podman.socket" "network-online.target" ];
+      requisite = [ "podman.socket" "network-online.target" ];
 
       serviceConfig = {
         Type = "simple";
@@ -102,14 +99,15 @@ in
           ''
             ${nm-online} -s
           ''
-        else
-          let
-            # assume using networkd
-            networkctl = "${pkgs.systemd}/bin/networkctl";
-          in
-          ''
-            ${networkctl} wait-online
-          ''
+        else null
+          # else
+          #   let
+          #     # assume using networkd
+          #     networkctl = "${pkgs.systemd}/bin/networkctl";
+          #   in
+          #   ''
+          #     ${networkctl} wait-online
+          #   ''
         );
 
         ExecStart = ''
