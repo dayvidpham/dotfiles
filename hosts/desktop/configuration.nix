@@ -67,6 +67,16 @@
     }
   );
 
+  systemd.network.networks."50-enp7s0" = (
+    config.CUSTOM.generate.systemd.network {
+      matchConfig.Name = "enp7s0";
+      networkConfig = {
+        Description = "eth 1 Gbit iface, Telus";
+      };
+      linkConfig.RequiredForOnline = "no";
+    }
+  );
+
   programs.wireshark.enable = true;
   programs.wireshark.dumpcap.enable = true;
 
