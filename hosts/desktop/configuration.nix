@@ -71,11 +71,23 @@
     config.CUSTOM.generate.systemd.network {
       matchConfig.Name = "enp7s0";
       networkConfig = {
-        Description = "eth 1 Gbit iface, Telus";
+        Description = "eth 1 Gbit iface, ISP";
       };
-      linkConfig.RequiredForOnline = "no";
+      linkConfig.RequiredForOnline = "yes";
     }
   );
+
+  systemd.network.networks."50-tailscale0" = (
+    config.CUSTOM.generate.systemd.network {
+      matchConfig.Name = "tailscale0";
+      networkConfig = {
+        Description = "Tailscale VPN";
+      };
+      linkConfig.RequiredForOnline = "yes";
+    }
+  );
+
+  services.resolved.enable = true;
 
   programs.wireshark.enable = true;
   programs.wireshark.dumpcap.enable = true;

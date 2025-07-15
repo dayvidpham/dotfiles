@@ -202,9 +202,9 @@ in
 
 
     # man resolved.conf
-    services.resolved.enable = false;
-    services.resolved.dnssec = "allow-downgrade";
-    services.resolved.dnsovertls = "opportunistic";
+    services.resolved.enable = lib.mkDefault false;
+    services.resolved.dnssec = lib.mkDefault "allow-downgrade";
+    services.resolved.dnsovertls = lib.mkDefault "opportunistic";
     services.resolved.domains = [
       "~."
     ];
