@@ -79,8 +79,9 @@ in
     systemd.services.sfurs-gitlab-runner = {
       enable = true;
       # Run the service as the gitlab-runner user
-      wantedBy = [ "multi-user.target" ];
+      wantedBy = [ "multi-user.target" "network-online.target" ];
       requisite = [ "podman.socket" "network-online.target" ];
+      requiredBy = [ "podman.socket" "network-online.target" ];
       after = [ "podman.socket" "network-online.target" ];
 
       serviceConfig = {
