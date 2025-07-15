@@ -258,7 +258,7 @@
             ./programs/neovim
             ./users/minttea/home.nix
             {
-              CUSTOM.games.minecraft.enable = true;
+              CUSTOM.games.minecraft.enable = false;
             }
           ];
           extraSpecialArgs = extraSpecialArgs // {

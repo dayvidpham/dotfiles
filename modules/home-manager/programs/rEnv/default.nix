@@ -48,7 +48,7 @@ in
 
   config = mkIf cfg.enable {
     home.packages = [
-      pkgs.texliveFull
+      pkgs.texliveTeTeX
       pkgs.pandoc
     ] ++ (f-renv pkgs-stable);
 

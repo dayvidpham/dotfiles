@@ -23,7 +23,6 @@ let
     ;
 
   waybar-mediaPlayer = (waybar.override {
-    swaySupport = false;
     withMediaPlayer = true;
   });
   python3-deps = (python3.withPackages (pyPkgs: with pyPkgs; [
