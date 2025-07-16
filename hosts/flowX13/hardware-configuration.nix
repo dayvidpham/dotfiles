@@ -54,7 +54,7 @@
   powerManagement.powertop.enable = true;
 
   services.thermald.enable = true;
-  services.tlp.enable = false;
+  services.tlp.enable = true;
   services.tlp.settings = {
     TLP_ENABLE = true;
 
@@ -86,8 +86,8 @@
     CPU_SCALING_MAX_FREQ_ON_AC = 9999999;
 
     # only enable wifi on startup
-    #DEVICES_TO_ENABLE_ON_STARTUP = "bluetooth wifi";
-    #DEVICES_TO_DISABLE_ON_STARTUP = "";
+    DEVICES_TO_ENABLE_ON_STARTUP = "bluetooth wifi wwan";
+    DEVICES_TO_DISABLE_ON_STARTUP = "";
 
     #DEVICES_TO_DISABLE_ON_LAN_CONNECT = "wifi wwan";
     #DEVICES_TO_DISABLE_ON_WIFI_CONNECT = "wwan";
@@ -100,7 +100,7 @@
     #DEVICES_TO_ENABLE_ON_AC = "bluetooth wifi wwan";
     #DEVICES_TO_DISABLE_ON_BAT_NOT_IN_USE = "";
 
-    PCIE_ASPM_ON_AC = "default";
-    PCIE_ASPM_ON_BAT = "default";
+    #PCIE_ASPM_ON_AC = "default";
+    #PCIE_ASPM_ON_BAT = "default";
   };
 }
