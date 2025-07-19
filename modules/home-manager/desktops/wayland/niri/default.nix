@@ -1,6 +1,6 @@
 { config
 , pkgs
-, lib ? pkgs.lib
+, lib ? config.lib
 , GLOBALS
 , niri
 , ...

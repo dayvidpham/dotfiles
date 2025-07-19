@@ -43,6 +43,14 @@ input {
         // scroll-method "no-scroll"
     }
 
+    tablet {
+        map-to-output "eDP-1"
+    }
+
+    touch {
+        map-to-output "eDP-1"
+    }
+
     trackpoint {
         // off
         // natural-scroll
