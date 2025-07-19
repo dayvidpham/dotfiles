@@ -100,7 +100,15 @@
     #DEVICES_TO_ENABLE_ON_AC = "bluetooth wifi wwan";
     #DEVICES_TO_DISABLE_ON_BAT_NOT_IN_USE = "";
 
-    #PCIE_ASPM_ON_AC = "default";
-    #PCIE_ASPM_ON_BAT = "default";
+
+    RUNTIME_PM_ON_AC = "on";
+    RUNTIME_PM_ON_BAT = "auto";
+
+    RUNTIME_PM_DENYLIST = "08:00.3 08:00.4";
+    RUNTIME_PM_DISABLE = "08:00.3 08:00.4";
+    RUNTIME_PM_DRIVER_DENYLIST = "mei_me nouveau radeon xhci_hcd";
+
+    PCIE_ASPM_ON_AC = "default";
+    PCIE_ASPM_ON_BAT = "powersave";
   };
 }

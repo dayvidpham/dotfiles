@@ -118,6 +118,7 @@
     matchConfig.Type = "ether";
     networkConfig = {
       Description = "Ethernet iface";
+      DHCP = "yes";
       IPv6PrivacyExtensions = "kernel";
     };
     linkConfig.RequiredForOnline = "no";
