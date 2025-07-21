@@ -97,9 +97,6 @@ rec {
     spotify
     discord
     discord-screenaudio
-    zotero # ref/citation/bib manager
-    vivaldi # alternative Chromium browser
-    anytype # proj management/knowledge base
 
     # Gaming
     protonup
@@ -113,6 +110,11 @@ rec {
     # Utils
     neovide # Rust-based native nvim text editor
     nix-search # Fast, indexed replacement for awful builtin `nix search`
+
+    # Notes
+    anytype # proj management/knowledge base
+    zotero # ref/citation/bib manager
+    lorien # infinite canvas notes
   ]);
 
 
