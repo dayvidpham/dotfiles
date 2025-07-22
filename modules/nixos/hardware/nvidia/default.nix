@@ -92,7 +92,7 @@ let
     # NOTE: Open kernel module: this is not the nouveau driver
     open = {
       default = true; # GTX 10XX gen is unsupported
-      # we on the RTX 4090 now though!
+      desktop = false; # we on the RTX 4090 now though!
     };
 
     # NOTE: Persists driver state across CUDA job runs, reduces setups/teardowns
