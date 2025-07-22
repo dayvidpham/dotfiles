@@ -10,18 +10,21 @@ if [ ! -n "${__COMPINIT_WAS_RUN-}" ]; then
     # autoload:
     #   -U: do not expand aliases
     #   -z: autoload using zsh style (?)
-    autoload -Uz compinit
+    autoload -Uz compinit bashcompinit
 
     # compinit:
     #   -u flag: use files in insecure directories without asking
 
     # Run faster compinit with -C, only check for new functions? don't re-check existing?
     #   Can be a source of bugs: if new completions added, will not be available
-    if [[ $ZSH_COMPDUMP(#qNmh-20) ]]; then
+    if [[ "$ZSH_COMPDUMP"(N.mh+8) ]]; then
       compinit -C -d "$ZSH_COMPDUMP"
     else
       compinit -u -d "$ZSH_COMPDUMP"; touch "$ZSH_COMPDUMP"
     fi
+
+    bashcompinit
+
     {
       autoload -Uz zcompile
       zcompare() {
