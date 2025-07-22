@@ -38,7 +38,8 @@ input {
     mouse {
         // off
         // natural-scroll
-        // accel-speed 0.2
+        accel-speed -0.4        // 1600 dpi
+        //accel-speed 0.0         // Default
         accel-profile "flat"
         // scroll-method "no-scroll"
     }
