@@ -41,7 +41,7 @@ let
 
       laptop = {
         enable = true;
-        finegrained = false;
+        finegrained = true;
       };
       desktop = {
         enable = true;
@@ -64,9 +64,9 @@ let
       };
 
       laptop = default // {
-        sync.enable = true;
-        #offload.enable = true;
-        #offload.enableOffloadCmd = true;
+        sync.enable = false;
+        offload.enable = true;
+        offload.enableOffloadCmd = true;
         nvidiaBusId = "PCI:1:0:0";
         amdgpuBusId = "PCI:8:0:0";
       };
@@ -99,7 +99,7 @@ let
       default = false;
       desktop = true;
       wsl = true;
-      flowX13 = false;
+      flowX13 = true;
       flowX13-wsl = true;
     };
 
