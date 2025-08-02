@@ -29,13 +29,14 @@
   ###############################
   # Locally-hosted binary cache settings
   nix.settings.builders = pkgs.lib.mkForce [
-    "ssh://nix-ssh@desktop"
+    "ssh-ng://nix-ssh@desktop"
     "@/etc/nix/machines"
   ];
   nix.settings.trusted-substituters = [
-    "ssh://nix-ssh@desktop"
+    "ssh-ng://nix-ssh@desktop"
   ];
   nix.settings.extra-trusted-public-keys = [
+    "desktop.tsnet.vpn.dhpham.com:8/RG/7HFPqSRRo7IWyGZwwiwgLs1i9FciO2FQEXN7ic="
     "cache.desktop.org:Sds3S8EjsjypNfQQekd7gmHg19PFZwbjR7Dko/r9mfY="
   ];
 
@@ -57,16 +58,15 @@
     # how fast is the builder compared to your local machine
     speedFactor = 8;
     supportedFeatures = [ "nixos-test" "benchmark" "big-parallel" "kvm" ]
-      #++ [ "nix-command" "flakes" "fetch-closure" ]
+      ++ [ "nix-command" "flakes" "fetch-closure" ]
     ;
     mandatoryFeatures = [ ];
   }];
   # required, otherwise remote buildMachines above aren't used
   nix.distributedBuilds = true;
-  # optional, useful when the builder has a faster internet connection than yours
-  nix.settings = {
-    builders-use-substitutes = true;
-  };
+  # useful when the builder has a faster internet connection than yours
+  # otherwise clients upload deps to builders
+  nix.settings.builders-use-substitutes = true;
 
 
   #########################
