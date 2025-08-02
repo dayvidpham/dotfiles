@@ -115,6 +115,11 @@
 
   # Use desktop's /nix/ store as nix cache served over ssh
   nix.sshServe.enable = true;
+  nix.sshServe.trusted = true;
+  nix.sshServe.write = true;
+  nix.sshServe.protocol = "ssh-ng";
+
+  # Remote users allowed to access the store
   nix.sshServe.keys = [
     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFE9Bzi5oGzx9d68d4lVLgo/d1GypUwE7MhAQ7Z32LlR minttea@flowX13"
   ];
@@ -122,8 +127,8 @@
   nix.settings.extra-allowed-users = [
     "minttea"
   ];
-  nix.settings.extra-trusted-users = [
-    "nix-ssh"
+  nix.settings.secret-key-files = [
+    "/etc/nix/cache-private-key.pem"
   ];
 
   ######################################
