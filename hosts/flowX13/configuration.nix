@@ -30,12 +30,15 @@
   # Locally-hosted binary cache settings
   nix.settings.builders = pkgs.lib.mkForce [
     "ssh-ng://nix-ssh@desktop"
+    "ssh-ng://nix-ssh@desktop.tsnet.vpn.dhpham.com"
     "@/etc/nix/machines"
   ];
   nix.settings.trusted-substituters = [
     "ssh-ng://nix-ssh@desktop"
+    "ssh-ng://nix-ssh@desktop.tsnet.vpn.dhpham.com"
   ];
   nix.settings.extra-trusted-public-keys = [
+    "desktop:8/RG/7HFPqSRRo7IWyGZwwiwgLs1i9FciO2FQEXN7ic="
     "desktop.tsnet.vpn.dhpham.com:8/RG/7HFPqSRRo7IWyGZwwiwgLs1i9FciO2FQEXN7ic="
     "cache.desktop.org:Sds3S8EjsjypNfQQekd7gmHg19PFZwbjR7Dko/r9mfY="
   ];
