@@ -65,9 +65,9 @@
     maxJobs = 16;
     # how fast is the builder compared to your local machine
     speedFactor = 8;
-    supportedFeatures = [ "nixos-test" "benchmark" "big-parallel" "kvm" ]
-      #++ [ "nix-command" "flakes" "fetch-closure" ]
-    ;
+    #supportedFeatures = [ "nixos-test" "benchmark" "big-parallel" "kvm" ]
+    #  #++ [ "nix-command" "flakes" "fetch-closure" ]
+    #;
     mandatoryFeatures = [ ];
   }];
   # required, otherwise remote buildMachines above aren't used
