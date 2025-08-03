@@ -29,13 +29,13 @@
   ###############################
   # Locally-hosted binary cache settings
   nix.settings.builders = pkgs.lib.mkForce [
-    "ssh-ng://nix-ssh@desktop"
-    "ssh-ng://nix-ssh@desktop.tsnet.vpn.dhpham.com"
+    "ssh://nix-ssh@desktop"
+    "ssh://nix-ssh@desktop.tsnet.vpn.dhpham.com"
     "@/etc/nix/machines"
   ];
   nix.settings.trusted-substituters = [
-    "ssh-ng://nix-ssh@desktop"
-    "ssh-ng://nix-ssh@desktop.tsnet.vpn.dhpham.com"
+    "ssh://nix-ssh@desktop"
+    "ssh://nix-ssh@desktop.tsnet.vpn.dhpham.com"
   ];
   nix.settings.extra-trusted-public-keys = [
     "desktop:8/RG/7HFPqSRRo7IWyGZwwiwgLs1i9FciO2FQEXN7ic="
@@ -56,7 +56,7 @@
     # CPU architecture of the builder, and the operating system it runs.
     system = "x86_64-linux";
     # Nix custom ssh-variant that avoids lots of "trusted-users" settings pain
-    protocol = "ssh-ng";
+    protocol = "ssh";
 
     sshUser = "nix-ssh";
     publicHostKey = "c3NoLWVkMjU1MTkgQUFBQUMzTnphQzFsWkRJMU5URTVBQUFBSU8xZDIrbGhDemRocnhhTDhxckE1VVc5V0N6SUN5VXBWbHQrZXJCWkZkazEgcm9vdEBkZXNrdG9wCg==";

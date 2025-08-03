@@ -21,7 +21,7 @@
     #############################
     # Nix package management
     nix-multithreaded.url = "github:DeterminateSystems/nix-src/multithreaded-eval";
-    determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/*";
+    determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/3.8.4.tar.gz";
 
     home-manager = {
       url = "github:nix-community/home-manager/master";
