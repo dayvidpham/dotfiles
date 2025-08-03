@@ -43,6 +43,11 @@
     "cache.desktop.org:Sds3S8EjsjypNfQQekd7gmHg19PFZwbjR7Dko/r9mfY="
   ];
 
+  programs.ssh.extraConfig = ''
+    Host desktop
+        Port 8108
+  '';
+
   nix.buildMachines = [{
     # Will be used to call "ssh builder" to connect to the builder machine.
     # The details of the connection (user, port, url etc.)
@@ -61,7 +66,7 @@
     # how fast is the builder compared to your local machine
     speedFactor = 8;
     supportedFeatures = [ "nixos-test" "benchmark" "big-parallel" "kvm" ]
-      ++ [ "nix-command" "flakes" "fetch-closure" ]
+      #++ [ "nix-command" "flakes" "fetch-closure" ]
     ;
     mandatoryFeatures = [ ];
   }];
