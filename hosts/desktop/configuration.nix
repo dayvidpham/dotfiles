@@ -121,6 +121,7 @@
 
   # Remote users allowed to access the store
   nix.sshServe.keys = [
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHokUTC0zB6bZvqRtXG8GAekzCLjvsSBNXL2Y/tBmyI7 root@flowX13"
     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFE9Bzi5oGzx9d68d4lVLgo/d1GypUwE7MhAQ7Z32LlR minttea@flowX13"
   ];
 
