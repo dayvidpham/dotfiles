@@ -123,6 +123,7 @@
   nix.sshServe.keys = [
     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHokUTC0zB6bZvqRtXG8GAekzCLjvsSBNXL2Y/tBmyI7 root@flowX13"
     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFE9Bzi5oGzx9d68d4lVLgo/d1GypUwE7MhAQ7Z32LlR minttea@flowX13"
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILbeKlRuPta2IE0KFAMf4ia7NwCSLoqhr6dgJhHpoJed root@hs0"
   ];
 
   nix.settings.allowed-users = [
