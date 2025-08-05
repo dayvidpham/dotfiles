@@ -117,7 +117,7 @@
   nix.sshServe.enable = true;
   nix.sshServe.trusted = true;
   nix.sshServe.write = true;
-  nix.sshServe.protocol = "ssh-ng";
+  nix.sshServe.protocol = "ssh";
 
   # Remote users allowed to access the store
   nix.sshServe.keys = [
