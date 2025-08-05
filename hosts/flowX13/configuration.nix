@@ -28,20 +28,23 @@
 
   ###############################
   # Locally-hosted binary cache settings
-  nix.settings.builders = pkgs.lib.mkForce [
+  nix.settings.builders = [
     "ssh://nix-ssh@desktop"
-    "ssh://nix-ssh@desktop.tsnet.vpn.dhpham.com"
+    #"ssh://nix-ssh@desktop.tsnet.vpn.dhpham.com"
     "@/etc/nix/machines"
   ];
   nix.settings.trusted-substituters = [
     "ssh://nix-ssh@desktop"
-    "ssh://nix-ssh@desktop.tsnet.vpn.dhpham.com"
+    #"ssh://nix-ssh@desktop.tsnet.vpn.dhpham.com"
   ];
-  nix.settings.extra-trusted-public-keys = [
+  nix.settings.trusted-public-keys = [
     "desktop:8/RG/7HFPqSRRo7IWyGZwwiwgLs1i9FciO2FQEXN7ic="
-    "desktop.tsnet.vpn.dhpham.com:8/RG/7HFPqSRRo7IWyGZwwiwgLs1i9FciO2FQEXN7ic="
-    "cache.desktop.org:Sds3S8EjsjypNfQQekd7gmHg19PFZwbjR7Dko/r9mfY="
+    #"desktop.tsnet.vpn.dhpham.com:8/RG/7HFPqSRRo7IWyGZwwiwgLs1i9FciO2FQEXN7ic="
   ];
+
+  # useful when the builder has a faster internet connection than yours
+  # otherwise clients upload deps to builders
+  nix.settings.builders-use-substitutes = true;
 
   programs.ssh.extraConfig = ''
     Host desktop
@@ -55,7 +58,7 @@
     hostName = "desktop";
     # CPU architecture of the builder, and the operating system it runs.
     system = "x86_64-linux";
-    # Nix custom ssh-variant that avoids lots of "trusted-users" settings pain
+    # ssh-ng is a Nix custom ssh-variant that avoids lots of "trusted-users" settings pain
     protocol = "ssh";
 
     sshUser = "nix-ssh";
@@ -65,16 +68,12 @@
     maxJobs = 16;
     # how fast is the builder compared to your local machine
     speedFactor = 8;
-    #supportedFeatures = [ "nixos-test" "benchmark" "big-parallel" "kvm" ]
-    #  #++ [ "nix-command" "flakes" "fetch-closure" ]
-    #;
-    mandatoryFeatures = [ ];
+    supportedFeatures = [ "nixos-test" "benchmark" "big-parallel" "kvm" ]
+      ++ [ "nix-command" "flakes" "fetch-closure" ]
+    ;
   }];
   # required, otherwise remote buildMachines above aren't used
   nix.distributedBuilds = true;
-  # useful when the builder has a faster internet connection than yours
-  # otherwise clients upload deps to builders
-  nix.settings.builders-use-substitutes = true;
 
 
   #########################
