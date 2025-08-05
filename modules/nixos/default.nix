@@ -39,5 +39,9 @@
     ];
     nix.settings.builders-use-substitutes = lib.mkDefault true;
     nix.settings.always-allow-substitutes = lib.mkDefault false;
+
+    # Performance boosts: enable higher number of parallel binary cache pulls
+    nix.settings.http-connections = lib.mkDefault 128;
+    nix.settings.max-substitution-jobs = lib.mkDefault 128;
   };
 }
