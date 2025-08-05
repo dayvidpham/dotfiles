@@ -21,7 +21,7 @@
     };
     settings.auto-optimise-store = true;
   };
-  nix.settings.extra-allowed-users = [
+  nix.settings.allowed-users = [
     "minttea"
   ];
 
