@@ -2,8 +2,17 @@
 # your system.  Help is available in the configuration.nix(5) man page
 # and in the NixOS manual (accessible by running `nixos-help`).
 
-{ config, pkgs, ... }:
-
+{ config
+, pkgs
+, lib
+, ...
+}:
+let
+  inherit (lib)
+    mkBefore
+    mkDefault
+    ;
+in
 {
   imports =
     [
@@ -28,16 +37,18 @@
 
   ###############################
   # Locally-hosted binary cache settings
-  nix.settings.builders = [
-    "ssh://nix-ssh@desktop"
-    #"ssh://nix-ssh@desktop.tsnet.vpn.dhpham.com"
+  nix.settings.builders = mkBefore [
     "@/etc/nix/machines"
   ];
-  nix.settings.trusted-substituters = [
-    "ssh://nix-ssh@desktop"
+  nix.settings.substituters = mkBefore [
+    "ssh-ng://nix-ssh@desktop?priority=1"
     #"ssh://nix-ssh@desktop.tsnet.vpn.dhpham.com"
   ];
-  nix.settings.trusted-public-keys = [
+  nix.settings.trusted-substituters = mkBefore [
+    "ssh-ng://nix-ssh@desktop?priority=1"
+    #"ssh://nix-ssh@desktop.tsnet.vpn.dhpham.com"
+  ];
+  nix.settings.trusted-public-keys = mkBefore [
     "desktop:8/RG/7HFPqSRRo7IWyGZwwiwgLs1i9FciO2FQEXN7ic="
     #"desktop.tsnet.vpn.dhpham.com:8/RG/7HFPqSRRo7IWyGZwwiwgLs1i9FciO2FQEXN7ic="
   ];
@@ -51,27 +62,29 @@
         Port 8108
   '';
 
-  nix.buildMachines = [{
-    # Will be used to call "ssh builder" to connect to the builder machine.
-    # The details of the connection (user, port, url etc.)
-    # are taken from your "~/.ssh/config" file.
-    hostName = "desktop";
-    # CPU architecture of the builder, and the operating system it runs.
-    system = "x86_64-linux";
-    # ssh-ng is a Nix custom ssh-variant that avoids lots of "trusted-users" settings pain
-    protocol = "ssh";
+  nix.buildMachines = [
+    {
+      # Will be used to call "ssh builder" to connect to the builder machine.
+      # The details of the connection (user, port, url etc.)
+      # are taken from your "~/.ssh/config" file.
+      hostName = "desktop";
+      # CPU architecture of the builder, and the operating system it runs.
+      system = "x86_64-linux";
+      # ssh-ng is a Nix custom ssh-variant that avoids lots of "trusted-users" settings pain
+      protocol = "ssh-ng";
 
-    sshUser = "nix-ssh";
-    publicHostKey = "c3NoLWVkMjU1MTkgQUFBQUMzTnphQzFsWkRJMU5URTVBQUFBSU8xZDIrbGhDemRocnhhTDhxckE1VVc5V0N6SUN5VXBWbHQrZXJCWkZkazEgcm9vdEBkZXNrdG9wCg==";
+      sshUser = "nix-ssh";
+      publicHostKey = "c3NoLWVkMjU1MTkgQUFBQUMzTnphQzFsWkRJMU5URTVBQUFBSU8xZDIrbGhDemRocnhhTDhxckE1VVc5V0N6SUN5VXBWbHQrZXJCWkZkazEgcm9vdEBkZXNrdG9wCg==";
 
-    # default is 1 but may keep the builder idle in between builds
-    maxJobs = 16;
-    # how fast is the builder compared to your local machine
-    speedFactor = 8;
-    supportedFeatures = [ "nixos-test" "benchmark" "big-parallel" "kvm" ]
-      ++ [ "nix-command" "flakes" "fetch-closure" ]
-    ;
-  }];
+      # default is 1 but may keep the builder idle in between builds
+      maxJobs = 16;
+      # how fast is the builder compared to your local machine
+      speedFactor = 8;
+      supportedFeatures = [ "nixos-test" "benchmark" "big-parallel" "kvm" ]
+        ++ [ "nix-command" "flakes" "fetch-closure" ]
+      ;
+    }
+  ];
   # required, otherwise remote buildMachines above aren't used
   nix.distributedBuilds = true;
 
