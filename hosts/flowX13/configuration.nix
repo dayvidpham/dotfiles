@@ -41,12 +41,12 @@ in
     "@/etc/nix/machines"
   ];
   nix.settings.substituters = mkBefore [
-    "ssh-ng://desktop.tsnet.vpn.dhpham.com?priority=1"
-    "ssh-ng://desktop?priority=5"
+    "ssh-ng://nix-ssh@desktop.tsnet.vpn.dhpham.com?priority=1"
+    "ssh-ng://nix-ssh@desktop?priority=5"
   ];
   nix.settings.trusted-substituters = mkBefore [
-    "ssh-ng://desktop.tsnet.vpn.dhpham.com?priority=1"
-    "ssh-ng://desktop?priority=5"
+    "ssh-ng://nix-ssh@desktop.tsnet.vpn.dhpham.com?priority=1"
+    "ssh-ng://nix-ssh@desktop?priority=5"
   ];
   nix.settings.trusted-public-keys = mkBefore [
     "desktop.tsnet.vpn.dhpham.com:8/RG/7HFPqSRRo7IWyGZwwiwgLs1i9FciO2FQEXN7ic="
