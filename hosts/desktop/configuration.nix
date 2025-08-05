@@ -129,7 +129,8 @@
     "minttea"
   ];
   nix.settings.secret-key-files = [
-    "/etc/nix/cache-private-key.pem"
+    "/etc/nix/desktop-cache-1-private-key.pem"
+    "/etc/nix/tsnet-cache-1-private-key.pem"
   ];
 
   ######################################
