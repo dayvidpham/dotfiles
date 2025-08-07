@@ -192,23 +192,27 @@ in
         hardware.nvidia.prime.offload.enable = mkForce false;
         hardware.nvidia.prime.offload.enableOffloadCmd = mkForce false;
         hardware.nvidia.powerManagement.finegrained = mkForce false;
+
+        environment.variables = mkMerge [{
+          # Use dGPU for everything
+          WLR_DRM_DEVICES = mkForce "/etc/card-dgpu:/etc/card-igpu";
+        }];
       };
     };
 
     environment.variables =
       let
-        hyprRenderer = mkMerge [
+        drmRenderer = mkMerge [
           (mkIf (cfg.hostName == "desktop")
             {
               # Fuck it: use dGPU for everything
-              WLR_DRM_DEVICES = "/etc/card-dgpu";
+              WLR_DRM_DEVICES = "/etc/card-dgpu:/etc/card-igpu";
             }
           )
-          (mkIf (cfg.hostName == "flowX13")
+          (mkIf (cfg.hostName == "flowX13" && config.specialisation != { })
             {
-              # TODO: Must test which value is correct for laptop
               # Use iGPU for everything
-              WLR_DRM_DEVICES = "/etc/card-igpu";
+              WLR_DRM_DEVICES = "/etc/card-igpu:/etc/card-dgpu";
             }
           )
         ];
@@ -223,7 +227,7 @@ in
         # https://wiki.hyprland.org/Nvidia/#va-api-hardware-video-acceleration
         NVD_BACKEND = "direct";
       }
-      // hyprRenderer;
+      // drmRenderer;
 
   };
 
