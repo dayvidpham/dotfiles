@@ -23,7 +23,6 @@ in
   config =
     let
       cfg = config.CUSTOM.wayland.windowManager.sway;
-      waybar-themed-sway = config.programs.waybar.package;
     in
     mkIf cfg.enable {
       CUSTOM.programs.waybar = {
@@ -43,11 +42,7 @@ in
           enable = true;
           config = {
             terminal = terminal;
-            bars = [
-              {
-                command = "${getExe waybar-themed-sway}";
-              }
-            ];
+            bars = [ ];
             input = {
               "Logitech G Pro" = {
                 accel_profile = "flat";
@@ -108,8 +103,6 @@ in
         polkit_gnome
         run-cwd
         scythe
-      ] ++ [
-        waybar-themed-sway
       ];
     };
 }
