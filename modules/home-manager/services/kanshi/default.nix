@@ -75,13 +75,34 @@ in
           ];
         }
         {
-          # NOTE: Laptop
-          profile.name = "flowX13";
+          # NOTE: Laptop with monitor
+          profile.name = "flowX13-lab";
           profile.outputs = [
             {
               criteria = "eDP-1";
               mode = "1920x1200@120.00Hz";
+              scale = 1.25;
+              adaptiveSync = true;
+              position = "456,1080";
+            }
+            {
+              criteria = "LG Electronics LG ULTRAWIDE 0x000302AA";
+              mode = "2560x1080@100.00Hz";
               scale = 1.0;
+              position = "0,0";
+            }
+          ];
+        }
+        {
+          # NOTE: Laptop
+          profile.name = "flowX13-solo";
+          profile.outputs = [
+            {
+              criteria = "eDP-1";
+              mode = "1920x1200@120.00Hz";
+              scale = 1.25;
+              adaptiveSync = true;
+              position = "0,0";
             }
           ];
         }
