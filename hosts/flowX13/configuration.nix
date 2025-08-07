@@ -222,7 +222,7 @@ in
   };
 
   CUSTOM.hardware.nvidia.enable = true;
-  CUSTOM.hardware.nvidia.hostName = "laptop";
+  CUSTOM.hardware.nvidia.hostName = "flowX13";
   CUSTOM.hardware.nvidia.proprietaryDrivers.enable = true;
 
   # enables switching between dGPU and iGPU

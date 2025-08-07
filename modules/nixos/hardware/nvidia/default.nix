@@ -1,7 +1,7 @@
 { config
 , pkgs
 , pkgs-unstable
-, lib ? pkgs.lib
+, lib ? config.lib
 , libmint
 , ...
 }:
@@ -39,7 +39,7 @@ let
         finegrained = false; # Enable PRIME offload power management
       };
 
-      laptop = {
+      flowX13 = {
         enable = true;
         finegrained = true;
       };
@@ -63,7 +63,7 @@ let
         amdgpuBusId = "PCI:16:0:0";
       };
 
-      laptop = default // {
+      flowX13 = default // {
         sync.enable = false;
         offload.enable = true;
         offload.enableOffloadCmd = true;
@@ -156,7 +156,6 @@ in
 
   config = mkIf cfg.enable
     {
-
       hardware.nvidia = {
         package = nvidiaDriver;
         modesetting.enable = true; # NOTE: Wayland requires this to be true
@@ -172,12 +171,12 @@ in
           else [ "nouveau" ];
       };
 
-      environment.etc = mkIf (hasAttr cfg.hostName gpu-paths)
-        (
-          lib.mapAttrs
-            (key: val: { source = (mkOutOfStoreSymlink val); })
-            gpu-paths."${cfg.hostName}"
-        );
+      environment.etc = (mkIf (hasAttr cfg.hostName gpu-paths) (
+        mkBefore (lib.mapAttrs
+          (key: val: { source = (mkOutOfStoreSymlink val); })
+          gpu-paths."${cfg.hostName}"
+        )
+      ));
       #{
       #  card-dgpu.source = mkIf (gpu-paths."${cfg.hostName}" ? card-dgpu) (mkOutOfStoreSymlink gpu-paths."${cfg.hostName}".card-dgpu);
       #  card-igpu.source = mkIf (gpu-paths."${cfg.hostName}" ? card-igpu) (mkOutOfStoreSymlink gpu-paths."${cfg.hostName}".card-igpu);
@@ -186,15 +185,19 @@ in
       environment.variables =
         let
           hyprRenderer = mkMerge [
-            (mkIf (config.programs.hyprland.enable && cfg.hostName == "desktop") {
-              # Fuck it: use dGPU for everything
-              WLR_DRM_DEVICES = "/etc/card-dgpu";
-            })
-            (mkIf (config.programs.hyprland.enable && cfg.hostName == "flowX13") {
-              # TODO: Must test which value is correct for laptop
-              # Use iGPU for everything
-              WLR_DRM_DEVICES = "/etc/card-igpu";
-            })
+            (mkIf (cfg.hostName == "desktop")
+              {
+                # Fuck it: use dGPU for everything
+                WLR_DRM_DEVICES = "/etc/card-dgpu";
+              }
+            )
+            (mkIf (cfg.hostName == "flowX13")
+              {
+                # TODO: Must test which value is correct for laptop
+                # Use iGPU for everything
+                WLR_DRM_DEVICES = "/etc/card-igpu";
+              }
+            )
           ];
         in
         {
