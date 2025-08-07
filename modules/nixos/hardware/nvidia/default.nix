@@ -20,6 +20,7 @@ let
     mkDefault
     mkBefore
     mkAfter
+    mkForce
     mkMerge
     optionals
     ;
@@ -65,6 +66,9 @@ let
 
       flowX13 = default // {
         sync.enable = false;
+        reverseSync.enable = true;
+        reverseSync.setupCommands.enable = true;
+
         offload.enable = true;
         offload.enableOffloadCmd = true;
         nvidiaBusId = "PCI:1:0:0";
@@ -154,63 +158,73 @@ in
 
   };
 
-  config = mkIf cfg.enable
-    {
-      hardware.nvidia = {
-        package = nvidiaDriver;
-        modesetting.enable = true; # NOTE: Wayland requires this to be true
-        nvidiaSettings = true;
-      } // (configureHost cfg.hostName nvidia);
+  config = mkIf cfg.enable {
+    hardware.nvidia = {
+      package = nvidiaDriver;
+      modesetting.enable = true; # NOTE: Wayland requires this to be true
+      nvidiaSettings = true;
+    } // (configureHost cfg.hostName nvidia);
 
-      services.xserver = {
-        enable = true;
-        # NOTE: If not set, will use nouveau drivers
-        videoDrivers =
-          if cfg.proprietaryDrivers.enable
-          then [ "nvidia" ]
-          else [ "nouveau" ];
-      };
-
-      environment.etc = (mkIf (hasAttr cfg.hostName gpu-paths) (
-        mkBefore (lib.mapAttrs
-          (key: val: { source = (mkOutOfStoreSymlink val); })
-          gpu-paths."${cfg.hostName}"
-        )
-      ));
-      #{
-      #  card-dgpu.source = mkIf (gpu-paths."${cfg.hostName}" ? card-dgpu) (mkOutOfStoreSymlink gpu-paths."${cfg.hostName}".card-dgpu);
-      #  card-igpu.source = mkIf (gpu-paths."${cfg.hostName}" ? card-igpu) (mkOutOfStoreSymlink gpu-paths."${cfg.hostName}".card-igpu);
-      #};
-
-      environment.variables =
-        let
-          hyprRenderer = mkMerge [
-            (mkIf (cfg.hostName == "desktop")
-              {
-                # Fuck it: use dGPU for everything
-                WLR_DRM_DEVICES = "/etc/card-dgpu";
-              }
-            )
-            (mkIf (cfg.hostName == "flowX13")
-              {
-                # TODO: Must test which value is correct for laptop
-                # Use iGPU for everything
-                WLR_DRM_DEVICES = "/etc/card-igpu";
-              }
-            )
-          ];
-        in
-        {
-          # https://wiki.hyprland.org/Nvidia/#environment-variables
-          LIBVA_DRIVER_NAME = "nvidia";
-          GBM_BACKEND = "nvidia-drm";
-          __GLX_VENDOR_LIBRARY_NAME = "nvidia";
-          __GL_GSYNC_ALLOWED = "1";
-
-          # https://wiki.hyprland.org/Nvidia/#va-api-hardware-video-acceleration
-          NVD_BACKEND = "direct";
-        }
-        // hyprRenderer;
-
+    services.xserver = {
+      enable = true;
+      # NOTE: If not set, will use nouveau drivers
+      videoDrivers =
+        if cfg.proprietaryDrivers.enable
+        then [ "nvidia" ]
+        else [ "nouveau" ];
     };
+
+    environment.etc = (mkIf (hasAttr cfg.hostName gpu-paths) (
+      mkBefore (lib.mapAttrs
+        (key: val: { source = (mkOutOfStoreSymlink val); })
+        gpu-paths."${cfg.hostName}"
+      )
+    ));
+
+    specialisation = {
+      nvidia-gpu.configuration = mkIf (cfg.hostName == "flowX13") {
+        system.nixos.tags = [ "nvidia-gpu" ];
+
+        hardware.nvidia.prime.sync.enable = mkForce true;
+        hardware.nvidia.prime.reverseSync.enable = mkForce false;
+        hardware.nvidia.prime.reverseSync.setupCommands.enable = mkForce false;
+
+        hardware.nvidia.prime.offload.enable = mkForce false;
+        hardware.nvidia.prime.offload.enableOffloadCmd = mkForce false;
+        hardware.nvidia.powerManagement.finegrained = mkForce false;
+      };
+    };
+
+    environment.variables =
+      let
+        hyprRenderer = mkMerge [
+          (mkIf (cfg.hostName == "desktop")
+            {
+              # Fuck it: use dGPU for everything
+              WLR_DRM_DEVICES = "/etc/card-dgpu";
+            }
+          )
+          (mkIf (cfg.hostName == "flowX13")
+            {
+              # TODO: Must test which value is correct for laptop
+              # Use iGPU for everything
+              WLR_DRM_DEVICES = "/etc/card-igpu";
+            }
+          )
+        ];
+      in
+      {
+        # https://wiki.hyprland.org/Nvidia/#environment-variables
+        LIBVA_DRIVER_NAME = "nvidia";
+        GBM_BACKEND = "nvidia-drm";
+        __GLX_VENDOR_LIBRARY_NAME = "nvidia";
+        __GL_GSYNC_ALLOWED = "1";
+
+        # https://wiki.hyprland.org/Nvidia/#va-api-hardware-video-acceleration
+        NVD_BACKEND = "direct";
+      }
+      // hyprRenderer;
+
+  };
+
 }
