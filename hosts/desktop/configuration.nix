@@ -39,6 +39,11 @@
     firewall.allowedUDPPorts = [
       10003
       10020
+      10300
+      10301
+      10302
+      30011
+      30012
     ];
     firewall.allowPing = false;
   };
