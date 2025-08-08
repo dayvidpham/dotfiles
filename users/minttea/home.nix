@@ -32,6 +32,7 @@ rec {
 
   # Virtualisation
   CUSTOM.services.podman.enable = true;
+  CUSTOM.programs.distrobox.enable = true;
 
   dconf.enable = true;
   dconf.settings = {

@@ -11,5 +11,6 @@
     ./zsh
     ./ghostty
     ./nodejs
+    ./distrobox
   ];
 }
