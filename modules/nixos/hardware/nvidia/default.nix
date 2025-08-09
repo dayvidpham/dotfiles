@@ -181,8 +181,8 @@ in
       )
     ));
 
-    specialisation = {
-      nvidia-gpu.configuration = mkIf (cfg.hostName == "flowX13") {
+    specialisation = mkIf (cfg.hostName == "flowX13") {
+      nvidia-gpu.configuration = {
         system.nixos.tags = [ "nvidia-gpu" ];
 
         hardware.nvidia.prime.sync.enable = mkForce true;
