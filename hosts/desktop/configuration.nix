@@ -6,6 +6,7 @@
 , pkgs
 , pkgs-unstable
 , home-manager
+, lib ? config.lib
 , ...
 }:
 
@@ -156,6 +157,12 @@
     proprietaryDrivers.enable = true;
   };
 
+  services.xserver = {
+    enable = true;
+    xkb.layout = "us";
+    videoDrivers = [ "nvidia" "amdgpu" "modesetting" ];
+  };
+
   ############################
   # Steam
 
@@ -184,12 +191,6 @@
   #   opencl.enable = true;
   #   initrd.enable = true;
   # };
-
-  services.xserver = {
-    enable = true;
-    xkb.layout = "us";
-    videoDrivers = [ "nvidia" "amdgpu" "modesetting" ];
-  };
 
   ######################################
   # Some user setup: Most user-stuff will be in home-manager
