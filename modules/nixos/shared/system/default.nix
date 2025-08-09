@@ -225,38 +225,5 @@ in
       (config.networking.defaultGateway != null)
       config.networking.defaultGateway)
     ;
-
-
-    # Virtualisation
-    # TODO: Split this into separate module
-    programs.dconf.enable = true; # virt-manager requires dconf to be enabled
-    programs.virt-manager = {
-      # GUI for controlling QEMU/KVM VMs on libvirtd
-      enable = lib.mkDefault false;
-    };
-    virtualisation.libvirtd = {
-      enable = lib.mkDefault false;
-      qemu = {
-        package = pkgs.qemu_kvm;
-        runAsRoot = true;
-        ovmf = {
-          # Open Virtual Machine Firmware: enables UEFI support for VMs
-          # Use UEFI over traditional BIOS
-          enable = true;
-        };
-        # swtpm.enable = true; # Software Trusted Platform Module: virtualized cryptoprocessor
-        # ovmf = {
-        #   # Open Virtual Machine Firmware: enables UEFI support for VMs
-        #   # Use UEFI over traditional BIOS
-        #   enable = true;
-        #   # packages = [ 
-        #   #   (pkgs.OVMF.override {
-        #   #     secureBoot = false;
-        #   #     tpmSupport = true;
-        #   #   }).fd 
-        #   # ];
-        # };
-      };
-    };
   };
 }

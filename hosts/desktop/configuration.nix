@@ -73,9 +73,9 @@
     }
   );
 
-  systemd.network.networks."50-enp7s0" = (
+  systemd.network.networks."50-enp5s0" = (
     config.CUSTOM.generate.systemd.network {
-      matchConfig.Name = "enp7s0";
+      matchConfig.Name = "enp5s0";
       networkConfig = {
         Description = "eth 1 Gbit iface, ISP";
       };
@@ -83,17 +83,19 @@
     }
   );
 
-  systemd.network.networks."50-tailscale0" = (
-    config.CUSTOM.generate.systemd.network {
-      matchConfig.Name = "tailscale0";
-      networkConfig = {
-        Description = "Tailscale VPN";
-      };
-      linkConfig.RequiredForOnline = "yes";
-    }
-  );
+  #systemd.network.networks."50-tailscale0" = (
+  #  config.CUSTOM.generate.systemd.network {
+  #    matchConfig.Name = "tailscale0";
+  #    networkConfig = {
+  #      Description = "Tailscale VPN";
+  #    };
+  #    linkConfig.RequiredForOnline = "yes";
+  #  }
+  #);
 
   services.resolved.enable = true;
+
+  networking.nftables.enable = true;
 
   programs.wireshark.enable = true;
   programs.wireshark.dumpcap.enable = true;
@@ -184,8 +186,7 @@
 
   # Virtualisation
   CUSTOM.virtualisation.podman.enable = true;
-  programs.virt-manager.enable = true;
-  virtualisation.libvirtd.enable = true;
+  CUSTOM.virtualisation.libvirtd.enable = true;
 
   # Try getting AMD iGPU to work @_@
   # hardware.amdgpu = {
