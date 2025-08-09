@@ -184,6 +184,8 @@
 
   # Virtualisation
   CUSTOM.virtualisation.podman.enable = true;
+  programs.virt-manager.enable = true;
+  virtualisation.libvirtd.enable = true;
 
   # Try getting AMD iGPU to work @_@
   # hardware.amdgpu = {
