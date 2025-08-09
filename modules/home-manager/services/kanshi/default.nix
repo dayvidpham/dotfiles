@@ -52,7 +52,7 @@ in
               mode = "2560x1440";
               scale = 1.00;
               position = "0,0";
-              adaptiveSync = false;
+              adaptiveSync = true;
               transform = "270";
             }
             {
@@ -61,7 +61,7 @@ in
               mode = "2560x1440";
               scale = 1.00;
               position = "1440,374";
-              adaptiveSync = false;
+              adaptiveSync = true;
             }
             {
               # right
@@ -69,7 +69,7 @@ in
               mode = "2560x1440";
               scale = 1.00;
               position = "4000,0";
-              adaptiveSync = false;
+              adaptiveSync = true;
               transform = "270";
             }
           ];
@@ -90,6 +90,7 @@ in
               mode = "2560x1080@100.00Hz";
               scale = 1.0;
               position = "0,0";
+              adaptiveSync = true;
             }
           ];
         }
