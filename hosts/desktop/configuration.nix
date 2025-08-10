@@ -46,6 +46,15 @@
       30011
       30012
     ];
+    firewall.allowedTCPPorts = [
+      10003
+      10020
+      10300
+      10301
+      10302
+      30011
+      30012
+    ];
     firewall.allowPing = false;
   };
   CUSTOM.services.tailscale.enable = true;
@@ -97,6 +106,9 @@
 
   networking.nftables.enable = true;
 
+  environment.systemPackages = [
+    pkgs.wireshark-qt
+  ];
   programs.wireshark.enable = true;
   programs.wireshark.dumpcap.enable = true;
 
@@ -200,7 +212,16 @@
   users.users.minttea = {
     isNormalUser = true;
     description = "the guy";
-    extraGroups = [ "networkmanager" "wheel" "libvirtd" "video" "gamemode" "gitlab-runner" "wireshark" ];
+    extraGroups = [
+      "networkmanager"
+      "wheel"
+      "libvirtd"
+      "vmusers"
+      "video"
+      "gamemode"
+      "gitlab-runner"
+      "wireshark"
+    ];
     subUidRanges = [
       {
         startUid = 100000;

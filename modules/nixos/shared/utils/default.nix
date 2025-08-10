@@ -6,10 +6,7 @@
 }:
 lib.mkIf (config.CUSTOM.shared.enable) {
   programs.command-not-found.enable = false;
-  #imports = [
-  #  ./nix
-  #  ./cli
-  #];
+
   environment.systemPackages = (with pkgs; [
     # Nix utils
     nix-output-monitor # more informative nix build outputs

@@ -17,6 +17,11 @@ in
 {
   options.CUSTOM.virtualisation.libvirtd = {
     enable = mkEnableOption "common shared libvirtd settings";
+    bridgeTrustedIface = mkOption {
+      default = true;
+      description = "allow traffic in-and-out of the virtual bridge iface virbr0";
+      example = "true";
+    };
   };
 
   config = mkIf cfg.enable {
@@ -36,9 +41,6 @@ in
       "net.bridge.bridge-nf-call-arptables" = 0;
     };
 
-    #virtualisation.libvirtd.extraOptions = [ "--verbose" "--config" "/etc/libvirt/network.conf" ];
-    #environment.etc."libvirt/network.conf".text = ''
-    #  firewall_backend = "nftables"
-    #'';
+    networking.firewall.trustedInterfaces = mkIf cfg.bridgeTrustedIface [ "virbr0" ];
   };
 }
