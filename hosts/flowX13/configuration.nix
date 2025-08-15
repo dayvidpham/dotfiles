@@ -129,7 +129,7 @@ in
   # ################################
   # General system-config
   CUSTOM.shared.enable = true;
-  environment.systemPackages = [ pkgs.ryzenadj ];
+  environment.systemPackages = [ pkgs.ryzenadj pkgs.brave ];
 
   # ################################
   # Desktop
