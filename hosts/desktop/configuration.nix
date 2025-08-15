@@ -55,6 +55,10 @@
       30011
       30012
     ];
+    firewall.checkReversePath = "loose";
+    firewall.logReversePathDrops = true;
+    firewall.logRefusedConnections = true;
+
     firewall.allowPing = false;
   };
   CUSTOM.services.tailscale.enable = true;

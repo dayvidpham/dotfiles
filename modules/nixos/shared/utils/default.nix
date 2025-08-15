@@ -1,7 +1,7 @@
 { config
 , pkgs
 , pkgs-unstable
-, lib ? pkgs.lib
+, lib ? config.lib
 , ...
 }:
 lib.mkIf (config.CUSTOM.shared.enable) {
@@ -29,6 +29,10 @@ lib.mkIf (config.CUSTOM.shared.enable) {
     git
     git-lfs
 
+    # Networking
+    lsof
+    net-tools
+
     # compression stuff
     zip
     unzip
@@ -41,7 +45,8 @@ lib.mkIf (config.CUSTOM.shared.enable) {
     # getters
     wget
     curl
-  ]) ++ (with pkgs-unstable; [
+  ])
+  ++ (with pkgs-unstable; [
     nix-search # offline nixpkgs package search, fuck default nix search
   ]);
 
