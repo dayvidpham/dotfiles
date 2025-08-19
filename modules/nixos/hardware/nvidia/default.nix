@@ -66,8 +66,8 @@ let
 
       flowX13 = default // {
         sync.enable = false;
-        reverseSync.enable = true;
-        reverseSync.setupCommands.enable = true;
+        reverseSync.enable = false;
+        reverseSync.setupCommands.enable = false;
 
         offload.enable = true;
         offload.enableOffloadCmd = true;
@@ -170,7 +170,7 @@ in
       # NOTE: If not set, will use nouveau drivers
       videoDrivers =
         if cfg.proprietaryDrivers.enable
-        then [ "nvidia" ]
+        then [ "nvidia" "modesetting" ]
         else [ "nouveau" ];
     };
 
