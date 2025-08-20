@@ -104,7 +104,6 @@
     RUNTIME_PM_ON_AC = "on";
     RUNTIME_PM_ON_BAT = "auto";
 
-    RUNTIME_PM_DENYLIST = "08:00.3 08:00.4";
     RUNTIME_PM_DISABLE = "08:00.3 08:00.4";
     RUNTIME_PM_DRIVER_DENYLIST = "mei_me nouveau radeon xhci_hcd";
 
