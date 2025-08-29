@@ -88,6 +88,7 @@ rec {
     vimiv-qt # image viewer with vim bindings
     xdragon # X/Wayland drag and drop
     steam-run-free # run things in steam's FHS env
+    gimp # photo editing/markup
 
     # For SFU
     openfortivpn
