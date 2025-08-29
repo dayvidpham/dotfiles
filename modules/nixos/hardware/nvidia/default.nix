@@ -103,7 +103,7 @@ let
       default = false;
       desktop = true;
       wsl = true;
-      flowX13 = true;
+      flowX13 = false;
       flowX13-wsl = true;
     };
 

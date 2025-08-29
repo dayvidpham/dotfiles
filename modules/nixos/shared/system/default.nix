@@ -148,10 +148,10 @@ in
 
     ######################################
     # Greeter
-    services.logind.extraConfig = ''
+    services.logind.settings.Login = {
       # Don't shutdown when power button is short-pressed
-      HandlePowerKey=ignore
-    '';
+      HandlePowerKey = "ignore";
+    };
 
     # Display manager
     services.greetd = {
