@@ -101,7 +101,7 @@ let
     # NOTE: Persists driver state across CUDA job runs, reduces setups/teardowns
     nvidiaPersistenced = {
       default = false;
-      desktop = true;
+      desktop = false;
       wsl = true;
       flowX13 = false;
       flowX13-wsl = true;
