@@ -1,0 +1,23 @@
+AuthenticationMethods publickey
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+
+PermitRootLogin no
+DenyGroups root
+DenyUsers root
+
+LogLevel VERBOSE
+
+StrictModes yes
+UseDns no
+UsePAM yes
+
+AddressFamily any
+Port 9204
+
+AuthorizedKeysFile %h/.ssh/authorized_keys /etc/ssh/authorized_keys.d/%u
+
+HostKey /etc/ssh/ssh_host_rsa_key
+HostKey /etc/ssh/ssh_host_ed25519_key
+HostKey /etc/ssh/ssh_host_ecdsa_key
+
