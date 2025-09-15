@@ -8,7 +8,7 @@ fi
 
 HOSTNAME="$1"
 
-cat "$HOSTNAME" >/etc/hostname
+echo "$HOSTNAME" >/etc/hostname
 
 apt update -y
 apt upgrade -y
