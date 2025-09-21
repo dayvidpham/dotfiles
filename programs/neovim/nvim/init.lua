@@ -746,7 +746,7 @@ require('lazy').setup({
 
         ---------------
         -- md, txt, rst
-        vale_ls = {},
+        -- vale_ls = {},
 
         ---------------
         -- Rust
@@ -796,7 +796,7 @@ require('lazy').setup({
 
         ---------------
         -- md, txt, rst
-        'vale',
+        -- 'vale',
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
