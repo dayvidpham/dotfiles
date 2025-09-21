@@ -22,11 +22,11 @@ return {
           --inko = { 'inko' },
           --janet = { 'janet' },
           json = { 'jsonlint' },
-          markdown = { 'vale' },
-          rst = { 'vale' },
+          --markdown = { 'vale' },
+          --rst = { 'vale' },
           --ruby = { 'ruby' },
           --terraform = { 'tflint' },
-          text = { 'vale' },
+          --text = { 'vale' },
         }
       -- You can disable the default linters by setting their filetypes to nil:
       --lint.linters_by_ft['dockerfile'] = nil
