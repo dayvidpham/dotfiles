@@ -61,6 +61,13 @@ in
   # Set time zone.
   time.timeZone = "America/Vancouver";
 
+  # For non-root gitlab-runner running from systemd user service
+  CUSTOM.services.gitlab-runner = {
+    enable = true;
+    sudoInto.enable = true;
+    sudoInto.fromUser = "minttea";
+  };
+
   ######################################
   # GPU
   CUSTOM.hardware.nvidia = {
@@ -78,7 +85,7 @@ in
   users.users.minttea = {
     isNormalUser = true;
     description = "the guy";
-    extraGroups = [ "networkmanager" "wheel" "video" ];
+    extraGroups = [ "networkmanager" "wheel" "video" "gitlab-runner" ];
   };
 
 
