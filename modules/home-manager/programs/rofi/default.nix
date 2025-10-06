@@ -28,7 +28,7 @@ in
 {
   options.CUSTOM.programs.rofi = {
     enable = mkEnableOption "themed rofi-wayland config";
-    package = mkPackageOption pkgs "rofi-wayland-unwrapped" { };
+    package = mkPackageOption pkgs "rofi-unwrapped" { };
 
 
     configType = mkOption {

@@ -2,7 +2,7 @@
 , runtimeShell
 , grim
 , slurp
-, rofi-wayland-unwrapped
+, rofi-unwrapped
 , swappy
 , wl-clipboard
 , output-dir ? "$GRIM_DFEAULT_DIR"
@@ -11,7 +11,7 @@
 writeShellApplication rec {
   # Metadata
   name = "scythe";
-  runtimeInputs = [ grim slurp rofi-wayland-unwrapped swappy wl-clipboard ];
+  runtimeInputs = [ grim slurp rofi-unwrapped swappy wl-clipboard ];
 
   text = ''
     #!${runtimeShell}

@@ -89,7 +89,7 @@
               output-dir = "$HOME/Pictures/scythe";
             };
             waybar-balcony = with prev; callPackage ./packages/themes/balcony/waybar {
-              rofi = rofi-wayland-unwrapped;
+              rofi = rofi-unwrapped;
             };
             ImPlay = with prev; callPackage ./packages/implay.nix { };
           })
