@@ -10,6 +10,7 @@
 let
   inherit (lib)
     mkBefore
+    mkAfter
     mkDefault
     ;
 in
@@ -37,19 +38,19 @@ in
 
   ###############################
   # Locally-hosted binary cache settings
-  nix.settings.builders = mkBefore [
+  /* nix.settings.builders = mkBefore [
     "@/etc/nix/machines"
-  ];
-  nix.settings.substituters = mkBefore [
-    "ssh-ng://nix-ssh@desktop.tsnet.vpn.dhpham.com?priority=1"
+  ]; */
+  nix.settings.extra-substituters = mkAfter [
+    #"ssh-ng://nix-ssh@desktop.tsnet.vpn.dhpham.com?priority=1"
     "ssh-ng://nix-ssh@desktop?priority=5"
   ];
-  nix.settings.trusted-substituters = mkBefore [
-    "ssh-ng://nix-ssh@desktop.tsnet.vpn.dhpham.com?priority=1"
+  nix.settings.extra-trusted-substituters = mkAfter [
+    #"ssh-ng://nix-ssh@desktop.tsnet.vpn.dhpham.com?priority=1"
     "ssh-ng://nix-ssh@desktop?priority=5"
   ];
-  nix.settings.trusted-public-keys = mkBefore [
-    "desktop.tsnet.vpn.dhpham.com:8/RG/7HFPqSRRo7IWyGZwwiwgLs1i9FciO2FQEXN7ic="
+  nix.settings.trusted-public-keys = mkAfter [
+    #"desktop.tsnet.vpn.dhpham.com:8/RG/7HFPqSRRo7IWyGZwwiwgLs1i9FciO2FQEXN7ic="
     "desktop:pvQ4+Av5pSnMWzi+bpe0okmmLPpeubeHyRHnUEYs+10="
   ];
 
@@ -62,28 +63,7 @@ in
         Port 8108
   '';
 
-  nix.buildMachines = [
-    {
-      # Will be used to call "ssh builder" to connect to the builder machine.
-      # The details of the connection (user, port, url etc.)
-      # are taken from your "~/.ssh/config" file.
-      hostName = "desktop.tsnet.vpn.dhpham.com";
-      # CPU architecture of the builder, and the operating system it runs.
-      system = "x86_64-linux";
-      # ssh-ng is a Nix custom ssh-variant that avoids lots of "trusted-users" settings pain
-      protocol = "ssh-ng";
-
-      sshUser = "nix-ssh";
-      publicHostKey = "c3NoLWVkMjU1MTkgQUFBQUMzTnphQzFsWkRJMU5URTVBQUFBSU8xZDIrbGhDemRocnhhTDhxckE1VVc5V0N6SUN5VXBWbHQrZXJCWkZkazEgcm9vdEBkZXNrdG9wCg==";
-
-      # default is 1 but may keep the builder idle in between builds
-      maxJobs = 16;
-      # how fast is the builder compared to your local machine
-      speedFactor = 8;
-      supportedFeatures = [ "nixos-test" "benchmark" "big-parallel" "kvm" ]
-        ++ [ "nix-command" "flakes" "fetch-closure" ]
-      ;
-    }
+  /* nix.buildMachines = [
     {
       # Will be used to call "ssh builder" to connect to the builder machine.
       # The details of the connection (user, port, url etc.)
@@ -105,9 +85,9 @@ in
         ++ [ "nix-command" "flakes" "fetch-closure" ]
       ;
     }
-  ];
+  ]; */
   # required, otherwise remote buildMachines above aren't used
-  nix.distributedBuilds = true;
+  nix.distributedBuilds = false;
 
 
   #########################
