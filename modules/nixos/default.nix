@@ -22,15 +22,10 @@
       HOST = config.networking.hostName;
     };
 
-    nix.settings.substituters = [
-      "https://cache.nixos.org"
-      "https://nix-community.cachix.org"
-      "https://cuda-maintainers.cachix.org"
-    ];
     nix.settings.trusted-substituters = [
-      "https://cache.nixos.org"
-      "https://nix-community.cachix.org"
-      "https://cuda-maintainers.cachix.org"
+      "https://cache.nixos.org?priority=1"
+      "https://nix-community.cachix.org?priority=2"
+      "https://cuda-maintainers.cachix.org?priority=3"
     ];
     nix.settings.trusted-public-keys = [
       "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
