@@ -102,7 +102,7 @@ in
             extended = true;
           };
 
-          initExtraBeforeCompInit =
+          initContent = lib.mkOrder 550 (
             readFile ./config/initExtraBeforeCompInit.zsh
             + ''
               # Get git completions: needs to be here for relative path to ./config/git-completion.bash
@@ -112,7 +112,7 @@ in
               # Must load complist before compinit
               zmodload zsh/complist
             ''
-          ;
+          );
 
           shellAliases =
             {
