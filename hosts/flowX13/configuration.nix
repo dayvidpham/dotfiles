@@ -30,6 +30,7 @@ in
       dates = "weekly";
     };
     settings.auto-optimise-store = true;
+    settings.fallback = true;
   };
   nix.settings.allowed-users = [
     "minttea"
@@ -44,11 +45,11 @@ in
   nix.settings.builders = null;
   nix.settings.extra-substituters = mkAfter [
     #"ssh-ng://nix-ssh@desktop.tsnet.vpn.dhpham.com?priority=1"
-    "ssh-ng://nix-ssh@desktop?priority=5"
+    "ssh-ng://nix-ssh@desktop?priority=1"
   ];
   nix.settings.extra-trusted-substituters = mkAfter [
     #"ssh-ng://nix-ssh@desktop.tsnet.vpn.dhpham.com?priority=1"
-    "ssh-ng://nix-ssh@desktop?priority=5"
+    "ssh-ng://nix-ssh@desktop?priority=1"
   ];
   nix.settings.trusted-public-keys = mkAfter [
     #"desktop.tsnet.vpn.dhpham.com:8/RG/7HFPqSRRo7IWyGZwwiwgLs1i9FciO2FQEXN7ic="
