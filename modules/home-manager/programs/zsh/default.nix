@@ -86,7 +86,7 @@ in
       {
         programs.zsh = {
           enable = true;
-          dotDir = zDotDirRel;
+          dotDir = zDotDirAbs;
 
           # Enable Nix completions and compinit
           enableCompletion = true;
