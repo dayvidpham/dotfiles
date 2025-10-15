@@ -41,6 +41,7 @@ in
   /* nix.settings.builders = mkBefore [
     "@/etc/nix/machines"
   ]; */
+  nix.settings.builders = null;
   nix.settings.extra-substituters = mkAfter [
     #"ssh-ng://nix-ssh@desktop.tsnet.vpn.dhpham.com?priority=1"
     "ssh-ng://nix-ssh@desktop?priority=5"
