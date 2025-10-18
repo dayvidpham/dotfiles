@@ -8,6 +8,7 @@
     at-spi2-atk
     at-spi2-core
     atk
+    binutils
     cairo
     cups
     curl
@@ -15,6 +16,7 @@
     expat
     fontconfig
     freetype
+    freeglut
     fuse3
     gdk-pixbuf
     glib
@@ -52,12 +54,16 @@
     xorg.libXext
     xorg.libXfixes
     xorg.libXi
+    xorg.libXinerama
+    xorg.libXmu
     xorg.libXrandr
     xorg.libXrender
     xorg.libXtst
+    xorg.libXv
     xorg.libxcb
     xorg.libxkbfile
     xorg.libxshmfence
     zlib
+    wayland
   ];
 }
