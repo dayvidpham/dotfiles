@@ -132,7 +132,7 @@ in
 
     environment.systemPackages = [
       # greeter
-      pkgs.greetd.tuigreet
+      pkgs.tuigreet
       # remote wayland
       pkgs-unstable.waypipe
     ];
@@ -159,7 +159,7 @@ in
       settings = {
         default_session = {
           command = ''
-            ${pkgs.greetd.tuigreet}/bin/tuigreet --remember-session --remember --time --asterisks --cmd "niri-session"
+            ${pkgs.tuigreet}/bin/tuigreet --remember-session --remember --time --asterisks --cmd "niri-session"
           '';
           user = "greeter";
         };
