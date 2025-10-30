@@ -30,6 +30,13 @@ rec {
     XDG_STATE_HOME = "${config.xdg.stateHome}";
   };
 
+  xdg.mimeApps = {
+    enable = true;
+    defaultApplications = {
+      "x-scheme-handler/mailto" = "firefox.desktop";
+    };
+  };
+
   # Virtualisation
   CUSTOM.services.podman.enable = true;
   CUSTOM.programs.distrobox.enable = true;
