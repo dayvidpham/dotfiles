@@ -45,15 +45,15 @@ in
   nix.settings.builders = null;
   nix.settings.extra-substituters = mkAfter [
     #"ssh-ng://nix-ssh@desktop.tsnet.vpn.dhpham.com?priority=1"
-    "ssh-ng://nix-ssh@desktop?priority=1"
+    #"ssh-ng://nix-ssh@desktop?priority=1"
   ];
   nix.settings.extra-trusted-substituters = mkAfter [
     #"ssh-ng://nix-ssh@desktop.tsnet.vpn.dhpham.com?priority=1"
-    "ssh-ng://nix-ssh@desktop?priority=1"
+    #"ssh-ng://nix-ssh@desktop?priority=1"
   ];
   nix.settings.trusted-public-keys = mkAfter [
     #"desktop.tsnet.vpn.dhpham.com:8/RG/7HFPqSRRo7IWyGZwwiwgLs1i9FciO2FQEXN7ic="
-    "desktop:pvQ4+Av5pSnMWzi+bpe0okmmLPpeubeHyRHnUEYs+10="
+    #"desktop:pvQ4+Av5pSnMWzi+bpe0okmmLPpeubeHyRHnUEYs+10="
   ];
 
   # useful when the builder has a faster internet connection than yours
@@ -203,7 +203,7 @@ in
     videoDrivers = [ "modesetting" ];
   };
 
-  CUSTOM.hardware.nvidia.enable = true;
+  CUSTOM.hardware.nvidia.enable = false;
   CUSTOM.hardware.nvidia.hostName = "flowX13";
   CUSTOM.hardware.nvidia.proprietaryDrivers.enable = true;
 
