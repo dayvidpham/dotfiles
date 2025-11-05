@@ -203,6 +203,10 @@ in
     videoDrivers = [ "modesetting" ];
   };
 
+  # Amdgpu
+  hardware.amdgpu.opencl.enable = true;
+
+  # Nvidia
   CUSTOM.hardware.nvidia.enable = false;
   specialisation.nvidia-gpu.configuration = {
     system.nixos.tags = [ "nvidia-gpu" ];
