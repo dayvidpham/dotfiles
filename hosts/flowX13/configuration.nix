@@ -200,7 +200,7 @@ in
     enable = true;
     xkb.variant = "";
     xkb.layout = "us";
-    videoDrivers = [ "nvidia" "amdgpu" ];
+    videoDrivers = [ "modesetting" ];
   };
 
   CUSTOM.hardware.nvidia.enable = true;

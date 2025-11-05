@@ -114,6 +114,11 @@ let
       flowX13-wsl.enable = true;
     };
 
+    videoAcceleration = {
+      default = true;
+      flowX13 = false;
+    };
+
   };
 
   gpu-paths = {
@@ -158,77 +163,104 @@ in
 
   };
 
-  config = mkIf cfg.enable {
-    hardware.nvidia = {
-      package = nvidiaDriver;
-      modesetting.enable = true; # NOTE: Wayland requires this to be true
-      nvidiaSettings = true;
-    } // (configureHost cfg.hostName nvidia);
-
-    services.xserver = {
-      enable = true;
-      # NOTE: If not set, will use nouveau drivers
-      videoDrivers =
-        if cfg.proprietaryDrivers.enable
-        then [ "nvidia" "modesetting" ]
-        else [ "nouveau" ];
-    };
-
-    environment.etc = (mkIf (hasAttr cfg.hostName gpu-paths) (
-      mkBefore (lib.mapAttrs
-        (key: val: { source = (mkOutOfStoreSymlink val); })
-        gpu-paths."${cfg.hostName}"
-      )
-    ));
-
-    specialisation = mkIf (cfg.hostName == "flowX13") {
-      nvidia-gpu.configuration = {
-        system.nixos.tags = [ "nvidia-gpu" ];
-
-        hardware.nvidia.prime.sync.enable = mkForce true;
-        hardware.nvidia.prime.reverseSync.enable = mkForce false;
-        hardware.nvidia.prime.reverseSync.setupCommands.enable = mkForce false;
-
-        hardware.nvidia.prime.offload.enable = mkForce false;
-        hardware.nvidia.prime.offload.enableOffloadCmd = mkForce false;
-        hardware.nvidia.powerManagement.finegrained = mkForce false;
-
-        environment.variables = mkMerge [{
-          # Use dGPU for everything
-          WLR_DRM_DEVICES = mkForce "/etc/card-dgpu:/etc/card-igpu";
-        }];
-      };
-    };
-
-    environment.variables =
-      let
-        drmRenderer = mkMerge [
-          (mkIf (cfg.hostName == "desktop")
-            {
-              # Fuck it: use dGPU for everything
-              WLR_DRM_DEVICES = "/etc/card-dgpu:/etc/card-igpu";
-            }
-          )
-          (mkIf (cfg.hostName == "flowX13" && config.specialisation != { })
-            {
-              # Use iGPU for everything
-              WLR_DRM_DEVICES = "/etc/card-igpu:/etc/card-dgpu";
-            }
-          )
-        ];
-      in
+  config = lib.mkMerge [
+    # not enabled
+    (mkIf (!cfg.enable)
       {
-        # https://wiki.hyprland.org/Nvidia/#environment-variables
-        LIBVA_DRIVER_NAME = "nvidia";
-        GBM_BACKEND = "nvidia-drm";
-        __GLX_VENDOR_LIBRARY_NAME = "nvidia";
-        __GL_GSYNC_ALLOWED = "1";
-
-        # https://wiki.hyprland.org/Nvidia/#va-api-hardware-video-acceleration
-        NVD_BACKEND = "direct";
+        services.xserver = {
+          enable = true;
+          videoDrivers = [ "modesetting" ];
+        };
+        boot.blacklistedKernelModules = [ "nvidia" "nouveau" "radeon" ];
       }
-      // drmRenderer;
+    )
+    # enabled
+    (mkIf cfg.enable {
+      hardware.nvidia = {
+        package = nvidiaDriver;
+        modesetting.enable = true; # NOTE: Wayland requires this to be true
+        nvidiaSettings = true;
+      } // (configureHost cfg.hostName nvidia);
 
-  };
+      services.xserver = {
+        enable = true;
+        # NOTE: If not set, will use nouveau drivers
+        videoDrivers =
+          if cfg.proprietaryDrivers.enable
+          then [ "nvidia" "modesetting" ]
+          else [ "nouveau" "modesetting" ];
+      };
+
+      environment.etc = (mkIf (hasAttr cfg.hostName gpu-paths) (
+        mkBefore (lib.mapAttrs
+          (key: val: { source = (mkOutOfStoreSymlink val); })
+          gpu-paths."${cfg.hostName}"
+        )
+      ));
+
+      specialisation = mkIf
+        (cfg.hostName == "flowX13")
+        {
+          nvidia-gpu.configuration = {
+            system.nixos.tags = [ "nvidia-gpu" ];
+
+            hardware.nvidia.prime.sync.enable = mkForce true;
+            hardware.nvidia.prime.reverseSync.enable = mkForce false;
+            hardware.nvidia.prime.reverseSync.setupCommands.enable = mkForce false;
+
+            hardware.nvidia.prime.offload.enable = mkForce false;
+            hardware.nvidia.prime.offload.enableOffloadCmd = mkForce false;
+            hardware.nvidia.powerManagement.finegrained = mkForce false;
+
+            hardware.nvidia.videoAcceleration = mkForce true;
+
+            environment.variables = mkMerge [{
+              # Use dGPU for everything
+              WLR_DRM_DEVICES = mkForce "/etc/card-dgpu:/etc/card-igpu";
+
+              # https://wiki.hyprland.org/Nvidia/#environment-variables
+              LIBVA_DRIVER_NAME = "nvidia";
+              GBM_BACKEND = "nvidia-drm";
+              __GLX_VENDOR_LIBRARY_NAME = "nvidia";
+              __GL_GSYNC_ALLOWED = "1";
+
+              # https://wiki.hyprland.org/Nvidia/#va-api-hardware-video-acceleration
+              NVD_BACKEND = "direct";
+            }];
+          };
+        };
+
+      environment.variables =
+        let
+          drmRenderer = mkMerge
+            [
+              (mkIf (cfg.hostName == "desktop")
+                {
+                  # Fuck it: use dGPU for everything
+                  WLR_DRM_DEVICES = "/etc/card-dgpu:/etc/card-igpu";
+                }
+              )
+              (mkIf (cfg.hostName == "flowX13" && config.specialisation != { })
+                {
+                  # Use iGPU for everything
+                  WLR_DRM_DEVICES = "/etc/card-igpu:/etc/card-dgpu";
+                }
+              )
+            ];
+        in
+        {
+          # https://wiki.hyprland.org/Nvidia/#environment-variables
+          #LIBVA_DRIVER_NAME = "nvidia";
+          #GBM_BACKEND = "nvidia-drm";
+          #__GLX_VENDOR_LIBRARY_NAME = "nvidia";
+          __GL_GSYNC_ALLOWED = "1";
+
+          # https://wiki.hyprland.org/Nvidia/#va-api-hardware-video-acceleration
+          NVD_BACKEND = "direct";
+        }
+        // drmRenderer;
+
+    })
+  ];
 
 }
