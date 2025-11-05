@@ -204,6 +204,10 @@ in
   };
 
   CUSTOM.hardware.nvidia.enable = false;
+  specialisation.nvidia-gpu.configuration = {
+    system.nixos.tags = [ "nvidia-gpu" ];
+    CUSTOM.hardware.nvidia.enable = lib.mkForce true;
+  };
   CUSTOM.hardware.nvidia.hostName = "flowX13";
   CUSTOM.hardware.nvidia.proprietaryDrivers.enable = true;
 
