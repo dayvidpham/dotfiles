@@ -34,6 +34,8 @@ rec {
     enable = true;
     defaultApplications = {
       "x-scheme-handler/mailto" = "firefox.desktop";
+      "x-scheme-handler/http" = "firefox.desktop";
+      "x-scheme-handler/https" = "firefox.desktop";
     };
   };
 
