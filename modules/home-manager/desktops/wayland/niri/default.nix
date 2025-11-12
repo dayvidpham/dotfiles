@@ -47,6 +47,7 @@ in
       home.packages = [ init-xwayland-satellite ];
 
       CUSTOM.services.xwayland-satellite.enable = true;
+      CUSTOM.services.swww.enable = true;
 
       xdg.portal.enable = true;
       xdg.portal.xdgOpenUsePortal = true;

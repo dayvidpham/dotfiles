@@ -23,7 +23,6 @@ in
 
     CUSTOM.programs.hyprlock.enable = true;
     CUSTOM.programs.eww.enable = true;
-    CUSTOM.programs.swww.enable = true;
 
     programs.xwayland.enable = true;
     environment.systemPackages = [
