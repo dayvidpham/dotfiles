@@ -758,6 +758,8 @@ require('lazy').setup({
         -- C++
         clangd = {
           cmd = { vim.g.clangd },
+          filetypes = { 'c', 'cpp' },
+          autostart = true,
         },
 
         ---------------
@@ -781,6 +783,7 @@ require('lazy').setup({
         server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
         vim.lsp.config[server_name] = server
       end
+      vim.lsp.enable 'clangd'
 
       -- Ensure the servers and tools above are installed
       --  To check the current status of installed tools and/or manually install
@@ -824,7 +827,7 @@ require('lazy').setup({
             -- by the server configuration above. Useful when disabling
             -- certain features of an LSP (for example, turning off formatting for tsserver)
             server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
-            vim.lsp.config[server_name].setup(server)
+            vim.lsp.config[server_name] = server
           end,
         },
       }
@@ -1000,7 +1003,12 @@ require('lazy').setup({
   },
 
   -- Highlight todo, notes, etc in comments
-  { 'folke/todo-comments.nvim', event = 'VimEnter', dependencies = { 'nvim-lua/plenary.nvim' }, opts = { signs = false } },
+  {
+    'folke/todo-comments.nvim',
+    event = 'VimEnter',
+    dependencies = { 'nvim-lua/plenary.nvim' },
+    opts = { signs = false },
+  },
 
   { -- Collection of various small independent plugins/modules
     'echasnovski/mini.nvim',
