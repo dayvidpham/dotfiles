@@ -62,7 +62,6 @@ let
   # Pull in cargo and nil packages for Nix LSP
   system = pkgs-unstable.system;
   nil-lsp-pkg = nil-lsp.outputs.packages.${system}.nil;
-  #  rust-minimal = nil-lsp.inputs.rust-overlay.packages.${system}.default.minimal;
 
   nvimConfig = "${config.xdg.configHome}/nvim";
 in
@@ -111,7 +110,6 @@ in
     ]) ++ [
       pkgs.nixd
       nil-lsp-pkg
-      #rust-minimal
       treesitterWithGrammars
     ];
 
