@@ -24,7 +24,7 @@
 
   #########################
   # Boot loader
-  boot.kernelPackages = pkgs.linuxPackages_6_16;
+  boot.kernelPackages = pkgs.linuxPackages_6_17;
 
   #########################
   # General system-config

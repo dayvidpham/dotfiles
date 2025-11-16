@@ -36,6 +36,18 @@ rec {
       "x-scheme-handler/mailto" = "firefox.desktop";
       "x-scheme-handler/http" = "firefox.desktop";
       "x-scheme-handler/https" = "firefox.desktop";
+      "x-scheme-handler/webcal" = "firefox.desktop";
+      "x-scheme-handler/about" = "firefox.desktop";
+      "x-scheme-handler/unknown" = "firefox.desktop";
+      "x-scheme-handler/chrome" = "firefox.desktop";
+      "text/html" = "firefox.desktop";
+      "application/x-extension-htm" = "firefox.desktop";
+      "application/x-extension-html" = "firefox.desktop";
+      "application/x-extension-shtml" = "firefox.desktop";
+      "application/xhtml+xml" = "firefox.desktop";
+      "application/x-extension-xhtml" = "firefox.desktop";
+      "application/x-extension-xht" = "firefox.desktop";
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document" = "firefox.desktop";
     };
   };
 
@@ -95,7 +107,7 @@ rec {
     mpv # CLI media player
     haruna # mpv Qt/QML frontend for mpv
     vimiv-qt # image viewer with vim bindings
-    xdragon # X/Wayland drag and drop
+    dragon-drop # X/Wayland drag and drop
     steam-run-free # run things in steam's FHS env
     gimp # photo editing/markup
 
@@ -107,10 +119,9 @@ rec {
     google-chrome
     spotify
     discord
-    discord-screenaudio
 
     # Gaming
-    protonup
+    protonup-ng
     godot
 
     # Cloud
