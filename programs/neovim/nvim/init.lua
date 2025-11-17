@@ -757,8 +757,7 @@ require('lazy').setup({
         ---------------
         -- C++
         clangd = {
-          cmd = { vim.g.clangd },
-          filetypes = { 'c', 'cpp' },
+          cmd = { 'clangd' },
           autostart = true,
         },
 

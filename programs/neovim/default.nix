@@ -104,19 +104,19 @@ in
     ]
     ++ [
       # C++
-      clang
-      libclang
-      clang-tools
+      pkgs.llvmPackages.clang
+      pkgs.llvmPackages.clang-tools
     ]) ++ [
       pkgs.nixd
       nil-lsp-pkg
       treesitterWithGrammars
+      pkgs.cargo
     ];
 
     extraLuaConfig =
       ''
         vim.opt.runtimepath:append("${treesitter-parsers}")
-        vim.g.clangd = "${pkgs-unstable.clang-tools}/bin/clangd"
+        --vim.g.clangd = "${pkgs.llvmPackages.clang-tools}/bin/clangd"
 
         package.path = '${nvimConfig}/?.lua;' ..
           '${nvimConfig}/?/init.lua;' .. 
