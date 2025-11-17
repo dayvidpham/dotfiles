@@ -132,6 +132,8 @@ in
     recursive = true;
   };
 
+  xdg.configFile."nvim/minttea/init.lua".source = config.lib.file.mkOutOfStoreSymlink "./nvim/init.lua";
+
   #home.file."${nvimConfigDir}/lua/nix/nvim-treesitter/init.lua".text = ''
   #  vim.opt.runtimepath:append("${treesitter-parsers}")
   #'';
