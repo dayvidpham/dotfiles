@@ -127,12 +127,12 @@ in
       '';
   };
 
-  xdg.configFile."nvim/minttea" = {
-    source = ./nvim;
-    recursive = true;
-  };
+  #xdg.configFile."nvim/minttea" = {
+  #  source = ./nvim;
+  #  recursive = true;
+  #};
 
-  xdg.configFile."nvim/minttea/init.lua".source = config.lib.file.mkOutOfStoreSymlink "./nvim/init.lua";
+  xdg.configFile."nvim/minttea".source = config.lib.file.mkOutOfStoreSymlink ./nvim;
 
   #home.file."${nvimConfigDir}/lua/nix/nvim-treesitter/init.lua".text = ''
   #  vim.opt.runtimepath:append("${treesitter-parsers}")

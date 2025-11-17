@@ -782,7 +782,7 @@ require('lazy').setup({
         server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
         vim.lsp.config[server_name] = server
       end
-      vim.lsp.enable 'clangd'
+      -- vim.lsp.enable 'clangd'
 
       -- Ensure the servers and tools above are installed
       --  To check the current status of installed tools and/or manually install
