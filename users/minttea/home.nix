@@ -110,6 +110,7 @@ rec {
     dragon-drop # X/Wayland drag and drop
     steam-run-free # run things in steam's FHS env
     gimp # photo editing/markup
+    kdePackages.dolphin # file explorer
 
     # For SFU
     openfortivpn
