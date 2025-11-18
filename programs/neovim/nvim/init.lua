@@ -709,6 +709,7 @@ require('lazy').setup({
         },
 
         nixd = {
+          autostart = true,
           cmd = { 'nixd' },
           settings = {
             nixd = {
@@ -781,8 +782,8 @@ require('lazy').setup({
       for server_name, server in pairs(servers) do
         server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
         vim.lsp.config[server_name] = server
+        vim.lsp.enable(server_name)
       end
-      -- vim.lsp.enable 'clangd'
 
       -- Ensure the servers and tools above are installed
       --  To check the current status of installed tools and/or manually install

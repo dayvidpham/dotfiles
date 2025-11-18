@@ -45,8 +45,10 @@ let
     p.rasi
     p.regex
     p.rust
+    p.latex
     p.toml
     p.typescript
+    p.typst
     p.vim
     p.vimdoc
     p.yaml
@@ -132,7 +134,7 @@ in
   #  recursive = true;
   #};
 
-  xdg.configFile."nvim/minttea".source = config.lib.file.mkOutOfStoreSymlink ./nvim;
+  xdg.configFile."nvim/minttea".source = config.lib.file.mkOutOfStoreSymlink /home/minttea/dotfiles/programs/neovim/nvim;
 
   #home.file."${nvimConfigDir}/lua/nix/nvim-treesitter/init.lua".text = ''
   #  vim.opt.runtimepath:append("${treesitter-parsers}")
