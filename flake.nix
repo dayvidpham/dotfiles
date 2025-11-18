@@ -259,6 +259,7 @@
             ./users/minttea/home.nix
             {
               CUSTOM.games.minecraft.enable = false;
+              programs.lutris.enable = true;
             }
           ];
           extraSpecialArgs = extraSpecialArgs // {
