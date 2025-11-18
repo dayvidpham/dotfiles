@@ -48,6 +48,8 @@ rec {
       "application/x-extension-xhtml" = "firefox.desktop";
       "application/x-extension-xht" = "firefox.desktop";
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document" = "firefox.desktop";
+
+      "inode/directory" = "dolphin.desktop";
     };
   };
 
@@ -95,6 +97,10 @@ rec {
     swayimg # image viewer
     qpwgraph # gui for audio
     brightnessctl # device light controller
+
+    # Desktop
+    kdePackages.dolphin
+    kdePackages.qtsvg
 
     # Utils
     tree # fs vis
