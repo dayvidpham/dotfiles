@@ -91,7 +91,6 @@ in
       lua-language-server
       black
       nixpkgs-fmt
-      rust-analyzer-unwrapped
     ]
     ++ [
       # Python
@@ -109,10 +108,14 @@ in
       pkgs.llvmPackages.clang
       pkgs.llvmPackages.clang-tools
     ]) ++ [
-      pkgs.nixd
+      pkgs-unstable.nixd
       nil-lsp-pkg
+      pkgs-unstable.tree-sitter
       treesitterWithGrammars
+
+      # Rust / Nix
       pkgs.cargo
+      pkgs.rust-analyzer-unwrapped
     ];
 
     extraLuaConfig =
