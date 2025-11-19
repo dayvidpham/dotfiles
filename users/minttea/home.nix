@@ -130,6 +130,7 @@ rec {
     # Gaming
     protonup-ng
     godot
+    unityhub
 
     # Cloud
     oci-cli

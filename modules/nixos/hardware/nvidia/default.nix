@@ -238,6 +238,9 @@ in
                 {
                   # Fuck it: use dGPU for everything
                   WLR_DRM_DEVICES = "/etc/card-dgpu:/etc/card-igpu";
+                  LD_LIBRARY_PATH = "${nvidiaDriver}/lib:$LD_LIBRARY_PATH";
+                  EXTRA_LDFLAGS = "-L${nvidiaDriver}/lib $EXTRA_LDFLAGS";
+                  CUDA_PATH = "${pkgs.cudatoolkit}";
                 }
               )
               (mkIf (cfg.hostName == "flowX13" && config.specialisation != { })
@@ -260,6 +263,17 @@ in
         }
         // drmRenderer;
 
+      environment.systemPackages = [
+        nvidiaDriver
+        pkgs.cudatoolkit
+        pkgs.cudaPackages.cudnn
+        pkgs.cudaPackages.cuda_cudart
+        pkgs.fmt.dev
+      ];
+
+      programs.nix-ld.libraries = [
+        nvidiaDriver
+      ];
     })
   ];
 
