@@ -240,6 +240,7 @@
             ./modules/home-manager
             ./programs/neovim
             ./users/minttea/home.nix
+            ./users/minttea/home.flowX13.nix
           ];
           extraSpecialArgs = extraSpecialArgs // {
             GLOBALS.hostName = "flowX13";
@@ -257,6 +258,7 @@
             ./modules/home-manager
             ./programs/neovim
             ./users/minttea/home.nix
+            ./users/minttea/home.desktop.nix
             {
               CUSTOM.games.minecraft.enable = false;
               programs.lutris.enable = true;

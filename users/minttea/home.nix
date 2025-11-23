@@ -127,11 +127,6 @@ rec {
     spotify
     discord
 
-    # Gaming
-    protonup-ng
-    godot
-    unityhub
-
     # Cloud
     oci-cli
     openssl
