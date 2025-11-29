@@ -11,6 +11,10 @@
     protonup-ng
     godot
     unityhub
+
+    # CAD viewer
+    f3d
+    #paraview
   ];
 
   CUSTOM.games.minecraft.enable = false;
