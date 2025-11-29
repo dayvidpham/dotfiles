@@ -14,6 +14,7 @@ lib.mkIf (config.CUSTOM.shared.enable) {
     nvd # closure differ
     nix-index # offline index of all files in nixpkgs, can search for files
     nix-fast-build # multithreaded nix eval? for CI? can I use for nixos-rebuild?
+    manix # settings searcher
 
     # CLI/system tools
     cyme # lsusb alternative, better UI

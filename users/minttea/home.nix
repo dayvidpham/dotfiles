@@ -94,7 +94,7 @@ rec {
     grim # screenshot
     slurp # select region on screen
     swappy # draw on image, mostly for screenshots
-    swayimg # image viewer
+    imv # image viewer
     qpwgraph # gui for audio
     brightnessctl # device light controller
 
@@ -237,6 +237,19 @@ rec {
         "--group-directories-first"
         "--header"
       ];
+  };
+
+  ##############################
+  # General applications
+  programs.imv.enable = true;
+  programs.imv.package = pkgs.imv;
+  xdg.desktopEntries.imv = {
+    name = "imv";
+    genericName = "Image Viewer";
+    exec = "${programs.imv.package}/bin/imv";
+    terminal = false;
+    categories = [ "Graphics" "Viewer" ];
+    mimeType = [ "image/*" ];
   };
 
   programs.firefox.enable = true;
