@@ -105,7 +105,7 @@ in
       '';
     };
     loader.efi.canTouchEfiVariables = true;
-    kernelPackages = pkgs.linuxPackages_6_17;
+    kernelPackages = pkgs.linuxPackages_6_12;
   };
 
   # ################################

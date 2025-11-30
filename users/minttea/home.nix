@@ -5,7 +5,11 @@
 , osConfig
 , ...
 }:
-
+let
+  inherit (lib)
+    mkDefault
+  ;
+in
 rec {
   # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;
@@ -73,11 +77,11 @@ rec {
 
   # NOTE: Hyprland
   CUSTOM.wayland.windowManager.hyprland = {
-    enable = true;
+    enable = mkDefault true;
   };
   # NOTE: Sway, for remote desktop & waypipe
   CUSTOM.wayland.windowManager.sway = {
-    enable = true;
+    enable = mkDefault true;
   };
 
   # NOTE: niri, experimental
