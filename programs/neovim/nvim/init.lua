@@ -479,6 +479,10 @@ require('lazy').setup({
       -- `neodev` configures Lua LSP for your Neovim config, runtime and plugins
       -- used for completion, annotations and signatures of Neovim apis
       { 'folke/neodev.nvim', opts = {} },
+
+      -----------
+      -- C#
+      'seblyng/roslyn.nvim',
     },
     opts = {
       servers = {
@@ -784,6 +788,12 @@ require('lazy').setup({
             },
           },
         },
+
+        ---------------
+        -- Rust
+        omnisharp = {},
+
+        roslyn = {},
       }
 
       for server_name, server in pairs(servers) do
@@ -801,6 +811,10 @@ require('lazy').setup({
       --  WARN: Do not use Mason with Nix
       require('mason').setup {
         PATH = 'append',
+        registries = {
+          'github:mason-org/mason-registry',
+          'github:Crashdummyy/mason-registry',
+        },
       }
 
       ---- You can add other tools here that you want Mason to install

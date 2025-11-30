@@ -107,6 +107,13 @@ in
       # C++
       pkgs.llvmPackages.clang
       pkgs.llvmPackages.clang-tools
+      # C# / Unity
+      pkgs.dotnet-sdk_8
+      pkgs.mono
+      pkgs.omnisharp-roslyn
+      pkgs.roslyn
+      pkgs.roslyn-ls
+      pkgs.msbuild
     ]) ++ [
       pkgs-unstable.nixd
       nil-lsp-pkg
@@ -120,6 +127,7 @@ in
 
     extraLuaConfig =
       ''
+        vim.opt.runtimepath:append("${pkgs.roslyn}")
         vim.opt.runtimepath:append("${treesitter-parsers}")
         --vim.g.clangd = "${pkgs.llvmPackages.clang-tools}/bin/clangd"
 
