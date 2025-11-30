@@ -9,5 +9,6 @@
     ./swww
     ./podman
     ./xwayland-satellite
+    ./syncthing
   ];
 }

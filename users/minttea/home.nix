@@ -50,6 +50,8 @@ rec {
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document" = "firefox.desktop";
 
       "inode/directory" = "dolphin.desktop";
+      "image/*" = "imv.desktop";
+      "image/png" = "imv.desktop";
     };
   };
 

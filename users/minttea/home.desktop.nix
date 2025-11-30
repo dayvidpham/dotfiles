@@ -19,4 +19,6 @@
 
   CUSTOM.games.minecraft.enable = false;
   programs.lutris.enable = true;
+
+  CUSTOM.services.syncthing.enable = true;
 }
