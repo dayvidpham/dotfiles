@@ -9,13 +9,13 @@
   home.packages = (with pkgs; [
     # Gaming
     protonup-ng
-    godot
+    #godot
     unityhub
 
   ])
   ++ (with pkgs-unstable; [
     # CAD viewer
-    blender
+    #blender
   ])
   ;
 
