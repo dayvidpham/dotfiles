@@ -13,7 +13,7 @@
     unityhub
 
     # CAD viewer
-    f3d
+    blender
     #paraview
   ];
 
