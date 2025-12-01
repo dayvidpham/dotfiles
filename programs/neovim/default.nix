@@ -2,11 +2,10 @@
 , pkgs
 , pkgs-unstable
 , lib ? pkgs.lib
-, nil-lsp
 , ...
 }:
 let
-  treesitterWithGrammars = (pkgs-unstable.vimPlugins.nvim-treesitter.withPlugins (p: [
+  treesitterWithGrammars = (pkgs.vimPlugins.nvim-treesitter.withPlugins (p: [
     p.awk
     p.bash
     p.bibtex
@@ -55,15 +54,13 @@ let
     p.yuck
   ]));
 
-  treesitter-parsers = pkgs-unstable.symlinkJoin {
+  treesitter-parsers = pkgs.symlinkJoin {
     name = "treesitter-parsers";
     paths = treesitterWithGrammars.dependencies;
   };
 
   # NOTE: my own config
-  # Pull in cargo and nil packages for Nix LSP
-  system = pkgs-unstable.system;
-  nil-lsp-pkg = nil-lsp.outputs.packages.${system}.nil;
+  system = pkgs.system;
 
   nvimConfig = "${config.xdg.configHome}/nvim";
 in
@@ -75,7 +72,7 @@ in
     coc.enable = false;
     withNodeJs = true;
     defaultEditor = true;
-    package = pkgs-unstable.neovim-unwrapped;
+    package = pkgs.neovim-unwrapped;
 
     #plugins = with pkgs.vimPlugins; [
     #  {
@@ -85,7 +82,7 @@ in
     #  }
     #];
 
-    extraPackages = (with pkgs-unstable; [
+    extraPackages = (with pkgs; [
       ripgrep
       fd
       lua-language-server
@@ -115,9 +112,8 @@ in
       pkgs.roslyn-ls
       pkgs.msbuild
     ]) ++ [
-      pkgs-unstable.nixd
-      nil-lsp-pkg
-      pkgs-unstable.tree-sitter
+      pkgs.nixd
+      pkgs.tree-sitter
       treesitterWithGrammars
 
       # Rust / Nix

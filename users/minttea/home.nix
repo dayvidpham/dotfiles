@@ -1,5 +1,6 @@
 { config
 , pkgs
+, pkgs-stable
 , pkgs-unstable
 , lib
 , osConfig
@@ -8,7 +9,7 @@
 let
   inherit (lib)
     mkDefault
-  ;
+    ;
 in
 rec {
   # Let Home Manager install and manage itself.
@@ -259,8 +260,7 @@ rec {
   };
 
   programs.firefox.enable = true;
-
-  CUSTOM.programs.ghostty.enable = true;
+  programs.firefox.package = pkgs-stable.firefox-bin;
 
   programs.obs-studio.enable = true;
   programs.lazygit.enable = true;

@@ -20,11 +20,10 @@
 
     #############################
     # Nix package management
-    nix-multithreaded.url = "github:DeterminateSystems/nix-src/multithreaded-eval";
-    determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/3.8.4.tar.gz";
+    determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/3.13.2.tar.gz";
 
     home-manager = {
-      url = "github:nix-community/home-manager/master";
+      url = "github:nix-community/home-manager/release-25.11";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     home-manager-wsl = {
@@ -33,17 +32,10 @@
     };
 
     #############################
-    # Community tools
-    nil-lsp = {
-      url = "github:oxalica/nil";
-      inputs.nixpkgs.follows = "nixpkgs-stable";
-    };
-
-    #############################
     # Other software
     niri = {
       url = "github:sodiboo/niri-flake";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs.follows = "nixpkgs-stable";
       inputs.nixpkgs-stable.follows = "nixpkgs-stable";
     };
   };
@@ -59,11 +51,9 @@
     , flake-registry
       # Package management
     , determinate
-    , nix-multithreaded
     , home-manager
     , home-manager-wsl
       # Community tools
-    , nil-lsp
     , niri
     , ...
     }:
@@ -78,7 +68,6 @@
         };
 
         overlays = [
-          #nix-multithreaded.overlays.default
           #nix.overlays.default
 
           # NOTE: My own packages and programs
@@ -160,7 +149,6 @@
         inherit
           pkgs-unstable
           pkgs-stable
-          nil-lsp
           niri
           ;
       };

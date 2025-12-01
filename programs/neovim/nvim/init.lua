@@ -699,25 +699,25 @@ require('lazy').setup({
 
         ---------------
         -- Nix
-        nil_ls = {
-          autostart = true,
-          cmd = { 'nil' },
-          settings = {
-            ['nil'] = {
-              formatting = {
-                command = { 'nixpkgs-fmt' },
-              },
-              nix = {
-                maxMemoryMB = 0, -- 12 GiB for input eval
-                flake = {
-                  autoArchive = true,
-                  autoEvalInputs = false,
-                  nixpkgsInputName = 'nixpkgs',
-                },
-              },
-            },
-          },
-        },
+        -- nil_ls = {
+        --   autostart = true,
+        --   cmd = { 'nil' },
+        --   settings = {
+        --     ['nil'] = {
+        --       formatting = {
+        --         command = { 'nixpkgs-fmt' },
+        --       },
+        --       nix = {
+        --         maxMemoryMB = 0, -- 12 GiB for input eval
+        --         flake = {
+        --           autoArchive = true,
+        --           autoEvalInputs = false,
+        --           nixpkgsInputName = 'nixpkgs',
+        --         },
+        --       },
+        --     },
+        --   },
+        -- },
 
         nixd = {
           autostart = true,
