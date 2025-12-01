@@ -241,7 +241,6 @@ in
   # Some user setup: Most user-stuff will be in home-manager
   users.users.minttea = {
     isNormalUser = true;
-    packages = [ pkgs.godot ];
     description = "the guy";
     extraGroups = [ "networkmanager" "wheel" "libvirtd" "video" "gamemode" ];
   };

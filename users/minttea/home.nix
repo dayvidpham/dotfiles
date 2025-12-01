@@ -124,6 +124,7 @@ rec {
     steam-run-free # run things in steam's FHS env
     gimp # photo editing/markup
     kdePackages.dolphin # file explorer
+    scythe # self-rolled screenshotter
 
     # For SFU
     openfortivpn
@@ -144,9 +145,9 @@ rec {
     nix-search # Fast, indexed replacement for awful builtin `nix search`
 
     # Notes
-    anytype # proj management/knowledge base
+    #anytype # proj management/knowledge base
     zotero # ref/citation/bib manager
-    lorien # infinite canvas notes
+    #lorien # infinite canvas notes
   ]);
 
 

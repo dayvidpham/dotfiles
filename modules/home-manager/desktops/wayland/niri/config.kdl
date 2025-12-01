@@ -263,7 +263,9 @@ environment {
 }
 
 spawn-at-startup "xwayland-satellite"
-spawn-at-startup "ghostty" "-e" "fastfetch && exec zsh -i -l" 
+//spawn-at-startup "ghostty" "-e" "fastfetch && exec zsh -i -l" 
+//spawn-at-startup "polkit-gnome-authentication-agent-1"
+
 
 
 // Uncomment this line to ask the clients to omit their client-side decorations if possible.

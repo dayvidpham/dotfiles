@@ -6,16 +6,18 @@
 , ...
 }:
 {
-  home.packages = with pkgs; [
+  home.packages = (with pkgs; [
     # Gaming
     protonup-ng
     godot
     unityhub
 
+  ])
+  ++ (with pkgs-unstable; [
     # CAD viewer
     blender
-    #paraview
-  ];
+  ])
+  ;
 
   CUSTOM.games.minecraft.enable = false;
   programs.lutris.enable = true;
