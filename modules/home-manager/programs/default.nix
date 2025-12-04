@@ -12,5 +12,6 @@
     ./ghostty
     ./nodejs
     ./distrobox
+    ./vscode
   ];
 }

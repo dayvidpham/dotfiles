@@ -168,6 +168,7 @@ rec {
     };
   };
 
+  CUSTOM.programs.vscode.enable = true;
 
   #########################
   # General CLI tools
