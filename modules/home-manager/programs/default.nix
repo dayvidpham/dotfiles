@@ -14,5 +14,6 @@
     ./distrobox
     ./vscode
     ./opencode
+    ./unity
   ];
 }

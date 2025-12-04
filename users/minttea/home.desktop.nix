@@ -50,7 +50,6 @@ in
 
     # Game Dev
     #godot
-    unityhub
   ])
   ++ (with pkgs-unstable; [
     # CAD viewer
@@ -61,6 +60,8 @@ in
   ]
   ;
 
+  CUSTOM.programs.vscode.enable = true;
+  CUSTOM.programs.unity.enable = true;
   CUSTOM.games.minecraft.enable = false;
   programs.lutris.enable = true;
 

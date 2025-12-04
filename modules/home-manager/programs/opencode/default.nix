@@ -4,7 +4,7 @@
 , ...
 }:
 let
-  cfg = config.CUSTOM.programs.vscode;
+  cfg = config.CUSTOM.programs.opencode;
 
   inherit (lib)
     mkIf
