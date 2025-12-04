@@ -482,11 +482,22 @@ require('lazy').setup({
 
       -----------
       -- C#
-      'seblyng/roslyn.nvim',
+      {
+        'seblyng/roslyn.nvim',
+        ft = 'cs',
+        opts = {
+          -- specific configuration for NixOS
+          -- If the above exe doesn't work, point directly to the store path (not recommended for portability)
+          -- or ensure 'Microsoft.CodeAnalysis.LanguageServer' is in your PATH
+        },
+      },
     },
     opts = {
       servers = {
         clangd = {
+          mason = false,
+        },
+        roslyn_ls = {
           mason = false,
         },
       },
@@ -790,10 +801,18 @@ require('lazy').setup({
         },
 
         ---------------
-        -- Rust
-        omnisharp = {},
-
-        roslyn = {},
+        -- CSharp
+        roslyn_ls = {
+          cmd = {
+            'dotnet',
+            vim.g.roslyn_path_dll, -- 'Microsoft.CodeAnalysis.LanguageServer.dll',
+            '--logLevel', -- this property is required by the server
+            'Information',
+            '--extensionLogDirectory', -- this property is required by the server
+            vim.fs.joinpath(vim.uv.os_tmpdir(), 'roslyn_ls/logs'),
+            '--stdio',
+          },
+        },
       }
 
       for server_name, server in pairs(servers) do
@@ -820,7 +839,7 @@ require('lazy').setup({
       ---- You can add other tools here that you want Mason to install
       ---- for you, so that they are available from within Neovim.
       local ensure_installed = {}
-      local dont_install = '|nixd|nil_ls|clangd|ruff|pylsp|'
+      local dont_install = '|lua_ls|roslyn_ls|nixd|nil_ls|clangd|ruff|pylsp|'
 
       for k in pairs(servers) do
         local should_install_server = string.find(dont_install, '|' .. k .. '|') == nil

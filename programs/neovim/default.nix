@@ -105,10 +105,8 @@ in
       pkgs.llvmPackages.clang
       pkgs.llvmPackages.clang-tools
       # C# / Unity
-      pkgs.dotnet-sdk_8
+      pkgs.dotnet-sdk_9
       pkgs.mono
-      pkgs.omnisharp-roslyn
-      pkgs.roslyn
       pkgs.roslyn-ls
       pkgs.msbuild
     ]) ++ [
@@ -123,9 +121,9 @@ in
 
     extraLuaConfig =
       ''
-        vim.opt.runtimepath:append("${pkgs.roslyn}")
         vim.opt.runtimepath:append("${treesitter-parsers}")
         --vim.g.clangd = "${pkgs.llvmPackages.clang-tools}/bin/clangd"
+        vim.g.roslyn_dll_path = "${pkgs.roslyn-ls}/lib/roslyn-ls/Microsoft.CodeAnalysis.LanguageServer.dll"
 
         package.path = '${nvimConfig}/?.lua;' ..
           '${nvimConfig}/?/init.lua;' .. 
