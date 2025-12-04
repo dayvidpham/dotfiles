@@ -13,5 +13,6 @@
     ./nodejs
     ./distrobox
     ./vscode
+    ./opencode
   ];
 }

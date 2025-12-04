@@ -169,6 +169,7 @@ rec {
   };
 
   CUSTOM.programs.vscode.enable = true;
+  CUSTOM.programs.opencode.enable = true;
 
   #########################
   # General CLI tools
