@@ -70,5 +70,7 @@ in
   ##################
   # Virtualisation
 
+  CUSTOM.services.podman.enable = true;
+  CUSTOM.programs.distrobox.enable = true;
   CUSTOM.virtualisation.libvirtd.enable = true;
 }

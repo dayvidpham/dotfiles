@@ -12,7 +12,6 @@ let
     mkDefault
     mkEnableOption
     ;
-
 in
 {
   options.CUSTOM.programs.distrobox = {
@@ -20,6 +19,8 @@ in
   };
 
   config = mkIf cfg.enable {
+    CUSTOM.services.podman.enable = true;
+
     programs.distrobox.enable = true;
     programs.distrobox.containers = {
       sfurs = {

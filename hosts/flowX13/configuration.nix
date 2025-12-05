@@ -183,7 +183,7 @@ in
   ######################################
   # Virtualisation
   CUSTOM.virtualisation.libvirtd.enable = false;
-  CUSTOM.virtualisation.podman.enable = true;
+  CUSTOM.virtualisation.podman.enable = false;
 
   # Set time zone.
   time.timeZone = "America/Vancouver";

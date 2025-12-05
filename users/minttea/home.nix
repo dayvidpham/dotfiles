@@ -60,10 +60,6 @@ rec {
     };
   };
 
-  # Virtualisation
-  CUSTOM.services.podman.enable = true;
-  CUSTOM.programs.distrobox.enable = true;
-
   #####################
   # NOTE: Desktop Environment
   CUSTOM.services.kanshi.enable = true;
