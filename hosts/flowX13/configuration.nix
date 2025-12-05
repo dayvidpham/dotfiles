@@ -202,12 +202,13 @@ in
 
   # Nvidia
   CUSTOM.hardware.nvidia.enable = false;
+  CUSTOM.hardware.nvidia.hostName = "flowX13";
+  CUSTOM.hardware.nvidia.proprietaryDrivers.enable = false;
   specialisation.nvidia-gpu.configuration = {
     system.nixos.tags = [ "nvidia-gpu" ];
     CUSTOM.hardware.nvidia.enable = lib.mkForce true;
+    CUSTOM.hardware.nvidia.proprietaryDrivers.enable = lib.mkForce true;
   };
-  CUSTOM.hardware.nvidia.hostName = "flowX13";
-  CUSTOM.hardware.nvidia.proprietaryDrivers.enable = true;
 
   services.udev.extraRules = ''
     # Remove NVIDIA USB xHCI Host Controller devices
