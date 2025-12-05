@@ -198,7 +198,7 @@ in
   };
 
   # Amdgpu
-  hardware.amdgpu.opencl.enable = true;
+  # hardware.amdgpu.opencl.enable = true;
 
   # Nvidia
   CUSTOM.hardware.nvidia.enable = false;
