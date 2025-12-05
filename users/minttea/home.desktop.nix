@@ -66,4 +66,9 @@ in
   programs.lutris.enable = true;
 
   CUSTOM.services.syncthing.enable = true;
+
+  ##################
+  # Virtualisation
+
+  CUSTOM.virtualisation.libvirtd.enable = true;
 }

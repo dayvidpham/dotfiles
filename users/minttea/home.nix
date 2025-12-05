@@ -64,14 +64,6 @@ rec {
   CUSTOM.services.podman.enable = true;
   CUSTOM.programs.distrobox.enable = true;
 
-  dconf.enable = true;
-  dconf.settings = {
-    "org/virt-manager/virt-manager/connections" = {
-      autoconnect = [ "qemu:///system" ];
-      uris = [ "qemu:///system" ];
-    };
-  };
-
   #####################
   # NOTE: Desktop Environment
   CUSTOM.services.kanshi.enable = true;

@@ -8,5 +8,6 @@
     ./services
     ./programs
     ./games
+    ./virtualisation
   ];
 }
