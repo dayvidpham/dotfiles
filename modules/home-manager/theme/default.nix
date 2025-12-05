@@ -49,7 +49,7 @@ in
         CUSTOM.services.playerctld.enable = true;
 
         # NOTE: Unused
-        CUSTOM.programs.eww.enable = true;
+        CUSTOM.programs.eww.enable = false;
 
         CUSTOM.programs.rofi = {
           enable = true;
