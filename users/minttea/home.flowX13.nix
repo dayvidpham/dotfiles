@@ -8,7 +8,7 @@
 let
   inherit (lib)
     mkForce
-  ;
+    ;
 in
 {
   # NOTE: Hyprland

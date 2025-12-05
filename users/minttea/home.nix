@@ -110,7 +110,6 @@ rec {
     vimiv-qt # image viewer with vim bindings
     dragon-drop # X/Wayland drag and drop
     steam-run-free # run things in steam's FHS env
-    gimp # photo editing/markup
     kdePackages.dolphin # file explorer
     scythe # self-rolled screenshotter
 
@@ -126,12 +125,12 @@ rec {
     # Cloud
     oci-cli
     openssl
-  ])
-  ++ (with pkgs-unstable; [
+
     # Utils
     neovide # Rust-based native nvim text editor
     nix-search # Fast, indexed replacement for awful builtin `nix search`
-
+  ])
+  ++ (with pkgs-unstable; [
     # Notes
     #anytype # proj management/knowledge base
     zotero # ref/citation/bib manager
@@ -142,7 +141,6 @@ rec {
   #########################
   # Programming Envs
 
-  CUSTOM.programs.nodejs.enable = true;
   CUSTOM.programs.rEnv.enable = true;
 
   programs.direnv = {

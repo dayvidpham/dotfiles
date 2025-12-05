@@ -63,6 +63,9 @@ in
 
     # Game Dev
     #godot
+
+    # utilities
+    gimp # photo editing/markup
   ])
   ++ (with pkgs-unstable; [
     # CAD viewer
@@ -73,6 +76,7 @@ in
   ]
   ;
 
+  CUSTOM.programs.nodejs.enable = true;
   CUSTOM.programs.vscode.enable = true;
   CUSTOM.programs.unity.enable = true;
   CUSTOM.games.minecraft.enable = false;
