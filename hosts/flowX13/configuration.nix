@@ -182,13 +182,7 @@ in
 
   ######################################
   # Virtualisation
-  programs.dconf.enable = true; # virt-manager requires dconf to be enabled
-  programs.virt-manager = {
-    # GUI for controlling QEMU/KVM VMs on libvirtd
-    enable = true;
-  };
-  virtualisation.libvirtd.enable = true;
-
+  CUSTOM.virtualisation.libvirtd.enable = false;
   CUSTOM.virtualisation.podman.enable = true;
 
   # Set time zone.
