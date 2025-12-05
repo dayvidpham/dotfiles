@@ -20,7 +20,9 @@
 
     #############################
     # Nix package management
-    determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/3.13.2.tar.gz";
+    determinate-nix.url = "https://flakehub.com/f/DeterminateSystems/nix-src/*";
+    determinate-nixd.url = "https://flakehub.com/f/DeterminateSystems/determinate/*";
+    determinate-nixd.inputs.nix.follows = "determinate-nix";
 
     home-manager = {
       url = "github:nix-community/home-manager/release-25.11";
@@ -50,7 +52,8 @@
     , nixos-wsl
     , flake-registry
       # Package management
-    , determinate
+    , determinate-nix
+    , determinate-nixd
     , home-manager
     , home-manager-wsl
       # Community tools
@@ -68,10 +71,11 @@
         };
 
         overlays = [
-          #nix.overlays.default
+          determinate-nix.overlays.default
 
           # NOTE: My own packages and programs
           (final: prev: {
+            #nix = determinate
             run-cwd = with prev; callPackage ./packages/run-cwd.nix { };
             scythe = with prev; callPackage ./packages/scythe.nix {
               wl-clipboard = wl-clipboard-rs;
@@ -163,7 +167,7 @@
             specialArgs
             ;
           modules = [
-            determinate.nixosModules.default
+            determinate-nixd.nixosModules.default
             niri.nixosModules.niri
             ./modules/nixos
             noChannelModule
@@ -177,7 +181,7 @@
             specialArgs
             ;
           modules = [
-            determinate.nixosModules.default
+            determinate-nixd.nixosModules.default
             niri.nixosModules.niri
             ./modules/nixos
             noChannelModule
@@ -194,7 +198,7 @@
           #  pkgs = pkgs-wsl;
           #};
           modules = [
-            determinate.nixosModules.default
+            determinate-nixd.nixosModules.default
             niri.nixosModules.niri
             (nixos-wsl.nixosModules.default // {
               system.build.installBootLoader = lib.mkForce "${pkgs.coreutils}/bin/true";

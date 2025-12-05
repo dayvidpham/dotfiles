@@ -20,9 +20,7 @@ let
       bookdown
       rmarkdown
       markdown
-      reticulate
       formatR # used to style and format code chunks when rendered
-      arrow
     ];
   });
 

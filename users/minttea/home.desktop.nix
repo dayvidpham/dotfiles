@@ -66,6 +66,7 @@ in
 
     # utilities
     gimp # photo editing/markup
+    nvtopPackages.full # htop but for GPUs
   ])
   ++ (with pkgs-unstable; [
     # CAD viewer
@@ -75,6 +76,8 @@ in
     rider
   ]
   ;
+
+  programs.obs-studio.enable = true;
 
   CUSTOM.programs.nodejs.enable = true;
   CUSTOM.programs.vscode.enable = true;

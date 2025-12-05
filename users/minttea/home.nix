@@ -104,7 +104,6 @@ rec {
     kdePackages.okular # fully-featured pdf viewer
     jq # CLI json explorer
     fastfetch # C implmentation of neofetch
-    nvtopPackages.full # htop but for GPUs
     mpv # CLI media player
     haruna # mpv Qt/QML frontend for mpv
     vimiv-qt # image viewer with vim bindings
@@ -147,6 +146,7 @@ rec {
     enable = true;
     enableZshIntegration = true;
     nix-direnv.enable = true;
+
     config = {
       global = {
         hide_env_diff = true;
@@ -251,7 +251,6 @@ rec {
   programs.firefox.enable = true;
   programs.firefox.package = pkgs-stable.firefox-bin;
 
-  programs.obs-studio.enable = true;
   programs.lazygit.enable = true;
 
   # SSH config
