@@ -16,6 +16,7 @@ let
   wayland-desktops = [
     "sway"
     "hyprland"
+    "niri"
   ];
 
   wayland-enabled =
