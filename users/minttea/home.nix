@@ -66,11 +66,11 @@ rec {
 
   # NOTE: Hyprland
   CUSTOM.wayland.windowManager.hyprland = {
-    enable = mkDefault true;
+    enable = mkDefault false;
   };
   # NOTE: Sway, for remote desktop & waypipe
   CUSTOM.wayland.windowManager.sway = {
-    enable = mkDefault true;
+    enable = mkDefault false;
   };
 
   # NOTE: niri, experimental

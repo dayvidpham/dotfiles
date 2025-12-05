@@ -13,10 +13,10 @@ in
 {
   # NOTE: Hyprland
   CUSTOM.wayland.windowManager.hyprland = {
-    enable = mkForce false;
+    enable = false;
   };
   # NOTE: Sway, for remote desktop & waypipe
   CUSTOM.wayland.windowManager.sway = {
-    enable = mkForce false;
+    enable = false;
   };
 }

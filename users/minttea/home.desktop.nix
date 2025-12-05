@@ -44,6 +44,19 @@ let
 
 in
 {
+  ########################
+  # Wayland Desktop Envs
+
+  CUSTOM.wayland.windowManager.hyprland = {
+    enable = true;
+  };
+
+  # NOTE: Sway, for remote desktop & waypipe
+  CUSTOM.wayland.windowManager.sway = {
+    enable = true;
+  };
+
+
   home.packages = (with pkgs; [
     # Gaming
     protonup-ng
