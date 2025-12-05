@@ -14,6 +14,7 @@
     ./distrobox
     ./vscode
     ./opencode
+    ./claude-code
     ./unity
   ];
 }

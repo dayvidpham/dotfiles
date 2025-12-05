@@ -156,9 +156,12 @@ rec {
 
   CUSTOM.programs.vscode.enable = true;
   CUSTOM.programs.opencode.enable = true;
+  CUSTOM.programs.claude-code.enable = true;
 
   #########################
   # General CLI tools
+
+  CUSTOM.programs.ghostty.enable = true;
 
   # NOTE: Zsh setup
   # Manual setup: don't like how home-manager currently sets up zsh

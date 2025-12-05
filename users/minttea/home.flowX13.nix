@@ -19,4 +19,6 @@ in
   CUSTOM.wayland.windowManager.sway = {
     enable = false;
   };
+
+  programs.opencode.enable = true;
 }
