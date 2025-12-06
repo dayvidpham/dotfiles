@@ -482,24 +482,6 @@ require('lazy').setup({
 
       -----------
       -- C#
-      {
-        'seblyng/roslyn.nvim',
-        ft = 'cs',
-        opts = {
-          -- specific configuration for NixOS
-          -- If the above exe doesn't work, point directly to the store path (not recommended for portability)
-          -- or ensure 'Microsoft.CodeAnalysis.LanguageServer' is in your PATH
-          settings = {
-            ['csharp|inlay_hints'] = {
-              csharp_enable_inlay_hints_for_implicit_object_creation = true,
-              csharp_enable_inlay_hints_for_implicit_variable_types = true,
-            },
-            ['csharp|code_lens'] = {
-              dotnet_enable_references_code_lens = true,
-            },
-          },
-        },
-      },
     },
     opts = {
       servers = {
@@ -811,17 +793,17 @@ require('lazy').setup({
 
         ---------------
         -- CSharp
-        roslyn_ls = {
-          cmd = {
-            'dotnet',
-            vim.g.roslyn_path_dll, -- 'Microsoft.CodeAnalysis.LanguageServer.dll',
-            '--logLevel', -- this property is required by the server
-            'Information',
-            '--extensionLogDirectory', -- this property is required by the server
-            vim.fs.joinpath(vim.uv.os_tmpdir(), 'roslyn_ls/logs'),
-            '--stdio',
-          },
-        },
+        -- roslyn_ls = {
+        --   cmd = {
+        --     'dotnet',
+        --     vim.g.roslyn_path_dll, -- 'Microsoft.CodeAnalysis.LanguageServer.dll',
+        --     '--logLevel', -- this property is required by the server
+        --     'Information',
+        --     '--extensionLogDirectory', -- this property is required by the server
+        --     vim.fs.joinpath(vim.uv.os_tmpdir(), 'roslyn_ls/logs'),
+        --     '--stdio',
+        --   },
+        -- },
       }
 
       for server_name, server in pairs(servers) do
