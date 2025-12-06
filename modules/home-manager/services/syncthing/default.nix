@@ -48,10 +48,10 @@ in
             # Hardcode the Headscale IP. Port 22000 is standard.
             addresses = [ "tcp://${desktopIp}:22000" ];
           };
-          #  "flowX13" = {
-          #    id = "DEVICE-ID-GOES-HERE";
-          #    addresses = [ "tcp://${flowx13Ip}:22000" ];
-          #  };
+          "flowX13" = {
+            id = "RS4XGM6-YFBMSFV-MWJJVZP-QXYM7UN-SOT7PKK-4PPDR4L-XMIE6EJ-5JEZOAR";
+            addresses = [ "tcp://${flowx13Ip}:22000" ];
+          };
         };
 
         # 4. Folder Configuration
@@ -60,8 +60,7 @@ in
             path = "${config.home.homeDirectory}/Zotero/storage";
             id = "zotero-storage-sync";
             label = "Zotero Storage";
-            #devices = [ "desktop" "laptop" ];
-            devices = [ ];
+            devices = [ "desktop" "flowX13" ];
             versioning = {
               type = "simple";
               params = {
