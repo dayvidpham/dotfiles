@@ -38,7 +38,7 @@
     # Performance boosts: enable higher number of parallel binary cache pulls
     nix.settings.http-connections = lib.mkDefault 128;
     nix.settings.max-substitution-jobs = lib.mkDefault 128;
-    nix.settings.download-buffer-size = 500;
+    nix.settings.download-buffer-size = 1024;
 
     # Fall back to other substituter
     nix.settings.fallback = true;
