@@ -38,6 +38,9 @@ in
         default = [
           "gtk"
         ];
+        extraPortals = [
+          pkgs.xdg-desktop-portal-gnome
+        ];
       };
     };
   };
