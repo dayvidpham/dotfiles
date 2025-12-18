@@ -42,7 +42,7 @@
 [Describe the target architecture after refactoring.]
 
 ```
-┌──────────────┐      ┌──────────────┐
+┌──────────────┐      ┌──────────────┐      ┌──────────────┐
 │  ComponentA  │ ───► │  NewAbstract │ ───► │  ComponentB  │
 └──────────────┘      └──────────────┘      └──────────────┘
 ```
