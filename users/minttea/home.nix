@@ -29,10 +29,11 @@ rec {
 
   # Env vars
   home.sessionVariables = {
-    XDG_CONFIG_HOME = "${config.xdg.configHome}";
-    XDG_CACHE_HOME = "${config.xdg.cacheHome}";
-    XDG_DATA_HOME = "${config.xdg.dataHome}";
-    XDG_STATE_HOME = "${config.xdg.stateHome}";
+    EDITOR = "nvim";
+    BROWSER = "firefox";
+    DEFAULT_BROWSER = "firefox";
+    GTK_DEFAULT_BROWSER = "firefox.desktop";
+    MOZ_DBUS_REMOTE = "1";
   };
 
   xdg.mimeApps = {
@@ -45,6 +46,10 @@ rec {
       "x-scheme-handler/about" = "firefox.desktop";
       "x-scheme-handler/unknown" = "firefox.desktop";
       "x-scheme-handler/chrome" = "firefox.desktop";
+      "x-scheme-handler/ftp" = "firefox.desktop";
+      "x-scheme-handler/web+unknown" = "firefox.desktop";
+      "x-scheme-handler/web+http" = "firefox.desktop";
+      "x-scheme-handler/web+https" = "firefox.desktop";
       "text/html" = "firefox.desktop";
       "application/x-extension-htm" = "firefox.desktop";
       "application/x-extension-html" = "firefox.desktop";
@@ -53,6 +58,8 @@ rec {
       "application/x-extension-xhtml" = "firefox.desktop";
       "application/x-extension-xht" = "firefox.desktop";
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document" = "firefox.desktop";
+      "application/pdf" = "firefox.desktop";
+      "application/json" = "firefox.desktop";
 
       "inode/directory" = "dolphin.desktop";
       "image/*" = "imv.desktop";
@@ -155,8 +162,11 @@ rec {
   };
 
   CUSTOM.programs.vscode.enable = true;
+
+  # LLM Agents
   CUSTOM.programs.opencode.enable = true;
   CUSTOM.programs.claude-code.enable = true;
+  programs.gemini-cli.enable = true;
 
   #########################
   # General CLI tools
