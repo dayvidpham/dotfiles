@@ -33,6 +33,21 @@ in
         theme = "balcony";
       };
 
+      # Portal configuration for Sway
+      xdg.portal = {
+        enable = true;
+        xdgOpenUsePortal = false;
+        extraPortals = with pkgs; [
+          xdg-desktop-portal-gtk
+          xdg-desktop-portal-wlr
+        ];
+        config = {
+          sway = {
+            default = [ "wlr" "gtk" ];
+          };
+        };
+      };
+
       wayland.windowManager.sway =
         let
           modifier = "Mod1";

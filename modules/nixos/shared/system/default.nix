@@ -129,6 +129,12 @@ in
     nixpkgs.config.allowUnfree = true;
     services.flatpak.enable = true;
     xdg.portal.enable = true;
+    xdg.portal.xdgOpenUsePortal = false;
+
+    environment.sessionVariables = {
+      BROWSER = "${pkgs.firefox-bin}/bin/firefox";
+      DEFAULT_BROWSER = "${pkgs.firefox-bin}/bin/firefox";
+    };
 
     environment.systemPackages = [
       # greeter
