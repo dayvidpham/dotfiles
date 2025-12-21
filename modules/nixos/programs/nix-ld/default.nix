@@ -1,6 +1,6 @@
 # NOTE: Referenced from:
 # https://github.com/Mic92/dotfiles/blob/a1b8a16b393d4396a0f41144d3cf308453d66048/nixos/modules/nix-ld.nix
-{ pkgs, ... }: {
+{ config, pkgs, lib, ... }: {
   programs.nix-ld.enable = true;
   programs.nix-ld.package = pkgs.nix-ld;
   programs.nix-ld.libraries = with pkgs; [
@@ -65,5 +65,11 @@
     xorg.libxshmfence
     zlib
     wayland
+  ]
+  ++ lib.optionals (config.CUSTOM.hardware.nvidia.enable) [
+    pkgs.cudaPackages.cuda_cudart
+    pkgs.cudatoolkit
+    config.CUSTOM.hardware.nvidia.proprietaryDrivers.package
+    pkgs.cudaPackages.cudnn
   ];
 }
