@@ -31,15 +31,18 @@ in
 
     xdg.portal.enable = true;
     xdg.portal.xdgOpenUsePortal = false;
-    xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
-    xdg.portal.configPackages = [ pkgs.xdg-desktop-portal-gtk ];
+    xdg.portal.extraPortals = [
+      pkgs.xdg-desktop-portal-gtk
+      pkgs.xdg-desktop-portal-gnome
+    ];
+    xdg.portal.configPackages = [
+      pkgs.xdg-desktop-portal-gtk
+      pkgs.xdg-desktop-portal-gnome
+    ];
     xdg.portal.config = {
       niri = {
         default = [
-          "gtk"
-        ];
-        extraPortals = [
-          pkgs.xdg-desktop-portal-gnome
+          [ "gtk" "gnome" ]
         ];
       };
     };

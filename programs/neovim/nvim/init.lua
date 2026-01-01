@@ -747,26 +747,26 @@ require('lazy').setup({
         ---------------
         -- Python
         --pyright = {},
-        ruff = {},
-        pylsp = {
-          plugins = {
-            rope_autoimport = {
-              enabled = true,
-            },
-            -- python-lsp-ruff: use ruff by default
-            ruff = {
-              enabled = true,
-            },
-
-            -- only use pylsp-rope for renaming
-            pylsp_rope = {
-              rename = true,
-            },
-            jedi_rename = {
-              enabled = false,
-            },
-          },
-        },
+        -- ruff = {},
+        -- pylsp = {
+        --   plugins = {
+        --     rope_autoimport = {
+        --       enabled = true,
+        --     },
+        --     -- python-lsp-ruff: use ruff by default
+        --     ruff = {
+        --       enabled = true,
+        --     },
+        --
+        --     -- only use pylsp-rope for renaming
+        --     pylsp_rope = {
+        --       rename = true,
+        --     },
+        --     jedi_rename = {
+        --       enabled = false,
+        --     },
+        --   },
+        -- },
 
         ---------------
         -- C++
