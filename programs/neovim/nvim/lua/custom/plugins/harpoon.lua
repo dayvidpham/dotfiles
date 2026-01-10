@@ -19,7 +19,7 @@ return {
       harpoon:list():add()
     end, { desc = 'Harpoon: [L]ist [A]dd' })
 
-    vim.keymap.set('n', '<leader><tab>', function()
+    vim.keymap.set('n', '<leader>l<tab>', function()
       harpoon.ui:toggle_quick_menu(harpoon:list())
     end, { desc = 'Harpoon: Show [l]ist' })
 

@@ -105,6 +105,7 @@ rec {
     kdePackages.qtsvg
 
     # Utils
+    gh # GitHub CLI tool
     tree # fs vis
     ranger # CLI file explorer
     zathura # pdf viewer
