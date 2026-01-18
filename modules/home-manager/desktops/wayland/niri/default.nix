@@ -44,19 +44,23 @@ in
       programs.niri.settings = null;
       xdg.configFile."niri/config.kdl".source = config.lib.file.mkOutOfStoreSymlink /home/minttea/dotfiles/modules/home-manager/desktops/wayland/niri/config.kdl;
 
-      home.packages = [ init-xwayland-satellite ];
+      home.packages = [
+        init-xwayland-satellite
+      ];
 
       CUSTOM.services.xwayland-satellite.enable = true;
       CUSTOM.services.swww.enable = true;
+      programs.swaylock.enable = true;
 
       xdg.portal.enable = true;
       xdg.portal.xdgOpenUsePortal = false;
-      xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
-      xdg.portal.configPackages = [ pkgs.xdg-desktop-portal-gtk ];
+      xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-gtk pkgs.xdg-desktop-portal-gnome ];
+      xdg.portal.configPackages = [ pkgs.xdg-desktop-portal-gtk pkgs.xdg-desktop-portal-gnome ];
       xdg.portal.config = {
         niri = {
           default = [
             "gtk"
+            "gnome"
           ];
         };
       };
