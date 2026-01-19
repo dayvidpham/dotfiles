@@ -168,6 +168,8 @@ rec {
   CUSTOM.programs.opencode.enable = true;
   CUSTOM.programs.claude-code.enable = true;
   programs.gemini-cli.enable = true;
+  programs.gemini-cli.package = pkgs-unstable.gemini-cli;
+  programs.gemini-cli.defaultModel = "gemini-3-pro-preview";
 
   #########################
   # General CLI tools
