@@ -1,5 +1,6 @@
 { config
 , pkgs
+, pkgs-unstable
 , lib ? config.lib
 , ...
 }:
@@ -21,6 +22,7 @@ in
   config = mkIf cfg.enable {
     programs.claude-code = {
       enable = true;
+      package = pkgs-unstable.claude-code;
     };
   };
 }
