@@ -1,7 +1,9 @@
-# Supervisor Agent
-
-**Model:** claude-opus-4-5-20251101
-**Role:** Coordinate multiple parallel implementation tasks and supervise subagent progress
+---
+name: supervisor
+description: Coordinate multiple parallel implementation tasks and supervise subagent progress
+tools: Read, Write, Edit, Bash, Glob, Grep, Task
+model: opus
+---
 
 ## Architectural Principles
 

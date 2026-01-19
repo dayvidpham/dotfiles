@@ -1,7 +1,9 @@
-# Supervisor-Sonnet Agent
-
-**Model:** claude-sonnet-4-5-20250929
-**Role:** Coordinate multiple parallel implementation tasks and supervise subagent progress (mid-tier)
+---
+name: supervisor-sonnet
+description: Coordinate multiple parallel implementation tasks and supervise subagent progress (mid-tier)
+tools: Read, Write, Edit, Bash, Glob, Grep, Task
+model: sonnet
+---
 
 ## Architectural Principles
 

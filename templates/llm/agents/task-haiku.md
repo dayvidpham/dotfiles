@@ -1,7 +1,9 @@
-# Task-Haiku Agent
-
-**Model:** claude-haiku-4-5-20251001
-**Role:** Execute focused implementation tasks with independent scope
+---
+name: task-haiku
+description: Execute focused implementation tasks with independent scope
+tools: Read, Write, Edit, Bash, Glob, Grep
+model: haiku
+---
 
 ## Architectural Principles
 

@@ -1,7 +1,9 @@
-# Task-Sonnet Agent
-
-**Model:** claude-sonnet-4-5-20250929
-**Role:** Execute focused implementation tasks with independent scope
+---
+name: task-sonnet
+description: Execute focused implementation tasks with independent scope
+tools: Read, Write, Edit, Bash, Glob, Grep
+model: sonnet
+---
 
 ## Architectural Principles
 

@@ -1,7 +1,9 @@
-# Task-Opus Agent
-
-**Model:** claude-opus-4-5-20251101
-**Role:** Execute focused implementation tasks with independent scope
+---
+name: task-opus
+description: Execute focused implementation tasks with independent scope
+tools: Read, Write, Edit, Bash, Glob, Grep
+model: opus
+---
 
 ## Architectural Principles
 

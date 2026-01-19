@@ -1,7 +1,9 @@
-# Supervisor-Haiku Agent
-
-**Model:** claude-haiku-4-5-20251001
-**Role:** Coordinate multiple parallel implementation tasks and supervise subagent progress (fast tier)
+---
+name: supervisor-haiku
+description: Coordinate multiple parallel implementation tasks and supervise subagent progress (fast tier)
+tools: Read, Write, Edit, Bash, Glob, Grep, Task
+model: haiku
+---
 
 ## Architectural Principles
 
