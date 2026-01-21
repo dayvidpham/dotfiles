@@ -10,6 +10,7 @@
     ./rEnv
     ./zsh
     ./ghostty
+    ./tmux
     ./nodejs
     ./distrobox
     ./vscode
