@@ -36,6 +36,16 @@ rec {
     MOZ_DBUS_REMOTE = "1";
   };
 
+  # Additional PATH entries (login shell)
+  home.sessionPath = [
+    "$HOME/.bun/bin" # Bun global binaries (beads, etc.)
+  ];
+
+  # PATH entries for interactive shells
+  programs.zsh.initExtra = ''
+    path+=("$HOME/.bun/bin")
+  '';
+
   xdg.mimeApps = {
     enable = true;
     defaultApplications = {
@@ -105,6 +115,7 @@ rec {
     kdePackages.qtsvg
 
     # Utils
+    mprocs # multi-processor manager TUI
     gh # GitHub CLI tool
     tree # fs vis
     ranger # CLI file explorer
