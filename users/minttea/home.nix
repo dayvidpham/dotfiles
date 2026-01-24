@@ -117,6 +117,7 @@ rec {
     # Utils
     mprocs # multi-processor manager TUI
     gh # GitHub CLI tool
+    glab # GitLab CLI tool
     tree # fs vis
     ranger # CLI file explorer
     zathura # pdf viewer
