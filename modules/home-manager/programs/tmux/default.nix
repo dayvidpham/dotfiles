@@ -13,6 +13,20 @@ let
     getExe
     ;
 
+  moveWindow = pkgs.writeShellScriptBin "tmux-move-window" ''
+    current_session=$(tmux display-message -p '#S')
+
+    # Format: "session-name (N windows)"
+    target=$(tmux list-sessions -F '#S (#{session_windows} windows)' | \
+      grep -v "^$current_session " | \
+      ${getExe pkgs.fzf} --reverse --border --height=50% --prompt="Move window to: " | \
+      sed 's/ (.*//')
+
+    if [[ -n "$target" ]]; then
+      tmux move-window -t "$target:"
+    fi
+  '';
+
   sessionizer = pkgs.writeShellScriptBin "tmux-sessionizer" ''
     if [[ $# -eq 1 ]]; then
       selected="$1"
@@ -158,7 +172,7 @@ in
   };
 
   config = mkIf cfg.enable {
-    home.packages = [ sessionizer ];
+    home.packages = [ sessionizer moveWindow ];
     programs.zsh.shellAliases.tmux-help = cheatsheet;
     programs.tmux = {
       enable = true;

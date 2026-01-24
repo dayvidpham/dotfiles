@@ -39,6 +39,9 @@ bind r source-file ~/.config/tmux/tmux.conf \; display "Config reloaded"
 # Sessionizer (fzf + zoxide)
 bind f display-popup -E "tmux-sessionizer"
 
+# Move current window to another session
+bind M display-popup -E "tmux-move-window"
+
 # True color support
 set -ag terminal-overrides ",xterm-256color:RGB"
 set -ag terminal-overrides ",ghostty:RGB"
