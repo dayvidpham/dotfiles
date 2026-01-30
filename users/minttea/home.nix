@@ -39,6 +39,7 @@ rec {
   # Additional PATH entries (login shell)
   home.sessionPath = [
     "$HOME/.bun/bin" # Bun global binaries (beads, etc.)
+    "$HOME/.local/bin"
   ];
 
   # PATH entries for interactive shells
@@ -177,6 +178,7 @@ rec {
   CUSTOM.programs.vscode.enable = true;
 
   # LLM Agents
+  programs.bun.enable = true;
   CUSTOM.programs.opencode.enable = true;
   CUSTOM.programs.claude-code.enable = true;
   programs.gemini-cli.enable = true;

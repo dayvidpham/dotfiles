@@ -40,6 +40,11 @@
       inputs.nixpkgs.follows = "nixpkgs-stable";
       inputs.nixpkgs-stable.follows = "nixpkgs-stable";
     };
+
+    llm-agents = {
+      url = "github:numtide/llm-agents.nix";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+    };
   };
 
   outputs =
@@ -58,6 +63,7 @@
     , home-manager-wsl
       # Community tools
     , niri
+    , llm-agents
     , ...
     }:
     let
@@ -72,6 +78,7 @@
 
         overlays = [
           determinate-nix.overlays.default
+          llm-agents.overlays.default
 
           # NOTE: My own packages and programs
           (final: prev: {

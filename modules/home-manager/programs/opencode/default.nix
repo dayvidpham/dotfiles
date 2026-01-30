@@ -1,5 +1,6 @@
 { config
 , pkgs
+, pkgs-unstable
 , lib ? config.lib
 , ...
 }:
@@ -21,6 +22,11 @@ in
   config = mkIf cfg.enable {
     programs.opencode = {
       enable = true;
+      package = pkgs-unstable.llm-agents.opencode;
+    };
+    programs.bun = {
+      enable = true;
+      package = pkgs-unstable.bun;
     };
   };
 }
