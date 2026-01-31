@@ -1,26 +1,24 @@
+# LLM Sandbox Host Configuration
+# This module configures the host to run the llm-sandbox microVM.
+# The guest configuration is defined in ./guest.nix
 { config
+, options
 , pkgs
-, pkgs-unstable
 , lib ? pkgs.lib
 , ...
 }:
 let
   cfg = config.CUSTOM.virtualisation.llm-sandbox;
+  hasMicrovm = options ? microvm;
 
   inherit (lib)
     mkIf
+    mkMerge
     mkOption
-    mkDefault
     mkEnableOption
+    optionalAttrs
     types
     ;
-
-  # Capture values for use in guest config (avoid closure issues)
-  vmVcpu = cfg.vm.vcpu;
-  vmMem = cfg.vm.mem;
-  workspaceHostPath = cfg.workspace.hostPath;
-  vsockCid = cfg.vsock.cid;
-
 in
 {
   options.CUSTOM.virtualisation.llm-sandbox = {
@@ -61,140 +59,32 @@ in
     };
   };
 
-  config = mkIf cfg.enable {
-    # Ensure workspace directory exists on host
-    systemd.tmpfiles.rules = [
-      "d ${workspaceHostPath} 0755 root root -"
-    ];
+  config = mkIf cfg.enable (mkMerge [
+    # Host-side config (works without microvm module)
+    {
+      systemd.tmpfiles.rules = [
+        "d ${cfg.workspace.hostPath} 0755 root root -"
+      ];
+    }
 
-    # Configure microvm for llm-sandbox
-    microvm.vms.llm-sandbox = {
-      # Allow the VM to inherit overlays for claude-code
-      inherit pkgs pkgs-unstable;
+    # microvm-specific config (only when microvm module is available)
+    (optionalAttrs hasMicrovm {
+      microvm.vms.llm-sandbox = {
+        inherit pkgs;
 
-      # Inline guest NixOS configuration
-      config = { config, pkgs, lib, ... }: {
-        # System identification
-        system.stateVersion = "25.11";
-        networking.hostName = "llm-sandbox";
+        config = { ... }: {
+          imports = [ ./guest.nix ];
 
-        # No TCP/IP networking - only VSOCK communication
-        # Firewall enabled for defense-in-depth (guards against accidental network exposure)
-        networking.useDHCP = false;
-        networking.firewall.enable = true;
-
-        # Disable unnecessary services
-        services.openssh.enable = false;
-
-        # LLM agent user (unprivileged - no sudo, no root, no nix)
-        users.users.agent = {
-          isNormalUser = true;
-          home = "/home/agent";
-          description = "LLM Agent User";
-        };
-
-        # Kernel hardening
-        boot.kernel.sysctl = {
-          "kernel.kptr_restrict" = 2;                # Hide kernel pointers
-          "kernel.dmesg_restrict" = 1;               # Restrict dmesg access
-          "kernel.unprivileged_bpf_disabled" = 1;    # Disable unprivileged BPF
-          "kernel.yama.ptrace_scope" = 2;            # Restrict ptrace
-        };
-        security.lockKernelModules = true;           # No module loading after boot
-
-        # Guest packages for LLM agent development
-        environment.systemPackages = with pkgs; [
-          # LLM tooling (from llm-agents overlay)
-          claude-code
-
-          # Terminal multiplexer
-          tmux
-
-          # Programming languages/runtimes
-          python3
-          nodejs
-          bun
-          uv
-
-          # Development tools
-          git
-          curl
-          jq
-          ripgrep
-
-          # Essential utilities
-          coreutils
-          gnugrep
-          gnused
-          gawk
-          findutils
-          which
-          file
-          less
-          tree
-
-          # Editor
-          neovim
-        ];
-
-        # Restrict nix daemon to root only (agent cannot use nix)
-        nix.settings.allowed-users = [ "root" ];
-
-        # Console configuration - auto-login as agent
-        services.getty.autologinUser = "agent";
-
-        # Environment variables
-        environment.variables = {
-          WORKSPACE = "/workspace";
-        };
-
-        # Shell configuration
-        programs.bash.enable = true;
-        environment.interactiveShellInit = ''
-          cd /workspace 2>/dev/null || true
-        '';
-
-        # microvm guest-specific configuration
-        microvm = {
-          # Hypervisor selection
-          hypervisor = "qemu";
-
-          # Resource allocation
-          vcpu = vmVcpu;
-          mem = vmMem;
-
-          # virtio-fs share for workspace
-          shares = [
-            {
-              tag = "workspace";
-              source = workspaceHostPath;
-              mountPoint = "/workspace";
-              proto = "virtiofs";
-            }
-          ];
-
-          # VSOCK for host-guest communication (no TCP/IP)
-          vsock = {
-            cid = vsockCid;
+          CUSTOM.virtualisation.llm-sandbox.guest = {
+            vcpu = cfg.vm.vcpu;
+            mem = cfg.vm.mem;
+            workspace.hostPath = cfg.workspace.hostPath;
+            vsock.cid = cfg.vsock.cid;
           };
-
-          # No network interfaces - isolated sandbox
-          interfaces = [ ];
-
-          # Use virtiofs for /nix/store as well (read-only)
-          writableStoreOverlay = null;
-        };
-
-        # Mount workspace via virtio-fs (hardened: no binaries, no suid)
-        fileSystems."/workspace" = {
-          device = "workspace";
-          fsType = "virtiofs";
-          options = [ "noexec" "nosuid" "nodev" ];
         };
       };
-    };
 
-    # Enable the microvm host module
-    microvm.host.enable = true;
-  };
+      microvm.host.enable = true;
+    })
+  ]);
 }

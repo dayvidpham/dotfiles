@@ -205,6 +205,16 @@
           ];
         };
 
+        # LLM Sandbox microVM - standalone configuration for `microvm -c llm-sandbox`
+        llm-sandbox = nixpkgs.lib.nixosSystem {
+          inherit system;
+          specialArgs = { inherit pkgs pkgs-unstable; };
+          modules = [
+            microvm.nixosModules.microvm
+            ./modules/nixos/virtualisation/llm-sandbox/guest.nix
+          ];
+        };
+
         wsl = nixpkgs.lib.nixosSystem {
           inherit
             system
