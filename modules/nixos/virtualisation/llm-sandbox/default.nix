@@ -79,22 +79,28 @@ in
         networking.hostName = "llm-sandbox";
 
         # No TCP/IP networking - only VSOCK communication
+        # Firewall enabled for defense-in-depth (guards against accidental network exposure)
         networking.useDHCP = false;
-        networking.firewall.enable = false;
+        networking.firewall.enable = true;
 
         # Disable unnecessary services
         services.openssh.enable = false;
 
-        # LLM agent user
+        # LLM agent user (unprivileged - no sudo, no root, no nix)
         users.users.agent = {
           isNormalUser = true;
           home = "/home/agent";
           description = "LLM Agent User";
-          extraGroups = [ "wheel" ];
         };
 
-        # Passwordless sudo for agent (sandbox is isolated)
-        security.sudo.wheelNeedsPassword = false;
+        # Kernel hardening
+        boot.kernel.sysctl = {
+          "kernel.kptr_restrict" = 2;                # Hide kernel pointers
+          "kernel.dmesg_restrict" = 1;               # Restrict dmesg access
+          "kernel.unprivileged_bpf_disabled" = 1;    # Disable unprivileged BPF
+          "kernel.yama.ptrace_scope" = 2;            # Restrict ptrace
+        };
+        security.lockKernelModules = true;           # No module loading after boot
 
         # Guest packages for LLM agent development
         environment.systemPackages = with pkgs; [
@@ -107,6 +113,8 @@ in
           # Programming languages/runtimes
           python3
           nodejs
+          bun
+          uv
 
           # Development tools
           git
@@ -129,8 +137,8 @@ in
           neovim
         ];
 
-        # Enable nix for the agent
-        nix.settings.experimental-features = [ "nix-command" "flakes" ];
+        # Restrict nix daemon to root only (agent cannot use nix)
+        nix.settings.allowed-users = [ "root" ];
 
         # Console configuration - auto-login as agent
         services.getty.autologinUser = "agent";
@@ -177,10 +185,11 @@ in
           writableStoreOverlay = null;
         };
 
-        # Mount workspace via virtio-fs
+        # Mount workspace via virtio-fs (hardened: no binaries, no suid)
         fileSystems."/workspace" = {
           device = "workspace";
           fsType = "virtiofs";
+          options = [ "noexec" "nosuid" "nodev" ];
         };
       };
     };
