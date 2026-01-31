@@ -58,10 +58,9 @@ in
       xdg.portal.configPackages = [ pkgs.xdg-desktop-portal-gtk pkgs.xdg-desktop-portal-gnome ];
       xdg.portal.config = {
         niri = {
-          default = [
-            "gtk"
-            "gnome"
-          ];
+          default = [ "gnome" "gtk" ];
+          "org.freedesktop.impl.portal.ScreenCast" = [ "gnome" ];
+          "org.freedesktop.impl.portal.Screenshot" = [ "gnome" ];
         };
       };
     };
