@@ -45,6 +45,11 @@
       url = "github:numtide/llm-agents.nix";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
+
+    microvm = {
+      url = "github:astro/microvm.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -64,6 +69,7 @@
       # Community tools
     , niri
     , llm-agents
+    , microvm
     , ...
     }:
     let
@@ -153,6 +159,7 @@
           pkgs-stable
           libmint
           niri
+          microvm
           ;
       };
 
@@ -176,6 +183,7 @@
           modules = [
             determinate-nixd.nixosModules.default
             niri.nixosModules.niri
+            microvm.nixosModules.host
             ./modules/nixos
             noChannelModule
             ./hosts/flowX13/configuration.nix
@@ -190,6 +198,7 @@
           modules = [
             determinate-nixd.nixosModules.default
             niri.nixosModules.niri
+            microvm.nixosModules.host
             ./modules/nixos
             noChannelModule
             ./hosts/desktop/configuration.nix
