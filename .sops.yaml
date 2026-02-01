@@ -3,17 +3,17 @@
 
 creation_rules:
   # OpenClaw secrets - accessible by desktop host
-  - path_regex: openclaw/.*\.yaml$
+  - path_regex: secrets/openclaw/.*\.yaml$
     key_groups:
       - age:
           # Desktop host key - generated with `age-keygen`
           # Store private key at: /var/lib/sops-nix/keys.txt
           # Generate with: age-keygen -o /var/lib/sops-nix/keys.txt
           # Then add public key here
-          - age1desktop_public_key_placeholder
+          - age1r2ev7w50syd2adu9e0uus4dllfqy9yc0j3w6ezdntjcsqn9gqejs34qxh9
 
   # Default rule for other secrets
-  - path_regex: .*\.yaml$
+  - path_regex: secrets/.*\.yaml$
     key_groups:
       - age:
-          - age1desktop_public_key_placeholder
+          - age1r2ev7w50syd2adu9e0uus4dllfqy9yc0j3w6ezdntjcsqn9gqejs34qxh9
