@@ -33,6 +33,7 @@ lib.mkIf (config.CUSTOM.shared.enable) {
     # Networking
     lsof
     net-tools
+    socat # bidirectional socket relay (for VM console access, port forwarding, etc.)
 
     # compression stuff
     zip

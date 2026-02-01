@@ -73,6 +73,9 @@ in
 
     # Guest packages for LLM agent development
     environment.systemPackages = with pkgs; [
+      # VSOCK terminal access
+      socat
+
       # LLM tooling (from llm-agents overlay)
       claude-code
 
@@ -122,6 +125,28 @@ in
     environment.interactiveShellInit = ''
       cd /workspace 2>/dev/null || true
     '';
+
+    # VSOCK console listener for web terminal access
+    # Listens on VSOCK port 5000, spawns login shell for each connection
+    systemd.services.vsock-console = {
+      description = "VSOCK Console Access";
+      wantedBy = [ "multi-user.target" ];
+      serviceConfig = {
+        Type = "simple";
+        User = "agent";
+        # Use login shell (-l) and interactive (-i) to ensure interactiveShellInit runs
+        ExecStart = "${pkgs.socat}/bin/socat VSOCK-LISTEN:5000,reuseaddr,fork EXEC:/run/current-system/sw/bin/bash\\,--login\\,-i,pty,setsid,setpgid,stderr,ctty";
+        Restart = "always";
+        RestartSec = "1s";
+        # Hardening
+        NoNewPrivileges = true;
+        PrivateTmp = true;
+        ProtectSystem = "strict";
+        ProtectHome = "read-only";
+        RestrictNamespaces = true;
+        RestrictSUIDSGID = true;
+      };
+    };
 
     # microvm guest-specific configuration
     microvm = {

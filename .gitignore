@@ -1,3 +1,6 @@
+# Git worktrees
+worktree/
+
 *.swp
 
 # _hide folders contain private stuff, so hide it!

@@ -65,6 +65,28 @@ in
       systemd.tmpfiles.rules = [
         "d ${cfg.workspace.hostPath} 0755 root root -"
       ];
+
+      # Web console for llm-sandbox via ttyd
+      # Access at: http://localhost:7681
+      # Binds to localhost only, bridges WebSocket to VSOCK
+      systemd.services.llm-sandbox-console = {
+        description = "LLM Sandbox Web Console";
+        wantedBy = [ "multi-user.target" ];
+        after = [ "microvm@llm-sandbox.service" ];
+        bindsTo = [ "microvm@llm-sandbox.service" ];
+        serviceConfig = {
+          Type = "simple";
+          DynamicUser = true;
+          ExecStart = "${pkgs.ttyd}/bin/ttyd -i 127.0.0.1 -p 7681 -W ${pkgs.socat}/bin/socat - VSOCK-CONNECT:${toString cfg.vsock.cid}:5000";
+          Restart = "on-failure";
+          RestartSec = "5s";
+          # Hardening
+          NoNewPrivileges = true;
+          PrivateTmp = true;
+          ProtectSystem = "strict";
+          ProtectHome = true;
+        };
+      };
     }
 
     # microvm-specific config (only when microvm module is available)
