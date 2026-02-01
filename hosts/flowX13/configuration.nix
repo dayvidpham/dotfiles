@@ -232,6 +232,12 @@ in
   # enables switching between dGPU and iGPU
   services.supergfxd.enable = true;
 
+  # Persistent tmux server (survives DE/WM/session closures)
+  CUSTOM.programs.tmux.server = {
+    enable = true;
+    user = "minttea";
+  };
+
   ######################################
   # Some user setup: Most user-stuff will be in home-manager
   users.users.minttea = {

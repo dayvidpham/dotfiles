@@ -32,7 +32,8 @@
 # db: ""
 
 # Auto-start daemon if not running (can also use BEADS_AUTO_START_DAEMON)
-# auto-start-daemon: true
+# Disabled: use `bd-daemon` alias to start with correct flags
+auto-start-daemon: false
 
 # Debounce interval for auto-flush (can also use BEADS_FLUSH_DEBOUNCE)
 # flush-debounce: "5s"
@@ -60,3 +61,8 @@ sync-branch: "beads-sync"
 # - linear.api-key
 # - github.org
 # - github.repo
+
+# Daemon settings for git worktree sync
+daemon.auto-commit: true
+daemon.auto-pull: true
+daemon.auto-push: true

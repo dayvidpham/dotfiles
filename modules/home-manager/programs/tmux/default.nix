@@ -219,24 +219,8 @@ in
     xdg.configFile."tmux/keybindings.tmux".source =
       config.lib.file.mkOutOfStoreSymlink "/home/minttea/dotfiles/modules/home-manager/programs/tmux/keybindings.tmux";
 
-    # Systemd user service to keep tmux server running at user login
-    systemd.user.services.tmux = {
-      Unit = {
-        Description = "tmux server";
-        Documentation = "man:tmux(1)";
-      };
-
-      Service = {
-        Type = "forking";
-        ExecStart = "${config.programs.tmux.package}/bin/tmux new-session -d -s main";
-        ExecStop = "${config.programs.tmux.package}/bin/tmux kill-server";
-        Restart = "on-failure";
-        RestartSec = 10;
-      };
-
-      Install = {
-        WantedBy = [ "default.target" ];
-      };
-    };
+    # NOTE: Persistent tmux server is managed by NixOS-level systemd service
+    # Enable via: CUSTOM.programs.tmux.server.enable = true; in NixOS config
+    # This ensures tmux starts at boot and survives DE/WM/session closures
   };
 }

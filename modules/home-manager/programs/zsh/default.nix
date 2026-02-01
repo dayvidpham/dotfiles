@@ -122,6 +122,9 @@ in
 
               # Pip Aliasing
               pip = "pip3";
+
+              # Beads daemon with git worktree sync flags
+              bd-daemon = "bd daemon start --auto-commit --auto-pull --auto-push";
             }
             // (optionalAttrs (!config.programs.eza.enable) {
               ls = "ls --color=always";
