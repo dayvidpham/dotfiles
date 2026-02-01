@@ -41,6 +41,12 @@ in
 
   options.CUSTOM.virtualisation.openclaw = {
     enable = mkEnableOption "OpenClaw secure AI assistant containers";
+
+    warnIfSecretsDisabled = mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Warn if secrets management is not enabled. Set to false for development.";
+    };
   };
 
   config = mkIf cfg.enable {
@@ -65,11 +71,12 @@ in
       }
     ];
 
-    # Warning about secrets
-    warnings = lib.optional (!cfg.secrets.enable) ''
+    # Warning about secrets (can be suppressed for development)
+    warnings = lib.optional (cfg.warnIfSecretsDisabled && !cfg.secrets.enable) ''
       OpenClaw is running without sops-nix secrets management.
       This is insecure for production use. Enable CUSTOM.virtualisation.openclaw.secrets.enable
       and configure your sops-nix secrets.
+      To suppress this warning during development, set CUSTOM.virtualisation.openclaw.warnIfSecretsDisabled = false.
     '';
   };
 }

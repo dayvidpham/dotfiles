@@ -68,6 +68,12 @@ in
     # Create the bridge group for shared secret access
     users.groups.openclaw-bridge = { };
 
+    # Ensure the sops-nix key directory exists with correct permissions
+    # Created unconditionally so users can generate keys before enabling secrets
+    systemd.tmpfiles.rules = [
+      "d /var/lib/sops-nix 0700 root root -"
+    ];
+
     # Assertion to ensure sopsFile is set when secrets are enabled
     assertions = [
       {

@@ -5,16 +5,14 @@ This guide walks you through enabling encrypted secrets management for the OpenC
 ## Prerequisites
 
 - NixOS with the openclaw module enabled
-- `age` and `sops` CLI tools available (included in nixpkgs)
+- `age` and `sops` CLI tools (included in shared utils)
 
 ## Step 1: Generate an Age Key
 
-On your desktop host, generate a new age keypair:
+The openclaw module creates `/var/lib/sops-nix` with proper permissions. After enabling the module and rebuilding once, generate your age keypair:
 
 ```bash
-sudo mkdir -p /var/lib/sops-nix
 sudo age-keygen -o /var/lib/sops-nix/keys.txt
-sudo chmod 600 /var/lib/sops-nix/keys.txt
 ```
 
 Note the public key output (starts with `age1...`). You'll need this for the next step.

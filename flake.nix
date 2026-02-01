@@ -268,6 +268,7 @@
         };
 
         # LLM Sandbox microVM - minimal standalone configuration
+        # Note: specialArgs.pkgs warning is expected - microvm module design
         llm-sandbox = mkMinimalHost {
           name = "llm-sandbox";
           hostSpecialArgs = { inherit pkgs pkgs-unstable; };
