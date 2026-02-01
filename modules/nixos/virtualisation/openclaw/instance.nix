@@ -204,9 +204,13 @@ let
 
           ${if cfg.container.registry == "" then ''
           # Load image (rootless podman has per-user image storage)
-          if ! ${pkgs.podman}/bin/podman image exists localhost/openclaw:latest 2>/dev/null; then
-            echo "Loading OpenClaw image for user ${instanceCfg.user}..."
-            ${pkgs.podman}/bin/podman load -i ${cfg.container.image}
+          # Always reload to pick up Nix store path changes (image hash changes on rebuild)
+          CURRENT_IMAGE_ID=$(${pkgs.podman}/bin/podman images -q localhost/openclaw:latest 2>/dev/null || true)
+          NEW_IMAGE_ID=$(${pkgs.podman}/bin/podman load -q -i ${cfg.container.image})
+
+          if [ -n "$CURRENT_IMAGE_ID" ] && [ "$CURRENT_IMAGE_ID" != "$NEW_IMAGE_ID" ]; then
+            echo "Image updated: removing old image $CURRENT_IMAGE_ID"
+            ${pkgs.podman}/bin/podman rmi "$CURRENT_IMAGE_ID" 2>/dev/null || true
           fi
           '' else ""}
         '';
@@ -236,7 +240,7 @@ let
             --userns keep-id
 
             # Healthcheck
-            --health-cmd "node -e 'process.exit(0)'"
+            --health-cmd "curl -sf http://localhost:18789/health"
             --health-interval 30s
             --health-retries 3
 
@@ -288,21 +292,29 @@ let
 
 in
 {
-  options.CUSTOM.virtualisation.openclaw.instances = mkOption {
-    type = types.attrsOf (types.submodule instanceOptions);
-    default = { };
-    description = "OpenClaw instance configurations";
-    example = {
-      alpha = {
-        enable = true;
-        ports.webchat = 3000;
-        ports.gateway = 18789;
+  options.CUSTOM.virtualisation.openclaw = {
+    instances = mkOption {
+      type = types.attrsOf (types.submodule instanceOptions);
+      default = { };
+      description = "OpenClaw instance configurations";
+      example = {
+        alpha = {
+          enable = true;
+          ports.webchat = 3000;
+          ports.gateway = 18789;
+        };
+        beta = {
+          enable = true;
+          ports.webchat = 3001;
+          ports.gateway = 18790;
+        };
       };
-      beta = {
-        enable = true;
-        ports.webchat = 3001;
-        ports.gateway = 18790;
-      };
+    };
+
+    subuidBase = mkOption {
+      type = types.int;
+      default = 300000;
+      description = "Base subuid for OpenClaw instance users. Each instance gets 65536 UIDs starting from base + (index * 65536). Avoids conflict with other system users (minttea/gitlab-runner use 100000-265534).";
     };
   };
 
@@ -312,9 +324,8 @@ in
     users.users = builtins.listToAttrs (lib.imap0 (idx: name:
       let
         instanceCfg = enabledInstances.${name};
-        # Each instance gets 65536 subuids starting at 300000 + (idx * 65536)
-        # Avoids conflict with minttea/gitlab-runner which use 100000-265534
-        subuidStart = 300000 + (idx * 65536);
+        # Each instance gets 65536 subuids starting at cfg.subuidBase + (idx * 65536)
+        subuidStart = cfg.subuidBase + (idx * 65536);
       in {
         name = instanceCfg.user;
         value = {

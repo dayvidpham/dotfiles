@@ -284,6 +284,16 @@
             ./modules/nixos/virtualisation/llm-sandbox/guest.nix
           ];
         };
+
+        # OpenClaw microVM - runs openclaw gateway with network access to safemolt
+        openclaw-vm = mkMinimalHost {
+          name = "openclaw-vm";
+          hostSpecialArgs = { inherit pkgs pkgs-unstable nix-openclaw; };
+          modules = [
+            microvm.nixosModules.microvm
+            ./modules/nixos/virtualisation/openclaw-vm/guest.nix
+          ];
+        };
       };
 
       homeConfigurations = {

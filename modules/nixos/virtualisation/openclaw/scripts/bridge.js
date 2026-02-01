@@ -56,7 +56,12 @@ function verifySignature(instanceId, timestamp, payload, signature) {
   const expected = crypto.createHmac('sha256', sharedSecret)
     .update(message)
     .digest('hex');
-  return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+
+  // Prevent length oracle attack - timingSafeEqual throws if lengths differ
+  if (typeof signature !== 'string' || signature.length !== expected.length) {
+    return false;
+  }
+  return crypto.timingSafeEqual(Buffer.from(signature, 'hex'), Buffer.from(expected, 'hex'));
 }
 
 // Rate limiting check
@@ -115,19 +120,26 @@ async function handleDelegation(req, res, body) {
 
   // Store delegation in shared context
   const delegationPath = path.join(CONFIG.sharedContextPath, 'delegations', `${delegationId}.json`);
-  fs.mkdirSync(path.dirname(delegationPath), { recursive: true });
-  fs.writeFileSync(delegationPath, JSON.stringify(delegation, null, 2));
 
-  res.writeHead(200);
-  res.end(JSON.stringify({ delegationId, status: 'queued' }));
+  try {
+    fs.mkdirSync(path.dirname(delegationPath), { recursive: true });
+    fs.writeFileSync(delegationPath, JSON.stringify(delegation, null, 2));
+
+    res.writeHead(200);
+    res.end(JSON.stringify({ delegationId, status: 'queued' }));
+  } catch (err) {
+    log('error', 'Failed to write delegation', { fromInstance, toInstance, error: err.message });
+    res.writeHead(500);
+    res.end(JSON.stringify({ error: 'Failed to queue delegation' }));
+  }
 }
 
 // Handle context update request
 async function handleContextUpdate(req, res, body) {
   const { instanceId, contextKey, value, signature: valueSignature } = body;
 
-  // Validate context key format
-  if (!/^[a-zA-Z0-9_-]+$/.test(contextKey)) {
+  // Validate context key format and length
+  if (!contextKey || contextKey.length > 255 || !/^[a-zA-Z0-9_-]+$/.test(contextKey)) {
     res.writeHead(400);
     res.end(JSON.stringify({ error: 'Invalid context key format' }));
     return;
@@ -137,27 +149,47 @@ async function handleContextUpdate(req, res, body) {
 
   // Store context update with metadata
   const contextPath = path.join(CONFIG.sharedContextPath, 'context', `${contextKey}.json`);
-  fs.mkdirSync(path.dirname(contextPath), { recursive: true });
 
-  const contextData = {
-    key: contextKey,
-    value,
-    updatedBy: instanceId,
-    updatedAt: new Date().toISOString(),
-    signature: valueSignature
-  };
+  try {
+    fs.mkdirSync(path.dirname(contextPath), { recursive: true });
 
-  fs.writeFileSync(contextPath, JSON.stringify(contextData, null, 2));
+    const contextData = {
+      key: contextKey,
+      value,
+      updatedBy: instanceId,
+      updatedAt: new Date().toISOString(),
+      signature: valueSignature
+    };
 
-  res.writeHead(200);
-  res.end(JSON.stringify({ status: 'updated', key: contextKey }));
+    fs.writeFileSync(contextPath, JSON.stringify(contextData, null, 2));
+
+    res.writeHead(200);
+    res.end(JSON.stringify({ status: 'updated', key: contextKey }));
+  } catch (err) {
+    log('error', 'Failed to write context update', { instanceId, contextKey, error: err.message });
+    res.writeHead(500);
+    res.end(JSON.stringify({ error: 'Failed to update context' }));
+  }
 }
 
-// Parse request body
+// Parse request body with size limit to prevent memory exhaustion
+const MAX_BODY_SIZE = 1024 * 1024; // 1MB limit
+
 function parseBody(req) {
   return new Promise((resolve, reject) => {
     let body = '';
-    req.on('data', chunk => { body += chunk; });
+    let size = 0;
+
+    req.on('data', chunk => {
+      size += chunk.length;
+      if (size > MAX_BODY_SIZE) {
+        req.destroy();
+        reject(new Error('Request body too large'));
+        return;
+      }
+      body += chunk;
+    });
+
     req.on('end', () => {
       try {
         resolve(JSON.parse(body));
@@ -165,6 +197,7 @@ function parseBody(req) {
         reject(err);
       }
     });
+
     req.on('error', reject);
   });
 }
@@ -182,6 +215,12 @@ const server = http.createServer(async (req, res) => {
   try {
     body = await parseBody(req);
   } catch (err) {
+    if (err.message === 'Request body too large') {
+      log('warn', 'Request body too large', { ip: req.socket.remoteAddress });
+      res.writeHead(413);
+      res.end(JSON.stringify({ error: 'Request body too large' }));
+      return;
+    }
     res.writeHead(400);
     res.end(JSON.stringify({ error: 'Invalid JSON' }));
     return;
@@ -250,7 +289,9 @@ server.listen(CONFIG.port, '127.0.0.1', () => {
 // Graceful shutdown
 process.on('SIGTERM', () => {
   log('info', 'Shutting down bridge service');
+  const forceExit = setTimeout(() => process.exit(1), 10000);
   server.close(() => {
+    clearTimeout(forceExit);
     auditLog.end();
     process.exit(0);
   });
