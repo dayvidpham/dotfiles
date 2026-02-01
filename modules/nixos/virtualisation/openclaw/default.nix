@@ -69,8 +69,12 @@ in
         message = "At least one OpenClaw instance must be configured when openclaw is enabled";
       }
       {
-        assertion = cfg.secrets.enable -> config.sops != null;
-        message = "sops-nix must be configured when openclaw.secrets.enable is true";
+        assertion = cfg.secrets.enable -> (config ? sops && config.sops ? secrets);
+        message = "sops-nix must be imported when openclaw.secrets.enable is true";
+      }
+      {
+        assertion = cfg.container.registry == "" -> cfg.container.gatewayPackage != null;
+        message = "openclaw.container.gatewayPackage must be set when container.registry is empty (using local build)";
       }
     ];
 
