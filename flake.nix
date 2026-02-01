@@ -98,6 +98,7 @@
         overlays = [
           determinate-nix.overlays.default
           llm-agents.overlays.default
+          nix-openclaw.overlays.default
 
           # NOTE: My own packages and programs
           (final: prev: {
@@ -206,6 +207,7 @@
           pkgs-unstable
           pkgs-stable
           niri
+          nix-openclaw
           ;
       };
 

@@ -35,7 +35,7 @@ let
     config = {
       # Use stable symlink path instead of Nix store path
       # The symlink is created in extraCommands below
-      Cmd = [ "/usr/local/bin/openclaw-gateway" ];
+      Cmd = [ "/usr/local/bin/openclaw" ];
       WorkingDir = "/app";
       User = "openclaw:openclaw";
 
@@ -77,10 +77,10 @@ let
       mkdir -p app
       mkdir -p run/secrets
 
-      # Create stable symlink to openclaw-gateway binary
+      # Create stable symlink to openclaw binary
       # This avoids Nix store path changes breaking the container Cmd
       mkdir -p usr/local/bin
-      ln -sf ${cfg.container.gatewayPackage}/bin/openclaw-gateway usr/local/bin/openclaw-gateway
+      ln -sf ${cfg.container.gatewayPackage}/bin/openclaw usr/local/bin/openclaw
 
       # Set ownership (will be applied at runtime)
       # Note: dockerTools doesn't support chown in extraCommands,
