@@ -1,5 +1,22 @@
-# OpenClaw Secrets Module
-# Configures sops-nix secrets for OpenClaw instances
+# OpenClaw Secrets Module (Dual-Mode)
+# Supports two secrets management modes:
+#
+# 1. sops-nix Mode (v1 / Fallback):
+#    - Secrets encrypted in git, decrypted at boot by sops-nix
+#    - Mounted directly into containers from sops paths
+#    - Permission-based isolation (container user can read their secrets)
+#    - Simple, no additional infrastructure required
+#
+# 2. Zero-Trust Mode (v2 / Recommended):
+#    - Containers have NO credentials
+#    - External injector authenticates via Keycloak OIDC
+#    - Secrets fetched from OpenBao, written to tmpfs
+#    - Cryptographic isolation (container cannot authenticate)
+#    - sops-nix still used as trust anchor for Keycloak credentials
+#
+# When zeroTrust.enable = true, this module provides:
+# - sops-nix secrets as FALLBACK if zero-trust injection fails
+# - Trust anchor for injector service account credentials
 { config
 , pkgs
 , lib ? pkgs.lib
@@ -50,7 +67,16 @@ let
 in
 {
   options.CUSTOM.virtualisation.openclaw.secrets = {
-    enable = mkEnableOption "sops-nix secrets management for OpenClaw";
+    enable = mkEnableOption ''
+      sops-nix secrets management for OpenClaw.
+
+      This is REQUIRED for both modes:
+      - v1 (sops-nix mode): Secrets mounted directly from sops paths
+      - v2 (zero-trust mode): sops provides trust anchor for injector credentials
+
+      When zeroTrust.enable = true, sops secrets also serve as fallback
+      if zero-trust injection fails.
+    '';
 
     sopsFile = mkOption {
       type = types.nullOr types.path;
@@ -64,6 +90,18 @@ in
       default = "/var/lib/sops-nix/keys.txt";
       description = "Path to the age private key for decryption";
     };
+
+    mode = mkOption {
+      type = types.enum [ "sops" "zero-trust" ];
+      default = "sops";
+      description = ''
+        Secrets management mode:
+        - sops: Direct sops-nix secrets (v1, simple)
+        - zero-trust: Keycloak + OpenBao with sops fallback (v2, recommended for production)
+
+        Note: Setting this to "zero-trust" automatically enables zeroTrust.enable.
+      '';
+    };
   };
 
   config = mkIf cfg.enable {
@@ -75,6 +113,10 @@ in
     systemd.tmpfiles.rules = [
       "d /var/lib/sops-nix 0700 root root -"
     ];
+
+    # Enable zero-trust mode when secrets.mode is set to "zero-trust"
+    CUSTOM.virtualisation.openclaw.zeroTrust.enable =
+      lib.mkDefault (secretsCfg.mode == "zero-trust");
 
     # Assertion to ensure sopsFile is set when secrets are enabled
     assertions = [

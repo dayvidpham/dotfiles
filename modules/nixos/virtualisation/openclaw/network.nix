@@ -68,6 +68,24 @@ let
       # which is handled by the container network namespace
     }
 
+    # Zero-Trust Network Isolation
+    # Block container network from reaching secrets infrastructure
+    # Defense in depth: services are bound to 127.0.0.1, but explicit block
+    ${optionalString cfg.zeroTrust.enable ''
+    chain openclaw_forward {
+      type filter hook forward priority 0; policy accept;
+
+      # Block container subnet from reaching Keycloak
+      ip saddr ${networkCfg.bridgeNetwork.subnet} tcp dport ${toString networkCfg.zeroTrust.keycloakPort} drop comment "Block containers->Keycloak"
+
+      # Block container subnet from reaching OpenBao
+      ip saddr ${networkCfg.bridgeNetwork.subnet} tcp dport ${toString networkCfg.zeroTrust.openbaoPort} drop comment "Block containers->OpenBao"
+
+      # Block container subnet from reaching secrets network
+      ip saddr ${networkCfg.bridgeNetwork.subnet} ip daddr ${networkCfg.zeroTrust.secretsNetworkSubnet} drop comment "Block containers->secrets-network"
+    }
+    ''}
+
     chain openclaw_input {
       type filter hook input priority 0; policy accept;
 
@@ -151,6 +169,27 @@ in
       type = types.bool;
       default = true;
       description = "Enable strict firewall rules blocking non-allowlisted outbound traffic";
+    };
+
+    # Zero-trust network isolation settings
+    zeroTrust = {
+      keycloakPort = mkOption {
+        type = types.port;
+        default = 8080;
+        description = "Keycloak port to block from containers (defense in depth)";
+      };
+
+      openbaoPort = mkOption {
+        type = types.port;
+        default = 8200;
+        description = "OpenBao port to block from containers (defense in depth)";
+      };
+
+      secretsNetworkSubnet = mkOption {
+        type = types.str;
+        default = "10.90.0.0/24";
+        description = "Secrets infrastructure network subnet to block from containers";
+      };
     };
   };
 

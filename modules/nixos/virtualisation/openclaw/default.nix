@@ -3,7 +3,9 @@
 #
 # This module provides:
 # - Rootless Podman containers for OpenClaw instances
-# - sops-nix encrypted secrets management
+# - Dual-mode secrets management:
+#   - v1: sops-nix encrypted secrets (fallback)
+#   - v2: Zero-trust with Keycloak + OpenBao (recommended)
 # - Strict network allowlist (Anthropic API only)
 # - Inter-instance communication with authenticated RPC
 # - Shared context store with gatekeeper
@@ -15,6 +17,12 @@
 # - Isolated workspaces per instance
 # - No external network access except allowlisted hosts
 # - All secrets on tmpfs (never touch disk)
+#
+# Zero-Trust Mode (v2):
+# - Containers have NO credentials
+# - External injector authenticates via Keycloak OIDC
+# - Secrets fetched from OpenBao, injected to tmpfs
+# - Cryptographic isolation (not just permission-based)
 { config
 , pkgs
 , lib ? pkgs.lib
@@ -85,13 +93,32 @@ in
         assertion = cfg.secrets.enable -> config.sops != null;
         message = "sops-nix must be configured when openclaw.secrets.enable is true";
       }
+      # Zero-trust mode requires all three components
+      {
+        assertion = cfg.zeroTrust.enable -> (cfg.zeroTrust.keycloak.enable && cfg.zeroTrust.openbao.enable && cfg.zeroTrust.injector.enable);
+        message = ''
+          Zero-trust mode requires all three components enabled:
+          - CUSTOM.virtualisation.openclaw.zeroTrust.keycloak.enable
+          - CUSTOM.virtualisation.openclaw.zeroTrust.openbao.enable
+          - CUSTOM.virtualisation.openclaw.zeroTrust.injector.enable
+        '';
+      }
+      # Zero-trust requires sops for fallback and trust anchor
+      {
+        assertion = cfg.zeroTrust.enable -> cfg.secrets.enable;
+        message = ''
+          Zero-trust mode requires sops-nix as trust anchor for Keycloak client credentials.
+          Enable CUSTOM.virtualisation.openclaw.secrets.enable and configure sops-nix.
+        '';
+      }
     ];
 
     # Warning about secrets (can be suppressed for development)
-    warnings = lib.optional (cfg.warnIfSecretsDisabled && !cfg.secrets.enable) ''
-      OpenClaw is running without sops-nix secrets management.
-      This is insecure for production use. Enable CUSTOM.virtualisation.openclaw.secrets.enable
-      and configure your sops-nix secrets.
+    warnings = lib.optional (cfg.warnIfSecretsDisabled && !cfg.secrets.enable && !cfg.zeroTrust.enable) ''
+      OpenClaw is running without secrets management.
+      This is insecure for production use. Either:
+      - Enable CUSTOM.virtualisation.openclaw.secrets.enable (sops-nix mode)
+      - Enable CUSTOM.virtualisation.openclaw.zeroTrust.enable (zero-trust mode)
       To suppress this warning during development, set CUSTOM.virtualisation.openclaw.warnIfSecretsDisabled = false.
     '';
   };
