@@ -34,43 +34,32 @@ creation_rules:
           - age1your_actual_public_key_here
 ```
 
-## Step 3: Create the Secrets File
+## Step 3: Generate and Encrypt Secrets
 
-Copy the example and fill in your actual values:
-
-```bash
-cp secrets/openclaw/secrets.yaml.example secrets/openclaw/secrets.yaml
-```
-
-Edit `secrets/openclaw/secrets.yaml` with your real secrets:
-
-```yaml
-# Anthropic API key
-anthropic_api_key: sk-ant-api03-YOUR_REAL_KEY
-
-# Instance tokens (generate random values)
-alpha_instance_token: $(openssl rand -base64 32)
-beta_instance_token: $(openssl rand -base64 32)
-
-# Bridge signing keys (generate random values)
-alpha_bridge_signing_key: $(openssl rand -base64 32)
-beta_bridge_signing_key: $(openssl rand -base64 32)
-
-# Shared bridge secret
-bridge_shared_secret: $(openssl rand -base64 32)
-```
-
-Generate random values with:
-```bash
-openssl rand -base64 32
-```
-
-## Step 4: Encrypt the Secrets File
+Run the secrets generation script (generates random values and encrypts immediately):
 
 ```bash
-cd secrets/openclaw
-sops -e -i secrets.yaml
+./scripts/generate-openclaw-secrets.sh
 ```
+
+This creates `secrets/openclaw/secrets.yaml` with:
+- Placeholder API keys for each instance (you must fill these in)
+- Auto-generated instance tokens and signing keys
+- Immediate encryption (plaintext never visible in terminal)
+
+## Step 4: Add Your API Keys
+
+Edit the encrypted file (decrypts in `$EDITOR`, re-encrypts on save):
+
+```bash
+sops secrets/openclaw/secrets.yaml
+```
+
+Replace the placeholder API keys with your actual Anthropic API keys:
+- `alpha_anthropic_api_key` - API key for alpha instance
+- `beta_anthropic_api_key` - API key for beta instance
+
+Using separate keys per instance means if one is compromised, you only revoke that one.
 
 The file is now encrypted. You can verify by viewing it:
 ```bash
