@@ -98,6 +98,7 @@ in
         "openclaw/bridge-shared-secret" = {
           sopsFile = secretsCfg.sopsFile;
           key = "bridge_shared_secret";
+          path = "/run/secrets/bridge-shared-secret";  # bridge.js expects this path
           owner = "root";
           group = "openclaw-bridge";
           mode = "0440";

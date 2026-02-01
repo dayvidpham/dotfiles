@@ -30,6 +30,11 @@ lib.mkIf (config.CUSTOM.shared.enable) {
     git
     git-lfs
 
+    # Development runtimes/tools
+    python3
+    uv # fast Python package installer
+    bun # fast JavaScript runtime
+
     # Secrets management
     age # modern encryption tool
     sops # secrets operations

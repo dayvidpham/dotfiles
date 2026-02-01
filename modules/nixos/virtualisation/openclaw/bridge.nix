@@ -105,11 +105,8 @@ in
         ExecStart = "${pkgs.nodejs_22}/bin/node ${bridgeScript}";
       };
 
-      # Create symlink for secrets if using sops
-      preStart = mkIf cfg.secrets.enable ''
-        mkdir -p /run/secrets
-        ln -sf ${config.sops.secrets."openclaw/bridge-shared-secret".path} /run/secrets/bridge-shared-secret
-      '';
+      # Note: sops-nix creates /run/secrets/bridge-shared-secret directly
+      # (configured in secrets.nix with path = "/run/secrets/bridge-shared-secret")
     };
   };
 }

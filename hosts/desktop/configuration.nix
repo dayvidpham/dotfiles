@@ -210,16 +210,10 @@
     enable = true;
 
     # sops-nix secrets configuration
-    # TODO: Enable after creating encrypted secrets file:
-    #   1. Generate age key: age-keygen -o /var/lib/sops-nix/keys.txt
-    #   2. Add public key to secrets/.sops.yaml
-    #   3. Create secrets/openclaw/secrets.yaml from the example
-    #   4. Encrypt: sops -e -i secrets/openclaw/secrets.yaml
-    #   5. Set enable = true below
     secrets = {
-      enable = false;
-      # sopsFile = ../../secrets/openclaw/secrets.yaml;
-      # ageKeyFile = "/var/lib/sops-nix/keys.txt";
+      enable = true;
+      sopsFile = ../../secrets/openclaw/secrets.yaml;
+      ageKeyFile = "/var/lib/sops-nix/keys.txt";
     };
 
     # Network security (strict allowlist)

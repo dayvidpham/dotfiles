@@ -3,10 +3,13 @@
 { config
 , pkgs
 , lib ? pkgs.lib
+, nix-openclaw
 , ...
 }:
 let
   cfg = config.CUSTOM.virtualisation.openclaw;
+  system = pkgs.stdenv.hostPlatform.system;
+  openclawGateway = nix-openclaw.packages.${system}.openclaw-gateway;
 
   inherit (lib)
     mkOption
@@ -26,14 +29,13 @@ let
       bashInteractive  # Required for healthchecks, but limited shell access
       cacert           # TLS certificates for API calls
 
-      # OpenClaw - TODO: Replace with actual package when available
-      # For now, this is a placeholder. The actual OpenClaw package
-      # should be added to nixpkgs or as an overlay
+      # OpenClaw gateway from nix-openclaw flake
+      openclawGateway
     ];
 
     # Security hardening configuration
     config = {
-      Cmd = [ "/bin/sh" "-c" "echo 'OpenClaw container ready. Configure entrypoint.'" ];
+      Cmd = [ "${openclawGateway}/bin/openclaw-gateway" ];
       WorkingDir = "/app";
       User = "openclaw:openclaw";
 
@@ -71,6 +73,7 @@ let
 
       # Create home and app directories
       mkdir -p home/openclaw
+      mkdir -p home/openclaw/.config
       mkdir -p app
       mkdir -p run/secrets
 

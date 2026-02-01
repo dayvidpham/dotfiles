@@ -124,10 +124,21 @@ let
       description = "OpenClaw instance ${name}";
       after = [
         "podman.service"
-        "openclaw-network-setup.service"
-      ] ++ (if cfg.secrets.enable then [ "sops-nix.service" ] else [ ]);
-      requires = [ "podman.service" "openclaw-network-setup.service" ];
+      ] ++ (if cfg.secrets.enable then [ "sops-nix.service" ] else []);
+      requires = [ "podman.service" ];
       wantedBy = [ "multi-user.target" ];
+
+      # Include /run/wrappers/bin for newuidmap/newgidmap setuid wrappers
+      # Note: NixOS automatically appends /bin and /sbin to path entries
+      path = [
+        pkgs.podman
+        "/run/wrappers"
+      ];
+
+      # Environment for rootless podman (system users don't have a login session)
+      environment = {
+        XDG_RUNTIME_DIR = "/run/openclaw-${name}";
+      };
 
       serviceConfig = {
         Type = "simple";
@@ -138,8 +149,12 @@ let
         User = instanceCfg.user;
         Group = instanceCfg.group;
 
+        # Runtime directory for rootless podman (system users don't have /run/user/<uid>)
+        RuntimeDirectory = "openclaw-${name}";
+        RuntimeDirectoryMode = "0700";
+
         # Security hardening
-        NoNewPrivileges = true;
+        # NoNewPrivileges = true;  # Disabled: blocks newuidmap setuid binary needed for rootless podman
         ProtectSystem = "strict";
         ProtectHome = true;
         PrivateTmp = true;
@@ -148,6 +163,8 @@ let
         ReadWritePaths = [
           instanceCfg.workspace.path
           instanceCfg.workspace.configPath
+          "/var/lib/openclaw/${name}/.config"
+          "/var/lib/openclaw/${name}/.local"  # Podman rootless storage
         ];
         ReadOnlyPaths = [
           instanceCfg.workspace.sharedContextPath
@@ -155,8 +172,34 @@ let
           config.sops.secrets."openclaw/${name}/api-key".path
           config.sops.secrets."openclaw/${name}/instance-token".path
           config.sops.secrets."openclaw/${name}/bridge-signing-key".path
+        ] else [ ]) ++ (if cfg.container.registry == "" then [
+          cfg.container.image  # Allow access to container image in Nix store
         ] else [ ]);
+      } // {
+        # Setup for rootless podman (per-user image and network storage)
+        ExecStartPre = pkgs.writeShellScript "openclaw-${name}-setup" ''
+          set -euo pipefail
 
+          # Create network for this user (rootless podman has per-user networks)
+          if ! ${pkgs.podman}/bin/podman network exists ${cfg.network.bridgeNetwork.name} 2>/dev/null; then
+            echo "Creating network ${cfg.network.bridgeNetwork.name} for user ${instanceCfg.user}..."
+            ${pkgs.podman}/bin/podman network create \
+              --driver bridge \
+              --subnet ${cfg.network.bridgeNetwork.subnet} \
+              --gateway ${cfg.network.bridgeNetwork.gateway} \
+              --internal \
+              ${cfg.network.bridgeNetwork.name}
+          fi
+
+          ${if cfg.container.registry == "" then ''
+          # Load image (rootless podman has per-user image storage)
+          if ! ${pkgs.podman}/bin/podman image exists localhost/openclaw:latest 2>/dev/null; then
+            echo "Loading OpenClaw image for user ${instanceCfg.user}..."
+            ${pkgs.podman}/bin/podman load -i ${cfg.container.image}
+          fi
+          '' else ""}
+        '';
+      } // {
         ExecStart = pkgs.writeShellScript "openclaw-${name}-start" ''
           set -euo pipefail
 
@@ -189,6 +232,7 @@ let
             # Volume mounts
             --volume "${instanceCfg.workspace.path}:/workspace:rw"
             --volume "${instanceCfg.workspace.configPath}:/config:rw"
+            --volume "/var/lib/openclaw/${name}/.config:/home/openclaw/.config:rw"
             --volume "${instanceCfg.workspace.sharedContextPath}:/shared-context:ro"
 
             # Secrets mounts (tmpfs)
@@ -249,8 +293,13 @@ in
 
   config = mkIf cfg.enable {
     # Create system users for each instance (keyed by user name, not instance name)
-    users.users = builtins.listToAttrs (builtins.map (name:
-      let instanceCfg = enabledInstances.${name};
+    # Each user gets subuid/subgid ranges for rootless podman
+    users.users = builtins.listToAttrs (lib.imap0 (idx: name:
+      let
+        instanceCfg = enabledInstances.${name};
+        # Each instance gets 65536 subuids starting at 300000 + (idx * 65536)
+        # Avoids conflict with minttea/gitlab-runner which use 100000-265534
+        subuidStart = 300000 + (idx * 65536);
       in {
         name = instanceCfg.user;
         value = {
@@ -261,6 +310,11 @@ in
           description = "OpenClaw ${name} instance user";
           # Add to openclaw-bridge group for shared secret access
           extraGroups = [ "openclaw-bridge" ];
+          # Enable linger for rootless podman (requires security.polkit.enable)
+          linger = true;
+          # Subuid/subgid ranges for rootless podman
+          subUidRanges = [{ startUid = subuidStart; count = 65536; }];
+          subGidRanges = [{ startGid = subuidStart; count = 65536; }];
         };
       }
     ) (builtins.attrNames enabledInstances));
@@ -277,6 +331,8 @@ in
       in [
         "d ${instanceCfg.workspace.path} 0750 ${instanceCfg.user} ${instanceCfg.group} -"
         "d ${instanceCfg.workspace.configPath} 0750 ${instanceCfg.user} ${instanceCfg.group} -"
+        "d /var/lib/openclaw/${name}/.config 0750 ${instanceCfg.user} ${instanceCfg.group} -"
+        "d /var/lib/openclaw/${name}/.local 0750 ${instanceCfg.user} ${instanceCfg.group} -"
       ]
     ) (builtins.attrNames enabledInstances)) ++ [
       # Shared context directory (writable by gatekeeper, readable by all)

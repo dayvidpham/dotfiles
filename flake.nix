@@ -51,6 +51,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    nix-openclaw = {
+      url = "github:openclaw/nix-openclaw";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Secrets management
     sops-nix = {
       url = "github:Mic92/sops-nix";
@@ -76,6 +81,7 @@
     , niri
     , llm-agents
     , microvm
+    , nix-openclaw
     , sops-nix
     , ...
     }:
@@ -190,6 +196,7 @@
           libmint
           niri
           microvm
+          nix-openclaw
           sops-nix
           ;
       };

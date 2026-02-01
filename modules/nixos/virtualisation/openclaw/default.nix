@@ -59,6 +59,9 @@ in
       dns_enabled = true;
     };
 
+    # Required for user linger (rootless podman)
+    security.polkit.enable = true;
+
     # Assertions for configuration validation
     assertions = [
       {
