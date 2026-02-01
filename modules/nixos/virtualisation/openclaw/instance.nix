@@ -193,9 +193,13 @@ let
 
           ${if cfg.container.registry == "" then ''
           # Load image (rootless podman has per-user image storage)
-          if ! ${pkgs.podman}/bin/podman image exists localhost/openclaw:latest 2>/dev/null; then
-            echo "Loading OpenClaw image for user ${instanceCfg.user}..."
-            ${pkgs.podman}/bin/podman load -i ${cfg.container.image}
+          # Always reload to pick up Nix store path changes (image hash changes on rebuild)
+          CURRENT_IMAGE_ID=$(${pkgs.podman}/bin/podman images -q localhost/openclaw:latest 2>/dev/null || true)
+          NEW_IMAGE_ID=$(${pkgs.podman}/bin/podman load -q -i ${cfg.container.image})
+
+          if [ -n "$CURRENT_IMAGE_ID" ] && [ "$CURRENT_IMAGE_ID" != "$NEW_IMAGE_ID" ]; then
+            echo "Image updated: removing old image $CURRENT_IMAGE_ID"
+            ${pkgs.podman}/bin/podman rmi "$CURRENT_IMAGE_ID" 2>/dev/null || true
           fi
           '' else ""}
         '';
