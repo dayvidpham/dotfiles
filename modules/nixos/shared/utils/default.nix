@@ -30,6 +30,10 @@ lib.mkIf (config.CUSTOM.shared.enable) {
     git
     git-lfs
 
+    # Secrets management
+    age # modern encryption tool
+    sops # secrets operations
+
     # Networking
     lsof
     net-tools

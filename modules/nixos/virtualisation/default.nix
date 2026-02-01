@@ -4,5 +4,6 @@
     ./podman
     ./libvirtd
     ./llm-sandbox
+    ./openclaw
   ];
 }
