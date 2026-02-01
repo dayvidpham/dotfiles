@@ -55,7 +55,12 @@ in
     sopsFile = mkOption {
       type = types.nullOr types.path;
       default = null;
-      description = "Path to the sops-encrypted secrets file";
+      description = ''
+        Path to the sops-encrypted secrets file.
+
+        WARNING: Ensure all placeholder values (REPLACE_WITH_*) are replaced with actual secrets.
+        Use `sops <file>` to edit the encrypted file securely.
+      '';
       example = "/etc/nixos/secrets/openclaw/secrets.yaml";
     };
 

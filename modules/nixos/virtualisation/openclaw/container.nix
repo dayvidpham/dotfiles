@@ -3,13 +3,10 @@
 { config
 , pkgs
 , lib ? pkgs.lib
-, nix-openclaw
 , ...
 }:
 let
   cfg = config.CUSTOM.virtualisation.openclaw;
-  system = pkgs.stdenv.hostPlatform.system;
-  openclawGateway = nix-openclaw.packages.${system}.openclaw-gateway;
 
   inherit (lib)
     mkOption
@@ -28,14 +25,17 @@ let
       coreutils
       bashInteractive  # Required for healthchecks, but limited shell access
       cacert           # TLS certificates for API calls
+      curl             # For health endpoint checking
 
       # OpenClaw gateway from nix-openclaw flake
-      openclawGateway
+      cfg.container.gatewayPackage
     ];
 
     # Security hardening configuration
     config = {
-      Cmd = [ "${openclawGateway}/bin/openclaw-gateway" ];
+      # Use stable symlink path instead of Nix store path
+      # The symlink is created in extraCommands below
+      Cmd = [ "/usr/local/bin/openclaw-gateway" ];
       WorkingDir = "/app";
       User = "openclaw:openclaw";
 
@@ -47,7 +47,7 @@ let
 
       # Healthcheck configuration
       Healthcheck = {
-        Test = [ "CMD" "node" "-e" "process.exit(0)" ];
+        Test = [ "CMD" "curl" "-sf" "http://localhost:18789/health" ];
         Interval = 30000000000;  # 30s in nanoseconds
         Timeout = 5000000000;    # 5s in nanoseconds
         Retries = 3;
@@ -77,6 +77,11 @@ let
       mkdir -p app
       mkdir -p run/secrets
 
+      # Create stable symlink to openclaw-gateway binary
+      # This avoids Nix store path changes breaking the container Cmd
+      mkdir -p usr/local/bin
+      ln -sf ${cfg.container.gatewayPackage}/bin/openclaw-gateway usr/local/bin/openclaw-gateway
+
       # Set ownership (will be applied at runtime)
       # Note: dockerTools doesn't support chown in extraCommands,
       # so we rely on the container runtime to handle this
@@ -103,7 +108,7 @@ let
         names = [
           "accept" "accept4" "access" "arch_prctl" "bind" "brk"
           "capget" "capset" "chdir" "chmod" "chown" "clock_getres"
-          "clock_gettime" "clock_nanosleep" "clone" "close" "connect"
+          "clock_gettime" "clock_nanosleep" "close" "connect"
           "dup" "dup2" "dup3" "epoll_create" "epoll_create1"
           "epoll_ctl" "epoll_pwait" "epoll_wait" "eventfd" "eventfd2"
           "execve" "exit" "exit_group" "faccessat" "faccessat2"
@@ -136,7 +141,7 @@ let
           "sched_setparam" "sched_setscheduler" "sched_yield" "seccomp"
           "select" "semctl" "semget" "semop" "semtimedop" "sendfile"
           "sendmmsg" "sendmsg" "sendto" "setfsgid" "setfsuid" "setgid"
-          "setgroups" "sethostname" "setitimer" "setpgid" "setpriority"
+          "setgroups" "setitimer" "setpgid" "setpriority"
           "setregid" "setresgid" "setresuid" "setreuid" "setrlimit"
           "setsid" "setsockopt" "set_tid_address" "setuid" "setxattr"
           "shmat" "shmctl" "shmdt" "shmget" "shutdown" "sigaltstack"
@@ -165,6 +170,12 @@ let
 in
 {
   options.CUSTOM.virtualisation.openclaw.container = {
+    gatewayPackage = mkOption {
+      type = types.nullOr types.package;
+      default = null;
+      description = "OpenClaw gateway package from nix-openclaw flake";
+    };
+
     image = mkOption {
       type = types.package;
       default = openclawContainerImage;

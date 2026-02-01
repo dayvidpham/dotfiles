@@ -6,6 +6,7 @@
 , pkgs
 , pkgs-unstable
 , home-manager
+, nix-openclaw
 , lib ? config.lib
 , ...
 }:
@@ -208,6 +209,9 @@
   # OpenClaw AI Assistant (secure containerized setup)
   CUSTOM.virtualisation.openclaw = {
     enable = true;
+
+    # Container configuration
+    container.gatewayPackage = nix-openclaw.packages.${pkgs.system}.openclaw-gateway;
 
     # sops-nix secrets configuration
     secrets = {

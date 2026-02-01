@@ -52,10 +52,16 @@ in
   };
 
   config = mkIf (cfg.enable && bridgeCfg.enable) {
-    # Create log directory
+    # Create dedicated system user for the bridge service
+    users.users.openclaw-bridge = {
+      isSystemUser = true;
+      group = "openclaw-bridge";
+      description = "OpenClaw bridge service user";
+    };
+
+    # Create bridge audit log file (log directory created by openbao.nix)
     systemd.tmpfiles.rules = [
-      "d /var/log/openclaw 0750 root openclaw-bridge -"
-      "f ${bridgeCfg.auditLogPath} 0640 root openclaw-bridge -"
+      "f ${bridgeCfg.auditLogPath} 0640 openclaw-bridge openclaw-bridge -"
     ];
 
     # Bridge service
@@ -63,9 +69,7 @@ in
       description = "OpenClaw Inter-Instance Communication Bridge";
       after = [
         "network.target"
-        "openclaw-network-setup.service"
       ] ++ (if cfg.secrets.enable then [ "sops-nix.service" ] else [ ]);
-      requires = [ "openclaw-network-setup.service" ];
       wantedBy = [ "multi-user.target" ];
 
       environment = {
@@ -81,9 +85,8 @@ in
         Restart = "always";
         RestartSec = "5s";
 
-        # Run as root but with restricted privileges
-        # (needs access to shared secrets)
-        User = "root";
+        # Run as dedicated non-root user
+        User = "openclaw-bridge";
         Group = "openclaw-bridge";
 
         # Security hardening
