@@ -69,9 +69,7 @@ in
       description = "OpenClaw Inter-Instance Communication Bridge";
       after = [
         "network.target"
-        "openclaw-network-setup.service"
       ] ++ (if cfg.secrets.enable then [ "sops-nix.service" ] else [ ]);
-      requires = [ "openclaw-network-setup.service" ];
       wantedBy = [ "multi-user.target" ];
 
       environment = {
