@@ -20,9 +20,11 @@ let
   mkInstanceSecrets = instanceName: instanceCfg: {
     "openclaw/${instanceName}/api-key" = {
       sopsFile = secretsCfg.sopsFile;
+      # Default: per-instance API key (alpha_anthropic_api_key, beta_anthropic_api_key)
+      # Override via instance.secrets.apiKeyPath if needed
       key = if instanceCfg.secrets.apiKeyPath != null
             then instanceCfg.secrets.apiKeyPath
-            else "anthropic_api_key";
+            else "${instanceName}_anthropic_api_key";
       owner = instanceCfg.user;
       group = instanceCfg.group;
       mode = "0400";
