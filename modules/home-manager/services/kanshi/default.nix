@@ -52,7 +52,7 @@ in
               mode = "2560x1440";
               scale = 1.00;
               position = "0,0";
-              adaptiveSync = true;
+              adaptiveSync = false;  # VRR disabled - causes tearing at boot with NVIDIA
               transform = "270";
             }
             {
@@ -61,7 +61,7 @@ in
               mode = "2560x1440";
               scale = 1.00;
               position = "1440,374";
-              adaptiveSync = true;
+              adaptiveSync = false;  # VRR disabled - causes tearing at boot with NVIDIA
             }
             {
               # right
@@ -69,7 +69,7 @@ in
               mode = "2560x1440";
               scale = 1.00;
               position = "4000,0";
-              adaptiveSync = true;
+              adaptiveSync = false;  # VRR disabled - causes tearing at boot with NVIDIA
               transform = "270";
             }
           ];
