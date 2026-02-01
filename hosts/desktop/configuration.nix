@@ -205,6 +205,85 @@
   CUSTOM.virtualisation.libvirtd.enable = true;
   CUSTOM.virtualisation.llm-sandbox.enable = true;
 
+  # OpenClaw AI Assistant (secure containerized setup)
+  CUSTOM.virtualisation.openclaw = {
+    enable = true;
+
+    # sops-nix secrets configuration
+    # TODO: Enable after creating encrypted secrets file:
+    #   1. Generate age key: age-keygen -o /var/lib/sops-nix/keys.txt
+    #   2. Add public key to secrets/.sops.yaml
+    #   3. Create secrets/openclaw/secrets.yaml from the example
+    #   4. Encrypt: sops -e -i secrets/openclaw/secrets.yaml
+    #   5. Set enable = true below
+    secrets = {
+      enable = false;
+      # sopsFile = ../../secrets/openclaw/secrets.yaml;
+      # ageKeyFile = "/var/lib/sops-nix/keys.txt";
+    };
+
+    # Network security (strict allowlist)
+    network = {
+      enable = true;
+      strictFirewall = true;
+      allowlist = {
+        domains = [ "api.anthropic.com" ];
+        allowDns = true;
+      };
+    };
+
+    # Inter-instance communication bridge
+    bridge = {
+      enable = true;
+      port = 18800;
+      rateLimit = 60;
+      maxDelegationDepth = 5;
+    };
+
+    # Instance configurations
+    instances = {
+      alpha = {
+        enable = true;
+        ports = {
+          webchat = 3000;
+          gateway = 18789;
+        };
+        workspace = {
+          path = "/var/lib/openclaw/alpha/workspace";
+          configPath = "/var/lib/openclaw/alpha/config";
+        };
+        resources = {
+          memoryLimit = "4g";
+          cpuLimit = "2.0";
+        };
+        openclaw = {
+          agentName = "Alpha";
+          sandboxMode = "all";
+        };
+      };
+
+      beta = {
+        enable = true;
+        ports = {
+          webchat = 3001;
+          gateway = 18790;
+        };
+        workspace = {
+          path = "/var/lib/openclaw/beta/workspace";
+          configPath = "/var/lib/openclaw/beta/config";
+        };
+        resources = {
+          memoryLimit = "4g";
+          cpuLimit = "2.0";
+        };
+        openclaw = {
+          agentName = "Beta";
+          sandboxMode = "all";
+        };
+      };
+    };
+  };
+
   # Try getting AMD iGPU to work @_@
   # hardware.amdgpu = {
   #   amdvlk.enable = true;

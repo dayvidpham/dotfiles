@@ -50,6 +50,12 @@
       url = "github:astro/microvm.nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # Secrets management
+    sops-nix = {
+      url = "github:Mic92/sops-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -70,6 +76,7 @@
     , niri
     , llm-agents
     , microvm
+    , sops-nix
     , ...
     }:
     let
@@ -88,7 +95,6 @@
 
           # NOTE: My own packages and programs
           (final: prev: {
-            #nix = determinate
             run-cwd = with prev; callPackage ./packages/run-cwd.nix { };
             scythe = with prev; callPackage ./packages/scythe.nix {
               wl-clipboard = wl-clipboard-rs;
@@ -109,10 +115,34 @@
 
       lib = pkgs.lib;
 
+      #############################
+      # Feature Module Registry
+      # Maps feature names to their corresponding NixOS modules
+      # These are OPTIONAL features that hosts can enable
+      featureModules = {
+        # WSL support (only needed for WSL hosts)
+        wsl = nixos-wsl.nixosModules.default // {
+          system.build.installBootLoader = lib.mkForce "${pkgs.coreutils}/bin/true";
+        };
+      };
+
+      #############################
+      # Base modules included in ALL standard hosts
+      # This ensures consistent module availability - features are controlled via enable options
+      baseModules = [
+        # Core infrastructure
+        determinate-nixd.nixosModules.default
+        niri.nixosModules.niri
+        microvm.nixosModules.host
+        sops-nix.nixosModules.sops
+
+        # Custom modules
+        ./modules/nixos
+        noChannelModule
+      ];
+
       # NOTE: Needs to be defined here to have access to nixpkgs and home-manager inputs
       noChannelModule = {
-        #nix.package = nix.packages."${system}".nix;
-
         nix.settings.experimental-features = [ "nix-command" "flakes" "fetch-closure" ];
         nix.channel.enable = false;
 
@@ -160,6 +190,7 @@
           libmint
           niri
           microvm
+          sops-nix
           ;
       };
 
@@ -170,82 +201,79 @@
           niri
           ;
       };
+
+      #############################
+      # Host Builder
+      # Creates a NixOS configuration with base modules + optional features
+      #
+      # All hosts get the same base modules (sops, niri, microvm, etc.)
+      # Features are controlled via enable options in host configuration
+      # Only truly host-specific modules (like WSL) are passed as features
+      #
+      # Arguments:
+      #   name: Host name (used to find ./hosts/${name}/configuration.nix)
+      #   features: List of optional feature names (e.g., ["wsl"])
+      #   extraModules: Additional modules to include (optional)
+      #   hostSpecialArgs: Additional specialArgs to merge (optional)
+      mkHost =
+        { name
+        , features ? [ ]
+        , extraModules ? [ ]
+        , hostSpecialArgs ? { }
+        }:
+        nixpkgs.lib.nixosSystem {
+          inherit system;
+          specialArgs = specialArgs // hostSpecialArgs;
+          modules =
+            # Base modules (always included)
+            baseModules
+            # Optional feature modules (from registry)
+            ++ (builtins.map (f: featureModules.${f}) features)
+            # Host-specific configuration
+            ++ [ ./hosts/${name}/configuration.nix ]
+            # Any additional modules
+            ++ extraModules;
+        };
+
+      # Minimal host builder for special cases (e.g., microVMs)
+      mkMinimalHost =
+        { name
+        , modules
+        , hostSpecialArgs ? { }
+        }:
+        nixpkgs.lib.nixosSystem {
+          inherit system;
+          specialArgs = hostSpecialArgs;
+          modules = modules;
+        };
+
     in
     {
       # Used with `nixos-rebuild --flake .#<hostname>`
       # nixosConfigurations."<hostname>".config.system.build.toplevel must be a derivation
       nixosConfigurations = {
-        flowX13 = nixpkgs.lib.nixosSystem {
-          inherit
-            system
-            specialArgs
-            ;
-          modules = [
-            determinate-nixd.nixosModules.default
-            niri.nixosModules.niri
-            microvm.nixosModules.host
-            ./modules/nixos
-            noChannelModule
-            ./hosts/flowX13/configuration.nix
-          ];
+        # Standard workstation hosts - all base modules included automatically
+        flowX13 = mkHost { name = "flowX13"; };
+        desktop = mkHost { name = "desktop"; };
+
+        # WSL hosts - need the wsl feature module
+        wsl = mkHost {
+          name = "wsl";
+          features = [ "wsl" ];
         };
 
-        desktop = nixpkgs.lib.nixosSystem {
-          inherit
-            system
-            specialArgs
-            ;
-          modules = [
-            determinate-nixd.nixosModules.default
-            niri.nixosModules.niri
-            microvm.nixosModules.host
-            ./modules/nixos
-            noChannelModule
-            ./hosts/desktop/configuration.nix
-          ];
+        flowX13-wsl = mkHost {
+          name = "flowX13-wsl";
+          features = [ "wsl" ];
         };
 
-        # LLM Sandbox microVM - standalone configuration for `microvm -c llm-sandbox`
-        llm-sandbox = nixpkgs.lib.nixosSystem {
-          inherit system;
-          specialArgs = { inherit pkgs pkgs-unstable; };
+        # LLM Sandbox microVM - minimal standalone configuration
+        llm-sandbox = mkMinimalHost {
+          name = "llm-sandbox";
+          hostSpecialArgs = { inherit pkgs pkgs-unstable; };
           modules = [
             microvm.nixosModules.microvm
             ./modules/nixos/virtualisation/llm-sandbox/guest.nix
-          ];
-        };
-
-        wsl = nixpkgs.lib.nixosSystem {
-          inherit
-            system
-            specialArgs
-            ;
-          #specialArgs = specialArgs // {
-          #  pkgs = pkgs-wsl;
-          #};
-          modules = [
-            determinate-nixd.nixosModules.default
-            niri.nixosModules.niri
-            (nixos-wsl.nixosModules.default // {
-              system.build.installBootLoader = lib.mkForce "${pkgs.coreutils}/bin/true";
-            })
-            noChannelModule
-            ./hosts/wsl/configuration.nix
-            ./modules/nixos
-          ];
-        };
-        flowX13-wsl = nixpkgs.lib.nixosSystem {
-          inherit
-            system
-            specialArgs
-            ;
-          modules = [
-            (nixos-wsl.nixosModules.default // {
-              system.build.installBootLoader = lib.mkForce "${pkgs.coreutils}/bin/true";
-            })
-            ./hosts/flowX13-wsl/configuration.nix
-            ./modules/nixos
-            noChannelModule
           ];
         };
       };
