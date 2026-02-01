@@ -37,6 +37,10 @@ in
     ./network.nix
     ./instance.nix
     ./bridge.nix
+    # Zero-trust infrastructure (optional)
+    ./keycloak.nix
+    ./openbao.nix
+    ./injector.nix
   ];
 
   options.CUSTOM.virtualisation.openclaw = {
@@ -46,6 +50,15 @@ in
       type = lib.types.bool;
       default = true;
       description = "Warn if secrets management is not enabled. Set to false for development.";
+    };
+
+    # Zero-trust secrets architecture
+    zeroTrust = {
+      enable = mkEnableOption ''
+        Zero-trust secrets architecture using Keycloak + OpenBao.
+        When enabled, containers have NO credentials. Secrets are injected
+        by an external sidecar that authenticates via OIDC.
+      '';
     };
   };
 

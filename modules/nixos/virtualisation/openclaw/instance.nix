@@ -124,8 +124,16 @@ let
       description = "OpenClaw instance ${name}";
       after = [
         "podman.service"
-      ] ++ (if cfg.secrets.enable then [ "sops-nix.service" ] else []);
-      requires = [ "podman.service" ];
+      ] ++ (if cfg.zeroTrust.enable && cfg.zeroTrust.injector.enable then [
+        # Zero-trust: wait for injector to complete secrets injection
+        "openclaw-injector-${name}.service"
+      ] else if cfg.secrets.enable then [
+        "sops-nix.service"
+      ] else []);
+      requires = [ "podman.service" ]
+        ++ (if cfg.zeroTrust.enable && cfg.zeroTrust.injector.enable then [
+          "openclaw-injector-${name}.service"
+        ] else []);
       wantedBy = [ "multi-user.target" ];
 
       # Include /run/wrappers/bin for newuidmap/newgidmap setuid wrappers
@@ -168,7 +176,10 @@ let
         ];
         ReadOnlyPaths = [
           instanceCfg.workspace.sharedContextPath
-        ] ++ (if cfg.secrets.enable then [
+        ] ++ (if cfg.zeroTrust.enable && cfg.zeroTrust.injector.enable then [
+          # Zero-trust: secrets directory is managed by injector
+          "/run/openclaw-${name}/secrets"
+        ] else if cfg.secrets.enable then [
           config.sops.secrets."openclaw/${name}/api-key".path
           config.sops.secrets."openclaw/${name}/instance-token".path
           config.sops.secrets."openclaw/${name}/bridge-signing-key".path
@@ -239,8 +250,12 @@ let
             --volume "/var/lib/openclaw/${name}/.config:/home/openclaw/.config:rw"
             --volume "${instanceCfg.workspace.sharedContextPath}:/shared-context:ro"
 
-            # Secrets mounts (tmpfs)
-            ${optionalString cfg.secrets.enable ''
+            # Secrets mounts (from tmpfs)
+            # Zero-trust mode: secrets injected by external service to /run/openclaw-${name}/secrets/
+            # Legacy mode: secrets mounted directly from sops-nix paths
+            ${if cfg.zeroTrust.enable && cfg.zeroTrust.injector.enable then ''
+            --volume "/run/openclaw-${name}/secrets:/run/secrets:ro"
+            '' else optionalString cfg.secrets.enable ''
             --volume "${config.sops.secrets."openclaw/${name}/api-key".path}:/run/secrets/api-key:ro"
             --volume "${config.sops.secrets."openclaw/${name}/instance-token".path}:/run/secrets/instance-token:ro"
             --volume "${config.sops.secrets."openclaw/${name}/bridge-signing-key".path}:/run/secrets/bridge-signing-key:ro"
