@@ -43,6 +43,21 @@ in
         When false, uses erofs without dedupe (faster builds, portable).
       '';
     };
+
+    tailscale = {
+      enable = mkOption {
+        type = types.bool;
+        default = false;
+        description = "Enable Tailscale for secure remote access via tailnet";
+      };
+
+      loginServer = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        example = "https://headscale.example.com";
+        description = "Headscale/Tailscale control server URL. If null, uses default Tailscale.";
+      };
+    };
   };
 
   config = {
@@ -57,8 +72,9 @@ in
     '';
 
     # Static IP configuration for TAP networking
+    # Interface is named enp0s4 by systemd predictable naming (virtio-net-pci on slot 4)
     networking.useDHCP = false;
-    networking.interfaces.eth0 = {
+    networking.interfaces.enp0s4 = {
       ipv4.addresses = [{
         address = "10.88.0.2";
         prefixLength = 24;
@@ -66,13 +82,52 @@ in
     };
     networking.defaultGateway = {
       address = "10.88.0.1";
-      interface = "eth0";
+      interface = "enp0s4";
     };
     networking.nameservers = [ "10.88.0.1" ];
 
     networking.firewall = {
       enable = true;
       allowedTCPPorts = [ cfg.gatewayPort ];
+      # Trust tailscale interface for inbound connections
+      trustedInterfaces = lib.optionals cfg.tailscale.enable [ "tailscale0" ];
+    };
+
+    # Tailscale for secure remote access
+    services.tailscale = lib.mkIf cfg.tailscale.enable {
+      enable = true;
+      # Auth key injected via fw_cfg, read by systemd LoadCredential
+      authKeyFile = "/run/credentials/tailscaled.service/tailscale-authkey";
+      extraUpFlags = lib.optionals (cfg.tailscale.loginServer != null) [
+        "--login-server" cfg.tailscale.loginServer
+      ] ++ [
+        "--hostname" "openclaw-vm"
+      ];
+    };
+
+    # Configure tailscaled to read auth key from fw_cfg credential
+    systemd.services.tailscaled = lib.mkIf cfg.tailscale.enable {
+      serviceConfig.LoadCredential = [ "tailscale-authkey" ];
+    };
+
+    # Tailscale Serve: auto-configure HTTPS proxy to gateway
+    # Runs once after tailscale is online, persists in tailscale state
+    systemd.services.tailscale-serve = lib.mkIf cfg.tailscale.enable {
+      description = "Configure Tailscale Serve for OpenClaw Gateway";
+      after = [ "tailscaled.service" ];
+      requires = [ "tailscaled.service" ];
+      wantedBy = [ "multi-user.target" ];
+
+      # Only run if serve not already configured
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        ExecStart = "${pkgs.tailscale}/bin/tailscale serve --bg https+insecure://localhost:${toString cfg.gatewayPort}";
+        # Retry if tailscale not ready yet
+        Restart = "on-failure";
+        RestartSec = 5;
+        RestartMaxDelaySec = "60s";
+      };
     };
 
     # OpenClaw user
@@ -95,8 +150,11 @@ in
     # OpenClaw gateway service
     systemd.services.openclaw-gateway = {
       description = "OpenClaw Gateway";
-      after = [ "network-online.target" ];
+      after = [ "network-online.target" ]
+        ++ lib.optionals cfg.tailscale.enable [ "tailscaled.service" "tailscale-serve.service" ];
       wants = [ "network-online.target" ];
+      # Fail-closed: gateway requires tailscale when enabled
+      requires = lib.optionals cfg.tailscale.enable [ "tailscaled.service" ];
       wantedBy = [ "multi-user.target" ];
 
       serviceConfig = {
@@ -181,6 +239,11 @@ in
       "f /var/lib/openclaw/workspace/AGENTS.md 0644 openclaw users -"
       "f /var/lib/openclaw/workspace/SOUL.md 0644 openclaw users -"
       "f /var/lib/openclaw/workspace/TOOLS.md 0644 openclaw users -"
+    ] ++ lib.optionals cfg.tailscale.enable [
+      # Tailscale state on persistent volume (survives rebuilds)
+      "d /var/lib/openclaw/tailscale 0700 root root -"
+      # Symlink so tailscale finds its state in the standard location
+      "L+ /var/lib/tailscale - - - - /var/lib/openclaw/tailscale"
     ];
   };
 }

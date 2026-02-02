@@ -102,6 +102,28 @@ in
       };
     };
 
+    # Tailscale integration (host-side config)
+    tailscale = {
+      enable = mkOption {
+        type = types.bool;
+        default = false;
+        description = "Enable Tailscale for secure remote access. Requires secrets.enable and sopsFile.";
+      };
+
+      authKeySecret = mkOption {
+        type = types.str;
+        default = "tailscale_authkey";
+        description = "Key name in sops file for the Tailscale auth key";
+      };
+
+      loginServer = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        example = "https://headscale.example.com";
+        description = "Headscale/Tailscale control server URL. If null, uses default Tailscale.";
+      };
+    };
+
     # State management
     stateDir = mkOption {
       type = types.path;
@@ -174,6 +196,10 @@ in
             - For sops-only: set cfg.secrets.sopsFile and disable injector.vmMode
           '';
         }
+        {
+          assertion = cfg.tailscale.enable -> (cfg.secrets.enable && cfg.secrets.sopsFile != null);
+          message = "tailscale.enable requires secrets.enable and secrets.sopsFile for auth key injection";
+        }
       ];
 
       # TAP networking configuration
@@ -216,21 +242,14 @@ in
         linkConfig.RequiredForOnline = "no";
       };
 
-      # nftables configuration for port forwarding and isolation
+      # nftables configuration for VM isolation
       networking.nftables.enable = true;
 
       networking.nftables.tables.openclaw-vm-firewall = {
         family = "inet";
         content = ''
           # OpenClaw VM Network Isolation
-          # Port forwarding from host to VM
-
-          chain prerouting {
-            type nat hook prerouting priority dstnat; policy accept;
-
-            # Forward localhost:${toString cfg.gatewayPort} to VM
-            iifname "lo" tcp dport ${toString cfg.gatewayPort} dnat ip to ${cfg.network.vmAddress}:${toString cfg.gatewayPort}
-          }
+          # Access gateway directly at ${cfg.network.vmAddress}:${toString cfg.gatewayPort}
 
           chain postrouting {
             type nat hook postrouting priority srcnat; policy accept;
@@ -251,16 +270,6 @@ in
 
             # Drop everything else (strict isolation)
           }
-
-          chain input {
-            type filter hook input priority filter; policy accept;
-
-            # Allow localhost access to forwarded port
-            iifname "lo" tcp dport ${toString cfg.gatewayPort} accept
-
-            # Block external access to VM gateway port (defense in depth)
-            tcp dport ${toString cfg.gatewayPort} drop
-          }
         '';
       };
     }
@@ -279,6 +288,10 @@ in
             mem = cfg.memory;
             gatewayPort = cfg.gatewayPort;
             devMode = cfg.devMode;
+            tailscale = {
+              enable = cfg.tailscale.enable;
+              loginServer = cfg.tailscale.loginServer;
+            };
           };
         };
       };
@@ -299,12 +312,18 @@ in
         key = "gateway_token";
       };
 
+      sops.secrets."openclaw/tailscale-authkey" = lib.mkIf cfg.tailscale.enable {
+        sopsFile = cfg.secrets.sopsFile;
+        key = cfg.tailscale.authKeySecret;
+      };
+
       # Generate openclaw.json config from sops secrets
       # This is passed to the VM via fw_cfg credentials
       sops.templates."openclaw.json" = {
         content = builtins.toJSON {
           gateway = {
             mode = "local";
+            bind = "lan";  # Bind to all interfaces (safe in isolated microvm)
             auth = {
               token = config.sops.placeholder."openclaw/gateway-token";
             };
@@ -323,6 +342,8 @@ in
         # These become available to guest systemd services via LoadCredential
         config.microvm.credentialFiles = {
           "openclaw-config" = "/run/secrets/rendered/openclaw.json";
+        } // lib.optionalAttrs cfg.tailscale.enable {
+          "tailscale-authkey" = config.sops.secrets."openclaw/tailscale-authkey".path;
         };
       };
     })
