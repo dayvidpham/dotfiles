@@ -100,6 +100,17 @@
           llm-agents.overlays.default
           nix-openclaw.overlays.default
 
+          # Override openclaw to disable extended tools (whisper/torch/triton)
+          # Note: nodejs/pnpm excluded to avoid collision with system packages
+          (final: prev: {
+            openclaw = prev.openclaw.override {
+              extendedTools = with final; [
+                git curl jq python3 ffmpeg ripgrep
+                go uv
+              ];
+            };
+          })
+
           # NOTE: My own packages and programs
           (final: prev: {
             run-cwd = with prev; callPackage ./packages/run-cwd.nix { };
