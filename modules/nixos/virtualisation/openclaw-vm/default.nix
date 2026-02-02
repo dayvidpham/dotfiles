@@ -315,6 +315,8 @@ in
       sops.secrets."openclaw/tailscale-authkey" = lib.mkIf cfg.tailscale.enable {
         sopsFile = cfg.secrets.sopsFile;
         key = cfg.tailscale.authKeySecret;
+        mode = "0440";
+        group = "openclaw-secrets";  # microvm user is in this group
       };
 
       # Generate openclaw.json config from sops secrets
