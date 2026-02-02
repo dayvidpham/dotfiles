@@ -135,7 +135,7 @@ in
         key = "gateway_token";
       };
 
-      sops.age.keyFile = cfg.secrets.ageKeyFile;
+      sops.age.keyFile = lib.mkDefault cfg.secrets.ageKeyFile;
 
       # Generate openclaw.json config from sops secrets
       sops.templates."openclaw-vm-config" = {
