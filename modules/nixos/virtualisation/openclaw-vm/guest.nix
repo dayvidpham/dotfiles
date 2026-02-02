@@ -25,7 +25,7 @@ in
 
     mem = mkOption {
       type = types.int;
-      default = 8192;  # 4GB per vCPU
+      default = 8192;  # 4096 MiB per vCPU with default 2 vCPUs
       description = "Memory allocation in MiB";
     };
 
@@ -42,6 +42,34 @@ in
         Use virtiofs for /nix/store (instant rebuilds, not portable).
         When false, uses erofs without dedupe (faster builds, portable).
       '';
+    };
+
+    # Network configuration (passed from host)
+    network = {
+      vmAddress = mkOption {
+        type = types.str;
+        default = "10.88.0.2";
+        description = "VM IP address (should match host cfg.network.vmAddress)";
+      };
+
+      gatewayAddress = mkOption {
+        type = types.str;
+        default = "10.88.0.1";
+        description = "Gateway/host bridge IP address";
+      };
+
+      prefixLength = mkOption {
+        type = types.int;
+        default = 24;
+        description = "Network prefix length";
+      };
+    };
+
+    # State volume configuration
+    stateVolumeSize = mkOption {
+      type = types.int;
+      default = 16384;
+      description = "Size of persistent state volume in MiB (default 16 GiB)";
     };
   };
 
@@ -61,15 +89,15 @@ in
     # TAP interface appears as enp0s4 (predictable naming: PCI slot 0, device 4)
     networking.interfaces.enp0s4 = {
       ipv4.addresses = [{
-        address = "10.88.0.2";
-        prefixLength = 24;
+        address = cfg.network.vmAddress;
+        prefixLength = cfg.network.prefixLength;
       }];
     };
     networking.defaultGateway = {
-      address = "10.88.0.1";
+      address = cfg.network.gatewayAddress;
       interface = "enp0s4";
     };
-    networking.nameservers = [ "10.88.0.1" ];
+    networking.nameservers = [ cfg.network.gatewayAddress ];
 
     networking.firewall = {
       enable = true;
@@ -105,12 +133,14 @@ in
         User = "openclaw";
         WorkingDirectory = "/var/lib/openclaw/workspace";
         StateDirectory = "openclaw";
-        ExecStart = "${openclaw-pkg}/bin/openclaw gateway --port ${toString cfg.gatewayPort}";
+        # Bind to LAN interfaces to accept connections from host via TAP
+        ExecStart = "${openclaw-pkg}/bin/openclaw gateway --bind lan --port ${toString cfg.gatewayPort}";
         Restart = "always";
         RestartSec = 5;
         RestartSteps = 5;
         RestartMaxDelaySec = "60s";
-        WatchdogSec = "30s";
+        # Disabled: openclaw gateway doesn't implement systemd watchdog notifications
+        # WatchdogSec = "30s";
         # Load credentials via fw_cfg
         LoadCredential = "openclaw-config";
         # %d = credentials directory
@@ -153,7 +183,7 @@ in
       volumes = [{
         mountPoint = "/var/lib/openclaw";
         image = "openclaw-state.img";
-        size = 16384;  # 16 GB for workspace and logs
+        size = cfg.stateVolumeSize;
       }];
 
       # Shares configuration

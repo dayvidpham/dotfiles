@@ -70,7 +70,7 @@ in
     # Resource limits
     memory = mkOption {
       type = types.int;
-      default = 8192;  # 4GB per vCPU
+      default = 8192;  # 4096 MiB per vCPU with default 2 vCPUs
       description = "Memory allocation in MiB for the microVM";
     };
 
@@ -161,6 +161,10 @@ in
           message = "OpenClaw VM requires microvm.nix. Ensure microvm module is available.";
         }
         {
+          assertion = !(cfg.secrets.enable && cfg.secrets.sopsFile != null) || (options ? sops);
+          message = "OpenClaw VM secrets require sops-nix module. Add sops-nix to your imports.";
+        }
+        {
           assertion = !(
             cfg.secrets.enable &&
             cfg.secrets.sopsFile != null &&
@@ -219,6 +223,9 @@ in
         linkConfig.RequiredForOnline = "no";
       };
 
+      # Trust bridge interface in default NixOS firewall
+      networking.firewall.trustedInterfaces = [ cfg.network.bridgeName ];
+
       # nftables configuration for port forwarding and isolation
       networking.nftables.enable = true;
 
@@ -231,12 +238,22 @@ in
           chain prerouting {
             type nat hook prerouting priority dstnat; policy accept;
 
-            # Forward localhost:${toString cfg.gatewayPort} to VM
+            # Forward localhost:${toString cfg.gatewayPort} to VM (for incoming packets)
             iifname "lo" tcp dport ${toString cfg.gatewayPort} dnat ip to ${cfg.network.vmAddress}:${toString cfg.gatewayPort}
+          }
+
+          chain output {
+            type nat hook output priority dstnat; policy accept;
+
+            # Forward localhost:${toString cfg.gatewayPort} to VM (for locally-generated packets)
+            ip daddr 127.0.0.1 tcp dport ${toString cfg.gatewayPort} dnat ip to ${cfg.network.vmAddress}:${toString cfg.gatewayPort}
           }
 
           chain postrouting {
             type nat hook postrouting priority srcnat; policy accept;
+
+            # SNAT localhost->VM traffic so VM can respond (127.0.0.1 -> bridge IP)
+            ip saddr 127.0.0.1 oifname "${cfg.network.bridgeName}" snat ip to ${lib.head (lib.splitString "/" cfg.network.bridgeAddress)}
 
             # Masquerade traffic from VM to internet
             ip saddr ${cfg.network.bridgeAddress} oifname != "${cfg.network.bridgeName}" masquerade
@@ -245,24 +262,29 @@ in
           chain forward {
             type filter hook forward priority filter; policy drop;
 
-            # Allow established/related connections
+            # Allow established/related connections (handles return traffic)
             ct state established,related accept
 
-            # Allow forwarding to/from VM bridge
+            # Allow VM-initiated outbound traffic
             iifname "${cfg.network.bridgeName}" accept
-            oifname "${cfg.network.bridgeName}" accept
 
-            # Drop everything else (strict isolation)
+            # Allow DNAT'd traffic TO the VM (from localhost via bridge)
+            oifname "${cfg.network.bridgeName}" accept
           }
 
           chain input {
-            type filter hook input priority filter; policy accept;
+            type filter hook input priority filter; policy drop;
 
-            # Allow localhost access to forwarded port
-            iifname "lo" tcp dport ${toString cfg.gatewayPort} accept
+            # Allow established/related connections
+            ct state established,related accept
 
-            # Block external access to VM gateway port (defense in depth)
-            tcp dport ${toString cfg.gatewayPort} drop
+            # Allow all localhost traffic (required for DNAT and local services)
+            iifname "lo" accept
+
+            # Allow traffic from VM bridge (for DNS, etc.)
+            iifname "${cfg.network.bridgeName}" accept
+
+            # Everything else dropped by policy
           }
         '';
       };
@@ -282,6 +304,12 @@ in
             mem = cfg.memory;
             gatewayPort = cfg.gatewayPort;
             devMode = cfg.devMode;
+            # Pass network config to ensure host and guest stay in sync
+            network = {
+              vmAddress = cfg.network.vmAddress;
+              gatewayAddress = lib.head (lib.splitString "/" cfg.network.bridgeAddress);
+              prefixLength = lib.toInt (lib.last (lib.splitString "/" cfg.network.bridgeAddress));
+            };
           };
         };
       };
