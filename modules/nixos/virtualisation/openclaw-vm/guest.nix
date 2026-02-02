@@ -7,18 +7,72 @@
 , ...
 }:
 let
+  inherit (lib)
+    mkOption
+    types
+    ;
+
+  cfg = config.CUSTOM.virtualisation.openclaw-vm.guest;
   openclaw-pkg = nix-openclaw.packages.${pkgs.system}.openclaw;
 in
 {
+  options.CUSTOM.virtualisation.openclaw-vm.guest = {
+    vcpu = mkOption {
+      type = types.int;
+      default = 2;
+      description = "Number of virtual CPUs";
+    };
+
+    mem = mkOption {
+      type = types.int;
+      default = 8192;  # 4GB per vCPU
+      description = "Memory allocation in MiB";
+    };
+
+    gatewayPort = mkOption {
+      type = types.port;
+      default = 18789;
+      description = "Port for the OpenClaw gateway";
+    };
+
+    devMode = mkOption {
+      type = types.bool;
+      default = true;
+      description = ''
+        Use virtiofs for /nix/store (instant rebuilds, not portable).
+        When false, uses erofs without dedupe (faster builds, portable).
+      '';
+    };
+  };
+
   config = {
     system.stateVersion = "25.11";
     networking.hostName = "openclaw-vm";
 
-    # Network access for safemolt
-    networking.useDHCP = true;
+    # Restrict fw_cfg sysfs to root only - systemd reads as root, then places
+    # credentials in service-specific directory. Prevents compromised agent
+    # from reading raw credentials via /sys/firmware/qemu_fw_cfg/
+    services.udev.extraRules = ''
+      SUBSYSTEM=="firmware", DRIVER=="qemu_fw_cfg", MODE="0400", OWNER="root", GROUP="root"
+    '';
+
+    # Static IP configuration for TAP networking
+    networking.useDHCP = false;
+    networking.interfaces.eth0 = {
+      ipv4.addresses = [{
+        address = "10.88.0.2";
+        prefixLength = 24;
+      }];
+    };
+    networking.defaultGateway = {
+      address = "10.88.0.1";
+      interface = "eth0";
+    };
+    networking.nameservers = [ "10.88.0.1" ];
+
     networking.firewall = {
       enable = true;
-      allowedTCPPorts = [ 18789 ];  # Gateway port
+      allowedTCPPorts = [ cfg.gatewayPort ];
     };
 
     # OpenClaw user
@@ -34,6 +88,8 @@ in
       pkgs.curl
       pkgs.jq
       pkgs.git
+      pkgs.bun        # JavaScript runtime
+      pkgs.uv         # Python package manager
     ];
 
     # OpenClaw gateway service
@@ -46,13 +102,22 @@ in
       serviceConfig = {
         Type = "simple";
         User = "openclaw";
-        WorkingDirectory = "/home/openclaw";
-        ExecStartPre = "${openclaw-pkg}/bin/openclaw onboard --non-interactive --accept-risk --mode local || true";
-        ExecStart = "${openclaw-pkg}/bin/openclaw gateway";
+        WorkingDirectory = "/var/lib/openclaw/workspace";
+        StateDirectory = "openclaw";
+        ExecStart = "${openclaw-pkg}/bin/openclaw gateway --port ${toString cfg.gatewayPort}";
         Restart = "always";
         RestartSec = 5;
+        RestartSteps = 5;
+        RestartMaxDelaySec = "60s";
+        WatchdogSec = "30s";
+        # Load credentials via fw_cfg
+        LoadCredential = "openclaw-config";
+        # %d = credentials directory
         Environment = [
           "HOME=/home/openclaw"
+          "XDG_CONFIG_HOME=/home/openclaw/.config"
+          "OPENCLAW_CONFIG_PATH=%d/openclaw-config"
+          "OPENCLAW_STATE_DIR=/var/lib/openclaw"
         ];
       };
     };
@@ -60,60 +125,62 @@ in
     # Auto-login for easy access
     services.getty.autologinUser = "openclaw";
 
+    # Enable getty on ttyS1 for console socket access
+    systemd.services."serial-getty@ttyS1".enable = true;
+
     # microvm configuration
     microvm = {
       hypervisor = "qemu";
-      vcpu = 2;
-      mem = 8192;  # 4GB per vCPU
+      vcpu = cfg.vcpu;
+      mem = cfg.mem;
 
-      # User-mode networking with port forwarding
+      # Add console socket for interactive access (ttyS1)
+      # Connect with: socat -,raw,echo=0 UNIX-CONNECT:console.sock
+      qemu.extraArgs = [
+        "-chardev" "socket,id=console,path=console.sock,server=on,wait=off"
+        "-device" "isa-serial,chardev=console"
+      ];
+
+      # TAP networking for proper isolation
       interfaces = [{
-        type = "user";
-        id = "eth0";
+        type = "tap";
+        id = "vm-openclaw";
         mac = "02:00:00:00:00:01";
-      }];
-
-      # Forward gateway port to host
-      forwardPorts = [{
-        from = "host";
-        host.port = 18789;
-        guest.port = 18789;
       }];
 
       # Persistent state volume
       volumes = [{
         mountPoint = "/var/lib/openclaw";
         image = "openclaw-state.img";
-        size = 256;
+        size = 16384;  # 16 GB for workspace and logs
       }];
 
-      # Share host configs into the VM
-      shares = [
-        {
-          tag = "safemolt-config";
-          source = "/home/minttea/.config/safemolt";
-          mountPoint = "/mnt/safemolt-config";
-          proto = "9p";
-        }
-        {
-          tag = "openclaw-skills";
-          source = "/home/minttea/.openclaw/skills";
-          mountPoint = "/mnt/openclaw-skills";
-          proto = "9p";
-        }
-      ];
+      # Shares configuration
+      shares = lib.optionals cfg.devMode [{
+        # devMode: mount host's /nix/store via virtiofs (instant rebuilds)
+        # Note: /nix/store is read-only by NixOS design (no explicit ro flag needed)
+        # virtiofs respects host permissions; /nix/store is immutable on the host
+        tag = "nix-store";
+        source = "/nix/store";
+        mountPoint = "/nix/store";
+        proto = "virtiofs";
+      }];
+
+      # devMode: don't embed /nix/store in image (use virtiofs instead)
+      storeOnDisk = !cfg.devMode;
+
+      # non-devMode: use erofs without dedupe for faster multi-threaded builds
+      storeDiskErofsFlags = lib.mkIf (!cfg.devMode) [ "-zlz4hc" "-Eztailpacking" ];
     };
 
-    # Create directories and symlink shared configs from host
+    # Create directories for openclaw state
     systemd.tmpfiles.rules = [
       "d /home/openclaw/.openclaw 0755 openclaw users -"
-      "d /home/openclaw/.openclaw/workspace 0755 openclaw users -"
       "d /home/openclaw/.config 0755 openclaw users -"
-      "L /home/openclaw/.openclaw/skills - - - - /mnt/openclaw-skills"
-      "L /home/openclaw/.config/safemolt - - - - /mnt/safemolt-config"
-      "f /home/openclaw/.openclaw/workspace/AGENTS.md 0644 openclaw users -"
-      "f /home/openclaw/.openclaw/workspace/SOUL.md 0644 openclaw users -"
-      "f /home/openclaw/.openclaw/workspace/TOOLS.md 0644 openclaw users -"
+      "d /var/lib/openclaw/workspace 0755 openclaw users -"
+      "f /var/lib/openclaw/workspace/AGENTS.md 0644 openclaw users -"
+      "f /var/lib/openclaw/workspace/SOUL.md 0644 openclaw users -"
+      "f /var/lib/openclaw/workspace/TOOLS.md 0644 openclaw users -"
     ];
   };
 }

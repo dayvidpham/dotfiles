@@ -5,5 +5,6 @@
     ./libvirtd
     ./llm-sandbox
     ./openclaw
+    ./openclaw-vm
   ];
 }

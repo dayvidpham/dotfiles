@@ -2,20 +2,16 @@
 # Keys are organized by host with support for multiple decryption keys
 
 creation_rules:
-  # OpenClaw secrets - accessible by desktop host and user minttea
+  # OpenClaw secrets - accessible by desktop host only
   - path_regex: secrets/openclaw/.*\.yaml$
     key_groups:
       - age:
           # Desktop host key (NixOS sops-nix)
           # Private key at: /var/lib/sops-nix/keys.txt
           - age1r2ev7w50syd2adu9e0uus4dllfqy9yc0j3w6ezdntjcsqn9gqejs34qxh9
-          # User minttea key (Home Manager sops-nix)
-          # Private key at: ~/.config/sops/age/keys.txt
-          - age1avxj2pmr8s2e4y7ucse6ks5xfwdftu357lec9ty8qvemw68p6epqq3k04y
 
   # Default rule for other secrets
   - path_regex: secrets/.*\.yaml$
     key_groups:
       - age:
           - age1r2ev7w50syd2adu9e0uus4dllfqy9yc0j3w6ezdntjcsqn9gqejs34qxh9
-          - age1avxj2pmr8s2e4y7ucse6ks5xfwdftu357lec9ty8qvemw68p6epqq3k04y
