@@ -31,6 +31,16 @@ in
   options.CUSTOM.virtualisation.openclaw-vm = {
     enable = mkEnableOption "OpenClaw in microVM";
 
+    devMode = mkOption {
+      type = types.bool;
+      default = true;
+      description = ''
+        Use virtiofs for /nix/store instead of embedding in erofs image.
+        Enables instant rebuilds but requires host's /nix/store at runtime.
+        Disable for portable/CI builds (uses erofs without dedupe for faster builds).
+      '';
+    };
+
     # Gateway configuration
     gatewayPort = mkOption {
       type = types.port;
@@ -114,6 +124,7 @@ in
             mem = cfg.memory;
             gatewayPort = cfg.gatewayPort;
             secrets.mountPoint = cfg.secrets.mountPoint;
+            devMode = cfg.devMode;
           };
         };
       };

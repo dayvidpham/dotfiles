@@ -40,6 +40,15 @@ in
       default = /run/openclaw-vm/secrets;
       description = "Host path where secrets are mounted (used by 9p share)";
     };
+
+    devMode = mkOption {
+      type = types.bool;
+      default = true;
+      description = ''
+        Use virtiofs for /nix/store (instant rebuilds, not portable).
+        When false, uses erofs without dedupe (faster builds, portable).
+      '';
+    };
   };
 
   config = {
@@ -127,7 +136,19 @@ in
         source = toString cfg.secrets.mountPoint;
         mountPoint = "/run/secrets";
         proto = "9p";
+      }] ++ lib.optionals cfg.devMode [{
+        # devMode: mount host's /nix/store via virtiofs (instant rebuilds)
+        tag = "nix-store";
+        source = "/nix/store";
+        mountPoint = "/nix/store";
+        proto = "virtiofs";
       }];
+
+      # devMode: don't embed /nix/store in image (use virtiofs instead)
+      storeOnDisk = !cfg.devMode;
+
+      # non-devMode: use erofs without dedupe for faster multi-threaded builds
+      storeDiskErofsFlags = lib.mkIf (!cfg.devMode) [ "-zlz4hc" "-Eztailpacking" ];
     };
 
     # 9p mount for secrets at /run/secrets
