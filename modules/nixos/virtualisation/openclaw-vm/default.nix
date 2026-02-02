@@ -26,6 +26,25 @@ let
     optionalAttrs
     types
     ;
+
+  # Console access script for the microVM
+  vm-console = pkgs.writeShellScriptBin "openclaw-vm-console" ''
+    set -euo pipefail
+
+    SOCKET_PATH="/var/lib/microvms/openclaw-vm/console.sock"
+
+    if [[ ! -S "$SOCKET_PATH" ]]; then
+        echo "Error: Console socket not found at $SOCKET_PATH" >&2
+        echo "Is the VM running? Check: systemctl status microvm@openclaw-vm" >&2
+        exit 1
+    fi
+
+    echo "Connecting to openclaw-vm console..."
+    echo "Press Ctrl+] to exit"
+    echo "---"
+
+    exec ${pkgs.socat}/bin/socat -,raw,echo=0,escape=0x1d UNIX-CONNECT:"$SOCKET_PATH"
+  '';
 in
 {
   options.CUSTOM.virtualisation.openclaw-vm = {
@@ -131,6 +150,9 @@ in
       systemd.tmpfiles.rules = [
         "d ${toString cfg.stateDir} 0750 root kvm -"
       ];
+
+      # Console access script
+      environment.systemPackages = [ vm-console ];
 
       # Assertions
       assertions = [

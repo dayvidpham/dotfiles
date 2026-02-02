@@ -88,6 +88,8 @@ in
       pkgs.curl
       pkgs.jq
       pkgs.git
+      pkgs.bun        # JavaScript runtime
+      pkgs.uv         # Python package manager
     ];
 
     # OpenClaw gateway service
@@ -150,7 +152,7 @@ in
       volumes = [{
         mountPoint = "/var/lib/openclaw";
         image = "openclaw-state.img";
-        size = 256;
+        size = 16384;  # 16 GB for workspace and logs
       }];
 
       # Shares configuration
