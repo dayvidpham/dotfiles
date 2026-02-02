@@ -94,6 +94,7 @@ in
     };
 
     # Tailscale for secure remote access
+    # extraDaemonFlags overrides state path to use persistent volume (survives VM rebuilds)
     services.tailscale = lib.mkIf cfg.tailscale.enable {
       enable = true;
       # Auth key injected via fw_cfg, read by systemd LoadCredential
@@ -103,11 +104,17 @@ in
       ] ++ [
         "--hostname" "openclaw-vm"
       ];
+      # Use persistent volume for state (--state flag overrides default /var/lib/tailscale)
+      extraDaemonFlags = [ "--state=/var/lib/openclaw/tailscale/tailscaled.state" ];
     };
 
     # Configure tailscaled to read auth key from fw_cfg credential
     systemd.services.tailscaled = lib.mkIf cfg.tailscale.enable {
-      serviceConfig.LoadCredential = [ "tailscale-authkey" ];
+      serviceConfig = {
+        LoadCredential = [ "tailscale-authkey" ];
+        # Don't create unused /var/lib/tailscale (we use /var/lib/openclaw/tailscale)
+        StateDirectory = lib.mkForce "";
+      };
     };
 
     # Tailscale Serve: auto-configure HTTPS proxy to gateway
@@ -242,8 +249,6 @@ in
     ] ++ lib.optionals cfg.tailscale.enable [
       # Tailscale state on persistent volume (survives rebuilds)
       "d /var/lib/openclaw/tailscale 0700 root root -"
-      # Symlink so tailscale finds its state in the standard location
-      "L+ /var/lib/tailscale - - - - /var/lib/openclaw/tailscale"
     ];
   };
 }
