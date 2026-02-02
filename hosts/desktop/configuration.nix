@@ -207,9 +207,9 @@
   CUSTOM.virtualisation.llm-sandbox.enable = true;
 
   # OpenClaw AI Assistant (secure containerized setup)
-  # NOTE: This provides zero-trust infrastructure (Keycloak, OpenBao) on host
+  # NOTE: Disabled - using microVM instead (openclaw-vm)
   CUSTOM.virtualisation.openclaw = {
-    enable = true;
+    enable = false;
 
     # Container configuration
     container.gatewayPackage = nix-openclaw.packages.${pkgs.system}.openclaw-gateway;
@@ -242,7 +242,7 @@
     # Instance configurations
     instances = {
       alpha = {
-        enable = false;  # Disabled: using microvm instead
+        enable = false;
         ports = {
           webchat = 3000;
           gateway = 18789;
@@ -262,7 +262,7 @@
       };
 
       beta = {
-        enable = false;  # Disabled: using microvm instead
+        enable = false;
         ports = {
           webchat = 3001;
           gateway = 18790;
@@ -294,6 +294,9 @@
       sopsFile = ../../secrets/openclaw/secrets.yaml;
     };
   };
+
+  # Configure sops-nix for system-level secrets (used by openclaw-vm)
+  sops.age.keyFile = "/var/lib/sops-nix/keys.txt";
 
   # Try getting AMD iGPU to work @_@
   # hardware.amdgpu = {

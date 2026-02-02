@@ -2,10 +2,10 @@
 # This module configures the host to run the openclaw-vm microVM.
 # The guest configuration is defined in ./guest.nix
 #
-# Architecture (per PROPOSAL-1):
+# Architecture:
 # - Host runs zero-trust infrastructure (Keycloak + OpenBao)
-# - Host injector writes secrets to /run/openclaw-vm/secrets/
-# - microVM mounts secrets via 9p share
+# - Secrets passed to VM via fw_cfg (microvm.credentials)
+# - Guest services load credentials via systemd LoadCredential
 # - Gateway accessible at localhost:18789 via QEMU port forwarding
 { config
 , options
@@ -65,12 +65,6 @@ in
     secrets = {
       enable = mkEnableOption "Inject secrets from host zero-trust infrastructure";
 
-      mountPoint = mkOption {
-        type = types.path;
-        default = /run/openclaw-vm/secrets;
-        description = "Host path where injector writes secrets (shared to VM via 9p)";
-      };
-
       sopsFile = mkOption {
         type = types.nullOr types.path;
         default = null;
@@ -80,7 +74,12 @@ in
       ageKeyFile = mkOption {
         type = types.path;
         default = /var/lib/sops-nix/keys.txt;
-        description = "Path to age key file for sops decryption";
+        description = ''
+          DEPRECATED: This option is no longer used. Configure sops.age.keyFile
+          directly in your host configuration if needed.
+
+          Path to age key file for sops decryption.
+        '';
       };
     };
 
@@ -90,22 +89,46 @@ in
       default = /var/lib/microvms/openclaw-vm/state;
       description = "Host path for VM persistent state volume";
     };
+
+    # Network configuration
+    network = {
+      bridgeName = mkOption {
+        type = types.str;
+        default = "br-openclaw";  # Max 15 chars for Linux interface names
+        description = "Name of the bridge interface for VM networking";
+      };
+
+      bridgeAddress = mkOption {
+        type = types.str;
+        default = "10.88.0.1/24";
+        description = "Host bridge IP address and subnet";
+      };
+
+      vmAddress = mkOption {
+        type = types.str;
+        default = "10.88.0.2";
+        description = "VM IP address (used for port forwarding)";
+      };
+
+      tapInterface = mkOption {
+        type = types.str;
+        default = "vm-openclaw";
+        description = "Name of the TAP interface (must match guest.nix)";
+      };
+    };
   };
 
   config = mkIf cfg.enable (mkMerge [
     # Host-side config (works without microvm module)
     {
-      # Dedicated group for secrets access (principle of least privilege)
+      # Dedicated group for secrets access
       users.groups.openclaw-secrets = {};
 
       # Grant microvm user access to secrets via group membership
       users.users.microvm.extraGroups = [ "openclaw-secrets" ];
 
-      # Create secrets directory on tmpfs
-      # 0750: root can write, openclaw-secrets group can read (for QEMU 9p access)
       # State dir: 0750 root:kvm - microvm user (in kvm group) needs access
       systemd.tmpfiles.rules = [
-        "d ${toString cfg.secrets.mountPoint} 0750 root openclaw-secrets -"
         "d ${toString cfg.stateDir} 0750 root kvm -"
       ];
 
@@ -115,7 +138,109 @@ in
           assertion = hasMicrovm;
           message = "OpenClaw VM requires microvm.nix. Ensure microvm module is available.";
         }
+        {
+          assertion = !(
+            cfg.secrets.enable &&
+            cfg.secrets.sopsFile != null &&
+            config.CUSTOM.virtualisation.openclaw.zeroTrust.injector.vmMode.enable or false
+          );
+          message = ''
+            Cannot use both sops.templates secrets (cfg.secrets.sopsFile) and injector.vmMode simultaneously.
+            Both would try to provide credentials to the microVM.
+            Choose one:
+            - For zero-trust injection: enable CUSTOM.virtualisation.openclaw.zeroTrust.injector.vmMode
+            - For sops-only: set cfg.secrets.sopsFile and disable injector.vmMode
+          '';
+        }
       ];
+
+      # TAP networking configuration
+      # systemd-networkd for TAP interface bridge
+      systemd.network.enable = true;
+
+      # Bridge device for microVM networking
+      systemd.network.netdevs."10-microvm-openclaw" = {
+        netdevConfig = {
+          Kind = "bridge";
+          Name = cfg.network.bridgeName;
+        };
+      };
+
+      # Bridge network configuration
+      systemd.network.networks."10-microvm-openclaw" = {
+        matchConfig.Name = cfg.network.bridgeName;
+        address = [ cfg.network.bridgeAddress ];
+        linkConfig.RequiredForOnline = "no";
+      };
+
+      # Enable IP forwarding for VM networking
+      boot.kernel.sysctl = {
+        "net.ipv4.ip_forward" = 1;
+      };
+
+      # Enable DNS forwarding for VM (systemd-resolved)
+      services.resolved = {
+        enable = true;
+        extraConfig = ''
+          # Allow DNS queries from VM network
+          DNSStubListenerExtra=${lib.head (lib.splitString "/" cfg.network.bridgeAddress)}
+        '';
+      };
+
+      # Attach TAP interface to bridge
+      systemd.network.networks."11-microvm-openclaw-tap" = {
+        matchConfig.Name = cfg.network.tapInterface;
+        bridge = [ cfg.network.bridgeName ];
+        linkConfig.RequiredForOnline = "no";
+      };
+
+      # nftables configuration for port forwarding and isolation
+      networking.nftables.enable = true;
+
+      networking.nftables.tables.openclaw-vm-firewall = {
+        family = "inet";
+        content = ''
+          # OpenClaw VM Network Isolation
+          # Port forwarding from host to VM
+
+          chain prerouting {
+            type nat hook prerouting priority dstnat; policy accept;
+
+            # Forward localhost:${toString cfg.gatewayPort} to VM
+            iifname "lo" tcp dport ${toString cfg.gatewayPort} dnat ip to ${cfg.network.vmAddress}:${toString cfg.gatewayPort}
+          }
+
+          chain postrouting {
+            type nat hook postrouting priority srcnat; policy accept;
+
+            # Masquerade traffic from VM to internet
+            ip saddr ${cfg.network.bridgeAddress} oifname != "${cfg.network.bridgeName}" masquerade
+          }
+
+          chain forward {
+            type filter hook forward priority filter; policy drop;
+
+            # Allow established/related connections
+            ct state established,related accept
+
+            # Allow forwarding to/from VM bridge
+            iifname "${cfg.network.bridgeName}" accept
+            oifname "${cfg.network.bridgeName}" accept
+
+            # Drop everything else (strict isolation)
+          }
+
+          chain input {
+            type filter hook input priority filter; policy accept;
+
+            # Allow localhost access to forwarded port
+            iifname "lo" tcp dport ${toString cfg.gatewayPort} accept
+
+            # Block external access to VM gateway port (defense in depth)
+            tcp dport ${toString cfg.gatewayPort} drop
+          }
+        '';
+      };
     }
 
     # microvm-specific config (only when microvm module is available)
@@ -131,7 +256,6 @@ in
             vcpu = cfg.vcpu;
             mem = cfg.memory;
             gatewayPort = cfg.gatewayPort;
-            secrets.mountPoint = cfg.secrets.mountPoint;
             devMode = cfg.devMode;
           };
         };
@@ -140,12 +264,9 @@ in
       microvm.host.enable = true;
 
       # Ensure microvm starts after secrets are ready
-      # The injector service (if using zero-trust) writes to secrets.mountPoint
       systemd.services."microvm@openclaw-vm" = {
         after = [ "sops-nix.service" ];
         wants = [ "sops-nix.service" ];
-        # Wait for secrets directory to exist with config file
-        unitConfig.ConditionPathExists = "${toString cfg.secrets.mountPoint}/openclaw.json";
       };
     })
 
@@ -156,11 +277,9 @@ in
         key = "gateway_token";
       };
 
-      sops.age.keyFile = lib.mkDefault cfg.secrets.ageKeyFile;
-
       # Generate openclaw.json config from sops secrets
-      # File must be readable by openclaw-secrets group for QEMU 9p access
-      sops.templates."openclaw-vm-config" = {
+      # This is passed to the VM via fw_cfg credentials
+      sops.templates."openclaw.json" = {
         content = builtins.toJSON {
           gateway = {
             mode = "local";
@@ -169,10 +288,20 @@ in
             };
           };
         };
-        path = "${toString cfg.secrets.mountPoint}/openclaw.json";
         mode = "0440";
         owner = "root";
-        group = "openclaw-secrets";
+        group = "openclaw-secrets";  # microvm user is in this group
+      };
+    })
+
+    # Add credentials to microvm when secrets are enabled
+    (mkIf (hasMicrovm && cfg.secrets.enable && cfg.secrets.sopsFile != null) {
+      microvm.vms.openclaw-vm = {
+        # Pass secrets via fw_cfg (QEMU firmware configuration)
+        # These become available to guest systemd services via LoadCredential
+        config.microvm.credentialFiles = {
+          "openclaw-config" = "/run/secrets/rendered/openclaw.json";
+        };
       };
     })
   ]);

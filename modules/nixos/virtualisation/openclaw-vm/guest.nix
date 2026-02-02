@@ -35,12 +35,6 @@ in
       description = "Port for the OpenClaw gateway";
     };
 
-    secrets.mountPoint = mkOption {
-      type = types.path;
-      default = /run/openclaw-vm/secrets;
-      description = "Host path where secrets are mounted (used by 9p share)";
-    };
-
     devMode = mkOption {
       type = types.bool;
       default = true;
@@ -55,8 +49,27 @@ in
     system.stateVersion = "25.11";
     networking.hostName = "openclaw-vm";
 
-    # Network access for safemolt
-    networking.useDHCP = true;
+    # Restrict fw_cfg sysfs to root only - systemd reads as root, then places
+    # credentials in service-specific directory. Prevents compromised agent
+    # from reading raw credentials via /sys/firmware/qemu_fw_cfg/
+    services.udev.extraRules = ''
+      SUBSYSTEM=="firmware", DRIVER=="qemu_fw_cfg", MODE="0400", OWNER="root", GROUP="root"
+    '';
+
+    # Static IP configuration for TAP networking
+    networking.useDHCP = false;
+    networking.interfaces.eth0 = {
+      ipv4.addresses = [{
+        address = "10.88.0.2";
+        prefixLength = 24;
+      }];
+    };
+    networking.defaultGateway = {
+      address = "10.88.0.1";
+      interface = "eth0";
+    };
+    networking.nameservers = [ "10.88.0.1" ];
+
     networking.firewall = {
       enable = true;
       allowedTCPPorts = [ cfg.gatewayPort ];
@@ -80,9 +93,8 @@ in
     # OpenClaw gateway service
     systemd.services.openclaw-gateway = {
       description = "OpenClaw Gateway";
-      after = [ "network-online.target" "run-secrets.mount" ];
+      after = [ "network-online.target" ];
       wants = [ "network-online.target" ];
-      requires = [ "run-secrets.mount" ];
       wantedBy = [ "multi-user.target" ];
 
       serviceConfig = {
@@ -90,12 +102,20 @@ in
         User = "openclaw";
         WorkingDirectory = "/var/lib/openclaw/workspace";
         StateDirectory = "openclaw";
-        ExecStartPre = "${openclaw-pkg}/bin/openclaw onboard --non-interactive --accept-risk --mode local || true";
-        ExecStart = "${openclaw-pkg}/bin/openclaw gateway --config /run/secrets/openclaw.json";
+        ExecStart = "${openclaw-pkg}/bin/openclaw gateway --port ${toString cfg.gatewayPort}";
         Restart = "always";
         RestartSec = 5;
+        RestartSteps = 5;
+        RestartMaxDelaySec = "60s";
+        WatchdogSec = "30s";
+        # Load credentials via fw_cfg
+        LoadCredential = "openclaw-config";
+        # %d = credentials directory
         Environment = [
           "HOME=/home/openclaw"
+          "XDG_CONFIG_HOME=/home/openclaw/.config"
+          "OPENCLAW_CONFIG_PATH=%d/openclaw-config"
+          "OPENCLAW_STATE_DIR=/var/lib/openclaw"
         ];
       };
     };
@@ -103,24 +123,27 @@ in
     # Auto-login for easy access
     services.getty.autologinUser = "openclaw";
 
+    # Enable getty on ttyS1 for console socket access
+    systemd.services."serial-getty@ttyS1".enable = true;
+
     # microvm configuration
     microvm = {
       hypervisor = "qemu";
       vcpu = cfg.vcpu;
       mem = cfg.mem;
 
-      # User-mode networking with port forwarding
-      interfaces = [{
-        type = "user";
-        id = "eth0";
-        mac = "02:00:00:00:00:01";
-      }];
+      # Add console socket for interactive access (ttyS1)
+      # Connect with: socat -,raw,echo=0 UNIX-CONNECT:console.sock
+      qemu.extraArgs = [
+        "-chardev" "socket,id=console,path=console.sock,server=on,wait=off"
+        "-device" "isa-serial,chardev=console"
+      ];
 
-      # Forward gateway port to host
-      forwardPorts = [{
-        from = "host";
-        host.port = cfg.gatewayPort;
-        guest.port = cfg.gatewayPort;
+      # TAP networking for proper isolation
+      interfaces = [{
+        type = "tap";
+        id = "vm-openclaw";
+        mac = "02:00:00:00:00:01";
       }];
 
       # Persistent state volume
@@ -130,14 +153,11 @@ in
         size = 256;
       }];
 
-      # 9p share for secrets from host
-      shares = [{
-        tag = "secrets";
-        source = toString cfg.secrets.mountPoint;
-        mountPoint = "/run/secrets";
-        proto = "9p";
-      }] ++ lib.optionals cfg.devMode [{
+      # Shares configuration
+      shares = lib.optionals cfg.devMode [{
         # devMode: mount host's /nix/store via virtiofs (instant rebuilds)
+        # Note: /nix/store is read-only by NixOS design (no explicit ro flag needed)
+        # virtiofs respects host permissions; /nix/store is immutable on the host
         tag = "nix-store";
         source = "/nix/store";
         mountPoint = "/nix/store";
@@ -149,13 +169,6 @@ in
 
       # non-devMode: use erofs without dedupe for faster multi-threaded builds
       storeDiskErofsFlags = lib.mkIf (!cfg.devMode) [ "-zlz4hc" "-Eztailpacking" ];
-    };
-
-    # 9p mount for secrets at /run/secrets
-    fileSystems."/run/secrets" = {
-      device = "secrets";
-      fsType = "9p";
-      options = [ "trans=virtio" "version=9p2000.L" "ro" ];
     };
 
     # Create directories for openclaw state
