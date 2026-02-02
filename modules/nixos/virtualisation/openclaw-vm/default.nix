@@ -95,9 +95,16 @@ in
   config = mkIf cfg.enable (mkMerge [
     # Host-side config (works without microvm module)
     {
+      # Dedicated group for secrets access (principle of least privilege)
+      users.groups.openclaw-secrets = {};
+
+      # Grant microvm user access to secrets via group membership
+      users.users.microvm.extraGroups = [ "openclaw-secrets" ];
+
       # Create secrets directory on tmpfs
+      # 0750: root can write, openclaw-secrets group can read (for QEMU 9p access)
       systemd.tmpfiles.rules = [
-        "d ${toString cfg.secrets.mountPoint} 0700 root root -"
+        "d ${toString cfg.secrets.mountPoint} 0750 root openclaw-secrets -"
         "d ${toString cfg.stateDir} 0755 root root -"
       ];
 
