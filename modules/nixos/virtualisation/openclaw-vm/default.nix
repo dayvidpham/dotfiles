@@ -149,7 +149,7 @@ in
     vsock = {
       cid = mkOption {
         type = types.int;
-        default = 3;
+        default = 4;  # CID 3 used by llm-sandbox
         description = ''
           VSOCK Context ID for this VM.
           CID 0 = hypervisor, 1 = loopback, 2 = host, 3+ = guests.
@@ -160,6 +160,32 @@ in
         type = types.port;
         default = 18789;
         description = "VSOCK port for gateway proxy (matches gateway port for clarity)";
+      };
+    };
+
+    # Tailscale configuration for remote access
+    tailscale = {
+      enable = mkEnableOption "Tailscale inside the VM for remote access via tailnet";
+
+      hostname = mkOption {
+        type = types.str;
+        default = "openclaw-vm";
+        description = "Hostname for the VM on the tailnet";
+      };
+
+      loginServer = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        description = "Custom control server URL (e.g., Headscale). If null, uses Tailscale's default servers.";
+        example = "https://headscale.example.com";
+      };
+
+      serve = {
+        enable = mkOption {
+          type = types.bool;
+          default = true;
+          description = "Enable Tailscale Serve to expose gateway via HTTPS";
+        };
       };
     };
 
@@ -254,11 +280,14 @@ in
       };
 
       # Enable IP forwarding for VM networking
+      # Use loose rp_filter on bridge to allow VM traffic (strict mode can block bridged packets)
       boot.kernel.sysctl = {
         "net.ipv4.ip_forward" = 1;
+        "net.ipv4.conf.br-openclaw.rp_filter" = 0;  # Disable for bridge (nftables rpfilter handles it)
       };
 
       # Enable DNS forwarding for VM (systemd-resolved)
+      # VM uses host as DNS resolver for security (encrypted DNS, logging)
       services.resolved = {
         enable = true;
         extraConfig = ''
@@ -266,6 +295,12 @@ in
           DNSStubListenerExtra=${lib.head (lib.splitString "/" cfg.network.bridgeAddress)}
         '';
       };
+
+      # Allow only DNS from VM to host (not full interface trust)
+      networking.firewall.extraInputRules = ''
+        ip saddr ${cfg.network.bridgeAddress} udp dport 53 accept
+        ip saddr ${cfg.network.bridgeAddress} tcp dport 53 accept
+      '';
 
       # Attach TAP interface to bridge
       systemd.network.networks."11-microvm-openclaw-tap" = {
@@ -307,6 +342,22 @@ in
         family = "inet";
         content = ''
           # OpenClaw VM Network Isolation
+          # Mark 0x00044F43 combines:
+          #   - 0x00040000: Tailscale forwarding bit (allows traffic through exit node)
+          #   - 0x00004F43: "OC" OpenClaw identifier
+          # Mark is set early in prerouting, then accepted in forward chains
+
+          chain prerouting {
+            type filter hook prerouting priority raw; policy accept;
+
+            # Mark packets from VM network for Tailscale exit node access
+            # SECURITY: Only mark if BOTH source IP AND interface match
+            # This prevents LAN devices from spoofing VM IPs to get the mark
+            iifname "${cfg.network.bridgeName}" ip saddr ${cfg.network.bridgeAddress} meta mark set 0x00044F43
+
+            # Mark return traffic to VM (no Tailscale bit needed - conntrack handles it)
+            ip daddr ${cfg.network.bridgeAddress} meta mark set 0x00004F43
+          }
 
           chain postrouting {
             type nat hook postrouting priority srcnat; policy accept;
@@ -316,7 +367,10 @@ in
           }
 
           chain forward {
-            type filter hook forward priority filter; policy drop;
+            type filter hook forward priority -10; policy accept;
+
+            # Accept all marked VM traffic (check our bits, ignore Tailscale bits)
+            meta mark & 0x0000FFFF == 0x4F43 accept
 
             # Allow established/related connections (handles return traffic)
             ct state established,related accept
@@ -330,6 +384,22 @@ in
 
           # Note: Input filtering handled by NixOS default firewall (networking.firewall)
         '';
+      };
+
+      # Add VM network exception to rpfilter-allow chain after firewall starts
+      # This is more secure than loose rpfilter (which would be system-wide)
+      systemd.services.openclaw-vm-rpfilter = {
+        description = "Add OpenClaw VM rpfilter exception";
+        after = [ "firewall.service" "nftables.service" ];
+        wants = [ "firewall.service" ];
+        wantedBy = [ "multi-user.target" ];
+
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          ExecStart = "${pkgs.nftables}/bin/nft insert rule inet nixos-fw rpfilter-allow ip saddr ${cfg.network.bridgeAddress} accept comment \\\"OpenClaw VM traffic\\\"";
+          ExecStop = "${pkgs.nftables}/bin/nft delete rule inet nixos-fw rpfilter-allow handle $(${pkgs.nftables}/bin/nft -a list chain inet nixos-fw rpfilter-allow | grep 'OpenClaw VM' | grep -oP 'handle \\K\\d+') 2>/dev/null || true";
+        };
       };
     }
 
@@ -357,6 +427,13 @@ in
             vsock = {
               cid = cfg.vsock.cid;
               port = cfg.vsock.port;
+            };
+            # Pass tailscale config to guest
+            tailscale = {
+              enable = cfg.tailscale.enable;
+              hostname = cfg.tailscale.hostname;
+              loginServer = cfg.tailscale.loginServer;
+              serve.enable = cfg.tailscale.serve.enable;
             };
           };
         };
@@ -395,6 +472,17 @@ in
       };
     })
 
+    # Tailscale auth key secret (when tailscale enabled)
+    (mkIf (cfg.secrets.enable && cfg.secrets.sopsFile != null && cfg.tailscale.enable) {
+      sops.secrets."openclaw/tailscale-authkey" = {
+        sopsFile = cfg.secrets.sopsFile;
+        key = "tailscale_authkey";
+        mode = "0440";
+        owner = "root";
+        group = "openclaw-secrets";
+      };
+    })
+
     # Add credentials to microvm when secrets are enabled
     (mkIf (hasMicrovm && cfg.secrets.enable && cfg.secrets.sopsFile != null) {
       microvm.vms.openclaw-vm = {
@@ -402,6 +490,15 @@ in
         # These become available to guest systemd services via LoadCredential
         config.microvm.credentialFiles = {
           "openclaw-config" = "/run/secrets/rendered/openclaw.json";
+        };
+      };
+    })
+
+    # Add tailscale auth key credential when tailscale enabled
+    (mkIf (hasMicrovm && cfg.secrets.enable && cfg.secrets.sopsFile != null && cfg.tailscale.enable) {
+      microvm.vms.openclaw-vm = {
+        config.microvm.credentialFiles = {
+          "tailscale-authkey" = config.sops.secrets."openclaw/tailscale-authkey".path;
         };
       };
     })
