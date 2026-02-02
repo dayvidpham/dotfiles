@@ -3,10 +3,13 @@
 # The guest configuration is defined in ./guest.nix
 #
 # Architecture:
-# - Host runs zero-trust infrastructure (Keycloak + OpenBao)
-# - Secrets passed to VM via fw_cfg (microvm.credentials)
+# - Host runs zero-trust infrastructure (Keycloak + OpenBao) or sops fallback
+# - Secrets passed to VM via fw_cfg (microvm.credentialFiles)
 # - Guest services load credentials via systemd LoadCredential
-# - Gateway accessible at localhost:18789 via QEMU port forwarding
+# - Gateway binds to localhost only inside VM (security requirement)
+# - Host accesses gateway via VSOCK (appears as localhost to guest)
+# - Gateway accessible at localhost:18789 on host via VSOCK proxy
+# - Optional Caddy provides HTTPS at localhost:8443
 { config
 , options
 , pkgs
@@ -109,6 +112,57 @@ in
       description = "Host path for VM persistent state volume";
     };
 
+    # Caddy reverse proxy configuration
+    caddy = {
+      enable = mkEnableOption "Caddy reverse proxy with HTTPS for the gateway";
+
+      domain = mkOption {
+        type = types.str;
+        default = "localhost";
+        description = "Domain name for the gateway (default: localhost)";
+      };
+
+      httpsPort = mkOption {
+        type = types.port;
+        default = 8443;
+        description = "HTTPS port for Caddy (default: 8443 to avoid conflicts with existing services)";
+      };
+
+      httpPort = mkOption {
+        type = types.port;
+        default = 8080;
+        description = "HTTP port for Caddy (redirects to HTTPS)";
+      };
+
+      internalCa = mkOption {
+        type = types.bool;
+        default = true;
+        description = ''
+          Use Caddy's internal CA for localhost HTTPS.
+          For browser trust, run: caddy trust (requires root, installs CA to system store).
+          Set to false if using a real domain with ACME/Let's Encrypt.
+        '';
+      };
+    };
+
+    # VSOCK configuration for host-guest communication
+    vsock = {
+      cid = mkOption {
+        type = types.int;
+        default = 3;
+        description = ''
+          VSOCK Context ID for this VM.
+          CID 0 = hypervisor, 1 = loopback, 2 = host, 3+ = guests.
+        '';
+      };
+
+      port = mkOption {
+        type = types.port;
+        default = 18789;
+        description = "VSOCK port for gateway proxy (matches gateway port for clarity)";
+      };
+    };
+
     # Network configuration
     network = {
       bridgeName = mkOption {
@@ -202,9 +256,6 @@ in
       # Enable IP forwarding for VM networking
       boot.kernel.sysctl = {
         "net.ipv4.ip_forward" = 1;
-        # Required for DNAT from localhost (127.0.0.0/8) to VM
-        # Only enabled on loopback interface (more secure than conf.all)
-        "net.ipv4.conf.lo.route_localnet" = 1;
       };
 
       # Enable DNS forwarding for VM (systemd-resolved)
@@ -223,37 +274,42 @@ in
         linkConfig.RequiredForOnline = "no";
       };
 
-      # Trust bridge interface in default NixOS firewall
-      networking.firewall.trustedInterfaces = [ cfg.network.bridgeName ];
+      # Ensure vhost-vsock module is loaded for VSOCK communication
+      boot.kernelModules = [ "vhost_vsock" ];
 
-      # nftables configuration for port forwarding and isolation
+      # Localhost proxy to VM gateway via VSOCK
+      # VSOCK connections appear as localhost to the guest, satisfying gateway security
+      systemd.services.openclaw-gateway-proxy = {
+        description = "Proxy localhost:${toString cfg.gatewayPort} to VM gateway via VSOCK";
+        after = [ "microvm@openclaw-vm.service" ];
+        requires = [ "microvm@openclaw-vm.service" ];
+        wantedBy = [ "multi-user.target" ];
+
+        serviceConfig = {
+          Type = "simple";
+          # Forward localhost TCP to VSOCK (CID:port)
+          ExecStart = "${pkgs.socat}/bin/socat TCP-LISTEN:${toString cfg.gatewayPort},bind=127.0.0.1,reuseaddr,fork VSOCK-CONNECT:${toString cfg.vsock.cid}:${toString cfg.vsock.port}";
+          Restart = "always";
+          RestartSec = 5;
+          # Hardening
+          DynamicUser = true;
+          NoNewPrivileges = true;
+          PrivateTmp = true;
+          ProtectSystem = "strict";
+          ProtectHome = true;
+        };
+      };
+
+      # nftables configuration for VM network isolation
       networking.nftables.enable = true;
 
       networking.nftables.tables.openclaw-vm-firewall = {
         family = "inet";
         content = ''
           # OpenClaw VM Network Isolation
-          # Port forwarding from host to VM
-
-          chain prerouting {
-            type nat hook prerouting priority dstnat; policy accept;
-
-            # Forward localhost:${toString cfg.gatewayPort} to VM (for incoming packets)
-            iifname "lo" tcp dport ${toString cfg.gatewayPort} dnat ip to ${cfg.network.vmAddress}:${toString cfg.gatewayPort}
-          }
-
-          chain output {
-            type nat hook output priority dstnat; policy accept;
-
-            # Forward localhost:${toString cfg.gatewayPort} to VM (for locally-generated packets)
-            ip daddr 127.0.0.1 tcp dport ${toString cfg.gatewayPort} dnat ip to ${cfg.network.vmAddress}:${toString cfg.gatewayPort}
-          }
 
           chain postrouting {
             type nat hook postrouting priority srcnat; policy accept;
-
-            # SNAT localhost->VM traffic so VM can respond (127.0.0.1 -> bridge IP)
-            ip saddr 127.0.0.1 oifname "${cfg.network.bridgeName}" snat ip to ${lib.head (lib.splitString "/" cfg.network.bridgeAddress)}
 
             # Masquerade traffic from VM to internet
             ip saddr ${cfg.network.bridgeAddress} oifname != "${cfg.network.bridgeName}" masquerade
@@ -268,24 +324,11 @@ in
             # Allow VM-initiated outbound traffic
             iifname "${cfg.network.bridgeName}" accept
 
-            # Allow DNAT'd traffic TO the VM (from localhost via bridge)
+            # Allow traffic TO the VM (from proxy or direct)
             oifname "${cfg.network.bridgeName}" accept
           }
 
-          chain input {
-            type filter hook input priority filter; policy drop;
-
-            # Allow established/related connections
-            ct state established,related accept
-
-            # Allow all localhost traffic (required for DNAT and local services)
-            iifname "lo" accept
-
-            # Allow traffic from VM bridge (for DNS, etc.)
-            iifname "${cfg.network.bridgeName}" accept
-
-            # Everything else dropped by policy
-          }
+          # Note: Input filtering handled by NixOS default firewall (networking.firewall)
         '';
       };
     }
@@ -309,6 +352,11 @@ in
               vmAddress = cfg.network.vmAddress;
               gatewayAddress = lib.head (lib.splitString "/" cfg.network.bridgeAddress);
               prefixLength = lib.toInt (lib.last (lib.splitString "/" cfg.network.bridgeAddress));
+            };
+            # Pass vsock config to guest
+            vsock = {
+              cid = cfg.vsock.cid;
+              port = cfg.vsock.port;
             };
           };
         };
@@ -355,6 +403,57 @@ in
         config.microvm.credentialFiles = {
           "openclaw-config" = "/run/secrets/rendered/openclaw.json";
         };
+      };
+    })
+
+    # Caddy reverse proxy configuration
+    (mkIf cfg.caddy.enable {
+      services.caddy = {
+        enable = true;
+
+        # Caddy configuration for HTTPS reverse proxy to gateway
+        virtualHosts."${cfg.caddy.domain}:${toString cfg.caddy.httpsPort}" = {
+          extraConfig = ''
+            ${lib.optionalString cfg.caddy.internalCa ''
+            # Use Caddy's internal CA for localhost HTTPS
+            # Run 'sudo caddy trust' to install CA in system trust store for browser access
+            tls internal
+            ''}
+
+            # Reverse proxy to the openclaw gateway
+            reverse_proxy localhost:${toString cfg.gatewayPort} {
+              # WebSocket support for real-time communication
+              header_up Host {host}
+              header_up X-Real-IP {remote_host}
+              header_up X-Forwarded-For {remote_host}
+              header_up X-Forwarded-Proto {scheme}
+
+              # Health check for the backend
+              health_uri /health
+              health_interval 30s
+              health_timeout 5s
+            }
+          '';
+        };
+      };
+
+      # HTTP redirect to HTTPS (optional, on different port)
+      services.caddy.virtualHosts."${cfg.caddy.domain}:${toString cfg.caddy.httpPort}" = {
+        extraConfig = ''
+          redir https://${cfg.caddy.domain}:${toString cfg.caddy.httpsPort}{uri} permanent
+        '';
+      };
+
+      # Open firewall ports for Caddy
+      networking.firewall.allowedTCPPorts = [
+        cfg.caddy.httpsPort
+        cfg.caddy.httpPort
+      ];
+
+      # Ensure Caddy starts after the gateway proxy is available
+      systemd.services.caddy = {
+        after = [ "openclaw-gateway-proxy.service" ];
+        wants = [ "openclaw-gateway-proxy.service" ];
       };
     })
   ]);

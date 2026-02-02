@@ -71,6 +71,24 @@ in
       default = 16384;
       description = "Size of persistent state volume in MiB (default 16 GiB)";
     };
+
+    # VSOCK configuration for host-guest communication
+    vsock = {
+      cid = mkOption {
+        type = types.int;
+        default = 3;
+        description = ''
+          VSOCK Context ID for this VM.
+          CID 0 = hypervisor, 1 = loopback, 2 = host, 3+ = guests.
+        '';
+      };
+
+      port = mkOption {
+        type = types.port;
+        default = 18789;
+        description = "VSOCK port for gateway proxy (matches gateway port for clarity)";
+      };
+    };
   };
 
   config = {
@@ -101,7 +119,9 @@ in
 
     networking.firewall = {
       enable = true;
-      allowedTCPPorts = [ cfg.gatewayPort ];
+      # Gateway binds to localhost only (VSOCK handles host access)
+      # No TCP ports need to be exposed
+      allowedTCPPorts = [ ];
     };
 
     # OpenClaw user
@@ -133,8 +153,8 @@ in
         User = "openclaw";
         WorkingDirectory = "/var/lib/openclaw/workspace";
         StateDirectory = "openclaw";
-        # Bind to LAN interfaces to accept connections from host via TAP
-        ExecStart = "${openclaw-pkg}/bin/openclaw gateway --bind lan --port ${toString cfg.gatewayPort}";
+        # Bind to localhost only - connections come via VSOCK (appears as localhost)
+        ExecStart = "${openclaw-pkg}/bin/openclaw gateway --bind localhost --port ${toString cfg.gatewayPort}";
         Restart = "always";
         RestartSec = 5;
         RestartSteps = 5;
@@ -153,6 +173,32 @@ in
       };
     };
 
+    # VSOCK gateway proxy - forwards VSOCK connections to gateway's localhost port
+    # This allows host connections via VSOCK to appear as localhost to the gateway
+    systemd.services.vsock-gateway-proxy = {
+      description = "VSOCK to Gateway Localhost Proxy";
+      after = [ "network.target" ];
+      wantedBy = [ "multi-user.target" ];
+
+      serviceConfig = {
+        Type = "simple";
+        # Listen on VSOCK port, forward to gateway's localhost port
+        ExecStart = "${pkgs.socat}/bin/socat VSOCK-LISTEN:${toString cfg.vsock.port},reuseaddr,fork TCP:127.0.0.1:${toString cfg.gatewayPort}";
+        Restart = "always";
+        RestartSec = "1s";
+        # Hardening - this is just a network proxy
+        DynamicUser = true;
+        NoNewPrivileges = true;
+        PrivateTmp = true;
+        ProtectSystem = "strict";
+        ProtectHome = true;
+        RestrictNamespaces = true;
+        RestrictSUIDSGID = true;
+        CapabilityBoundingSet = "";
+        SystemCallFilter = [ "@system-service" "~@privileged" ];
+      };
+    };
+
     # Auto-login for easy access
     services.getty.autologinUser = "openclaw";
 
@@ -164,6 +210,11 @@ in
       hypervisor = "qemu";
       vcpu = cfg.vcpu;
       mem = cfg.mem;
+
+      # VSOCK for host-guest communication (gateway access without TCP/IP)
+      vsock = {
+        cid = cfg.vsock.cid;
+      };
 
       # Add console socket for interactive access (ttyS1)
       # Connect with: socat -,raw,echo=0 UNIX-CONNECT:console.sock

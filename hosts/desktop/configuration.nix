@@ -293,6 +293,14 @@
       enable = true;
       sopsFile = ../../secrets/openclaw/secrets.yaml;
     };
+    # Caddy reverse proxy for HTTPS access
+    caddy = {
+      enable = true;
+      domain = "localhost";
+      httpsPort = 8443;
+      httpPort = 8080;
+      internalCa = true;  # Uses Caddy's internal CA for localhost
+    };
   };
 
   # Configure sops-nix for system-level secrets (used by openclaw-vm)
