@@ -1,12 +1,16 @@
 # OpenClaw Secrets Injector Service
-# Zero-trust secret injection: runs BEFORE container, injects secrets to tmpfs
+# Zero-trust secret injection: runs BEFORE container/VM, injects secrets to tmpfs
 #
 # Design:
-# - Container has NO credentials (zero-trust)
+# - Container/VM has NO credentials (zero-trust)
 # - Injector authenticates to Keycloak using service account credentials
 # - Fetches OIDC token, exchanges for OpenBao secrets
 # - Writes secrets to tmpfs mount, exits
-# - Container starts with bind-mounted secrets
+# - Container/VM starts with bind-mounted secrets
+#
+# Modes:
+# - Container mode: writes to /run/openclaw-${name}/secrets/ (per-instance)
+# - VM mode: writes to /run/openclaw-vm/secrets/ (shared for microVM)
 #
 # Trust Anchor: sops-nix-encrypted client credentials on host
 { config
@@ -21,13 +25,81 @@ let
   openbaoCfg = cfg.zeroTrust.openbao;
   enabledInstances = lib.filterAttrs (n: v: v.enable) cfg.instances;
 
+  vmModeCfg = injectorCfg.vmMode;
+
   inherit (lib)
     mkIf
+    mkMerge
     mkOption
     mkEnableOption
     types
     optionalString
+    optional
     ;
+
+  # VM mode injector script
+  # Writes gateway configuration to shared secrets directory for microVM
+  mkVmInjectorScript = pkgs.writeShellScript "openclaw-injector-vm" ''
+    set -euo pipefail
+
+    SECRETS_DIR="${toString vmModeCfg.secretsDir}"
+    OPENBAO_URL="${injectorCfg.openbaoUrl}"
+
+    log() {
+      echo "[$(date -Iseconds)] [injector-vm] $*"
+    }
+
+    log_error() {
+      echo "[$(date -Iseconds)] [injector-vm] ERROR: $*" >&2
+    }
+
+    # Create secrets directory
+    mkdir -p "$SECRETS_DIR"
+    chmod 700 "$SECRETS_DIR"
+    log "Secrets directory ready: $SECRETS_DIR"
+
+    # Determine gateway token
+    GATEWAY_TOKEN=""
+
+    ${if vmModeCfg.gatewayToken != null then ''
+      # Use configured gateway token
+      GATEWAY_TOKEN="${vmModeCfg.gatewayToken}"
+      log "Using configured gateway token"
+    '' else ''
+      # Fetch gateway token from OpenBao (if available) or use sops fallback
+      ${optionalString injectorCfg.fallbackToSops ''
+        # Try sops fallback for gateway token
+        SOPS_TOKEN_PATH="${config.sops.secrets."openclaw/gateway-token".path or ""}"
+        if [ -n "$SOPS_TOKEN_PATH" ] && [ -f "$SOPS_TOKEN_PATH" ]; then
+          GATEWAY_TOKEN="$(cat "$SOPS_TOKEN_PATH")"
+          log "Gateway token loaded from sops-nix"
+        fi
+      ''}
+
+      if [ -z "$GATEWAY_TOKEN" ]; then
+        log_error "No gateway token available (neither configured nor from sops)"
+        exit 1
+      fi
+    ''}
+
+    # Write openclaw.json config file
+    CONFIG_FILE="$SECRETS_DIR/openclaw.json"
+    ${pkgs.jq}/bin/jq -n \
+      --arg token "$GATEWAY_TOKEN" \
+      '{
+        gateway: {
+          mode: "local",
+          auth: {
+            token: $token
+          }
+        }
+      }' > "$CONFIG_FILE"
+
+    chmod 400 "$CONFIG_FILE"
+    log "Config written: $CONFIG_FILE"
+
+    log "VM secrets injector finished successfully"
+  '';
 
   # Injector script for a single instance
   # Authenticates to Keycloak, fetches secrets from OpenBao, writes to tmpfs
@@ -273,82 +345,144 @@ in
       default = 120;
       description = "Maximum time in seconds for injection to complete";
     };
+
+    # VM mode: inject secrets for microVM instead of/in addition to containers
+    vmMode = {
+      enable = mkEnableOption "VM mode secrets injection for openclaw-vm microVM";
+
+      secretsDir = mkOption {
+        type = types.path;
+        default = /run/openclaw-vm/secrets;
+        description = "Directory to write secrets for VM consumption via 9p share";
+      };
+
+      gatewayToken = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        description = "Gateway token to embed in config. If null, fetched from OpenBao.";
+      };
+    };
   };
 
   # Generate injector services for each enabled instance
-  config = mkIf (cfg.enable && cfg.zeroTrust.enable && injectorCfg.enable) {
-    # Assertions
-    assertions = [
-      {
-        assertion = keycloakCfg.enable;
-        message = "OpenClaw secrets injector requires Keycloak. Enable CUSTOM.virtualisation.openclaw.zeroTrust.keycloak";
-      }
-      {
-        assertion = openbaoCfg.enable;
-        message = "OpenClaw secrets injector requires OpenBao. Enable CUSTOM.virtualisation.openclaw.zeroTrust.openbao";
-      }
-    ];
+  config = mkMerge [
+    # Container mode: per-instance injectors
+    (mkIf (cfg.enable && cfg.zeroTrust.enable && injectorCfg.enable) {
+      # Assertions
+      assertions = [
+        {
+          assertion = keycloakCfg.enable;
+          message = "OpenClaw secrets injector requires Keycloak. Enable CUSTOM.virtualisation.openclaw.zeroTrust.keycloak";
+        }
+        {
+          assertion = openbaoCfg.enable;
+          message = "OpenClaw secrets injector requires OpenBao. Enable CUSTOM.virtualisation.openclaw.zeroTrust.openbao";
+        }
+      ];
 
-    # Create tmpfs directories for secrets
-    systemd.tmpfiles.rules = builtins.map (name:
-      # Create secrets dir on tmpfs with restricted permissions
-      "d /run/openclaw-${name}/secrets 0700 root root -"
-    ) (builtins.attrNames enabledInstances);
+      # Create tmpfs directories for secrets
+      systemd.tmpfiles.rules = builtins.map (name:
+        # Create secrets dir on tmpfs with restricted permissions
+        "d /run/openclaw-${name}/secrets 0700 root root -"
+      ) (builtins.attrNames enabledInstances);
 
-    # Generate injector service for each instance
-    systemd.services = builtins.listToAttrs (builtins.map (name:
-      let instanceCfg = enabledInstances.${name};
-      in {
-        name = "openclaw-injector-${name}";
-        value = {
-          description = "OpenClaw Secrets Injector for ${name}";
+      # Generate injector service for each instance
+      systemd.services = builtins.listToAttrs (builtins.map (name:
+        let instanceCfg = enabledInstances.${name};
+        in {
+          name = "openclaw-injector-${name}";
+          value = {
+            description = "OpenClaw Secrets Injector for ${name}";
 
-          # Run AFTER infrastructure is ready, BEFORE container starts
-          after = [
-            "network.target"
-            "podman-openclaw-keycloak.service"
-            "openclaw-keycloak-init.service"
-            "podman-openclaw-openbao.service"
-            "openclaw-openbao-init.service"
-          ];
-          requires = [
-            "podman-openclaw-keycloak.service"
-            "podman-openclaw-openbao.service"
-          ];
-          before = [ "podman-openclaw-${name}.service" ];
-          wantedBy = [ "multi-user.target" ];
-
-          # Injector runs once before container, must complete
-          serviceConfig = {
-            Type = "oneshot";
-            RemainAfterExit = true;
-            TimeoutStartSec = "${toString injectorCfg.timeout}s";
-
-            # Run as root to access client secrets, then chown to instance user
-            User = "root";
-            Group = "root";
-
-            # Security hardening
-            ProtectSystem = "strict";
-            ProtectHome = true;
-            PrivateTmp = true;
-            NoNewPrivileges = true;
-
-            # Required paths
-            ReadOnlyPaths = [
-              injectorCfg.clientSecretsDir
-            ] ++ (if cfg.secrets.enable then [
-              # sops fallback paths
-              config.sops.secrets."openclaw/${name}/api-key".path
-            ] else []);
-            ReadWritePaths = [
-              "/run/openclaw-${name}"
+            # Run AFTER infrastructure is ready, BEFORE container starts
+            after = [
+              "network.target"
+              "podman-openclaw-keycloak.service"
+              "openclaw-keycloak-init.service"
+              "podman-openclaw-openbao.service"
+              "openclaw-openbao-init.service"
             ];
+            requires = [
+              "podman-openclaw-keycloak.service"
+              "podman-openclaw-openbao.service"
+            ];
+            before = [ "podman-openclaw-${name}.service" ];
+            wantedBy = [ "multi-user.target" ];
 
-            ExecStart = mkInjectorScript name instanceCfg;
+            # Injector runs once before container, must complete
+            serviceConfig = {
+              Type = "oneshot";
+              RemainAfterExit = true;
+              TimeoutStartSec = "${toString injectorCfg.timeout}s";
+
+              # Run as root to access client secrets, then chown to instance user
+              User = "root";
+              Group = "root";
+
+              # Security hardening
+              ProtectSystem = "strict";
+              ProtectHome = true;
+              PrivateTmp = true;
+              NoNewPrivileges = true;
+
+              # Required paths
+              ReadOnlyPaths = [
+                injectorCfg.clientSecretsDir
+              ] ++ (if cfg.secrets.enable then [
+                # sops fallback paths
+                config.sops.secrets."openclaw/${name}/api-key".path
+              ] else []);
+              ReadWritePaths = [
+                "/run/openclaw-${name}"
+              ];
+
+              ExecStart = mkInjectorScript name instanceCfg;
+            };
           };
+        }
+      ) (builtins.attrNames enabledInstances));
+    })
+
+    # VM mode: single injector for microVM
+    (mkIf vmModeCfg.enable {
+      # Create tmpfs directory for VM secrets
+      systemd.tmpfiles.rules = [
+        "d ${toString vmModeCfg.secretsDir} 0700 root root -"
+      ];
+
+      # VM secrets injector service
+      systemd.services.openclaw-injector-vm = {
+        description = "OpenClaw Secrets Injector for microVM";
+
+        # Run BEFORE the microVM starts
+        after = [ "network.target" ];
+        before = [ "microvm@openclaw-vm.service" ];
+        wantedBy = [ "multi-user.target" ];
+
+        # Oneshot: run once, complete before microVM starts
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          TimeoutStartSec = "${toString injectorCfg.timeout}s";
+
+          # Run as root to create secrets directory
+          User = "root";
+          Group = "root";
+
+          # Security hardening
+          ProtectSystem = "strict";
+          ProtectHome = true;
+          PrivateTmp = true;
+          NoNewPrivileges = true;
+
+          # Required paths
+          ReadOnlyPaths = optional (vmModeCfg.gatewayToken == null && injectorCfg.fallbackToSops)
+            (config.sops.secrets."openclaw/gateway-token".path or "/dev/null");
+          ReadWritePaths = [ (toString vmModeCfg.secretsDir) "/run/openclaw-vm" ];
+
+          ExecStart = mkVmInjectorScript;
         };
-      }
-    ) (builtins.attrNames enabledInstances));
-  };
+      };
+    })
+  ];
 }

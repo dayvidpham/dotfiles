@@ -97,17 +97,8 @@ in
   ##################
   # AI Services
 
-  CUSTOM.services.openclaw = {
-    enable = true;
-    gatewayPort = 18789;
-    # API key should be set via ANTHROPIC_API_KEY env var
-
-    secrets = {
-      enable = true;
-      sopsFile = ../../secrets/openclaw/secrets.yaml;
-      gatewayTokenKey = "gateway_token";
-    };
-  };
+  # Disabled: openclaw now runs via VM (CUSTOM.virtualisation.openclaw-vm in host config)
+  CUSTOM.services.openclaw.enable = false;
 
   # Configure sops-nix for Home Manager
   sops = {

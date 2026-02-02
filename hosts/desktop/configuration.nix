@@ -207,6 +207,7 @@
   CUSTOM.virtualisation.llm-sandbox.enable = true;
 
   # OpenClaw AI Assistant (secure containerized setup)
+  # NOTE: This provides zero-trust infrastructure (Keycloak, OpenBao) on host
   CUSTOM.virtualisation.openclaw = {
     enable = true;
 
@@ -279,6 +280,18 @@
           sandboxMode = "all";
         };
       };
+    };
+  };
+
+  # OpenClaw VM - microVM-based isolation for gateway
+  CUSTOM.virtualisation.openclaw-vm = {
+    enable = true;
+    gatewayPort = 18789;
+    memory = 8192;  # 4GB per vCPU
+    vcpu = 2;
+    secrets = {
+      enable = true;
+      sopsFile = ../../secrets/openclaw/secrets.yaml;
     };
   };
 

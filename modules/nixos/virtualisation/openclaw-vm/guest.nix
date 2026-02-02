@@ -7,9 +7,41 @@
 , ...
 }:
 let
+  inherit (lib)
+    mkOption
+    types
+    ;
+
+  cfg = config.CUSTOM.virtualisation.openclaw-vm.guest;
   openclaw-pkg = nix-openclaw.packages.${pkgs.system}.openclaw;
 in
 {
+  options.CUSTOM.virtualisation.openclaw-vm.guest = {
+    vcpu = mkOption {
+      type = types.int;
+      default = 2;
+      description = "Number of virtual CPUs";
+    };
+
+    mem = mkOption {
+      type = types.int;
+      default = 8192;  # 4GB per vCPU
+      description = "Memory allocation in MiB";
+    };
+
+    gatewayPort = mkOption {
+      type = types.port;
+      default = 18789;
+      description = "Port for the OpenClaw gateway";
+    };
+
+    secrets.mountPoint = mkOption {
+      type = types.path;
+      default = /run/openclaw-vm/secrets;
+      description = "Host path where secrets are mounted (used by 9p share)";
+    };
+  };
+
   config = {
     system.stateVersion = "25.11";
     networking.hostName = "openclaw-vm";
@@ -18,7 +50,7 @@ in
     networking.useDHCP = true;
     networking.firewall = {
       enable = true;
-      allowedTCPPorts = [ 18789 ];  # Gateway port
+      allowedTCPPorts = [ cfg.gatewayPort ];
     };
 
     # OpenClaw user
@@ -39,16 +71,18 @@ in
     # OpenClaw gateway service
     systemd.services.openclaw-gateway = {
       description = "OpenClaw Gateway";
-      after = [ "network-online.target" ];
+      after = [ "network-online.target" "run-secrets.mount" ];
       wants = [ "network-online.target" ];
+      requires = [ "run-secrets.mount" ];
       wantedBy = [ "multi-user.target" ];
 
       serviceConfig = {
         Type = "simple";
         User = "openclaw";
-        WorkingDirectory = "/home/openclaw";
+        WorkingDirectory = "/var/lib/openclaw/workspace";
+        StateDirectory = "openclaw";
         ExecStartPre = "${openclaw-pkg}/bin/openclaw onboard --non-interactive --accept-risk --mode local || true";
-        ExecStart = "${openclaw-pkg}/bin/openclaw gateway";
+        ExecStart = "${openclaw-pkg}/bin/openclaw gateway --config /run/secrets/openclaw.json";
         Restart = "always";
         RestartSec = 5;
         Environment = [
@@ -63,8 +97,8 @@ in
     # microvm configuration
     microvm = {
       hypervisor = "qemu";
-      vcpu = 2;
-      mem = 8192;  # 4GB per vCPU
+      vcpu = cfg.vcpu;
+      mem = cfg.mem;
 
       # User-mode networking with port forwarding
       interfaces = [{
@@ -76,8 +110,8 @@ in
       # Forward gateway port to host
       forwardPorts = [{
         from = "host";
-        host.port = 18789;
-        guest.port = 18789;
+        host.port = cfg.gatewayPort;
+        guest.port = cfg.gatewayPort;
       }];
 
       # Persistent state volume
@@ -87,33 +121,30 @@ in
         size = 256;
       }];
 
-      # Share host configs into the VM
-      shares = [
-        {
-          tag = "safemolt-config";
-          source = "/home/minttea/.config/safemolt";
-          mountPoint = "/mnt/safemolt-config";
-          proto = "9p";
-        }
-        {
-          tag = "openclaw-skills";
-          source = "/home/minttea/.openclaw/skills";
-          mountPoint = "/mnt/openclaw-skills";
-          proto = "9p";
-        }
-      ];
+      # 9p share for secrets from host
+      shares = [{
+        tag = "secrets";
+        source = toString cfg.secrets.mountPoint;
+        mountPoint = "/run/secrets";
+        proto = "9p";
+      }];
     };
 
-    # Create directories and symlink shared configs from host
+    # 9p mount for secrets at /run/secrets
+    fileSystems."/run/secrets" = {
+      device = "secrets";
+      fsType = "9p";
+      options = [ "trans=virtio" "version=9p2000.L" "ro" ];
+    };
+
+    # Create directories for openclaw state
     systemd.tmpfiles.rules = [
       "d /home/openclaw/.openclaw 0755 openclaw users -"
-      "d /home/openclaw/.openclaw/workspace 0755 openclaw users -"
       "d /home/openclaw/.config 0755 openclaw users -"
-      "L /home/openclaw/.openclaw/skills - - - - /mnt/openclaw-skills"
-      "L /home/openclaw/.config/safemolt - - - - /mnt/safemolt-config"
-      "f /home/openclaw/.openclaw/workspace/AGENTS.md 0644 openclaw users -"
-      "f /home/openclaw/.openclaw/workspace/SOUL.md 0644 openclaw users -"
-      "f /home/openclaw/.openclaw/workspace/TOOLS.md 0644 openclaw users -"
+      "d /var/lib/openclaw/workspace 0755 openclaw users -"
+      "f /var/lib/openclaw/workspace/AGENTS.md 0644 openclaw users -"
+      "f /var/lib/openclaw/workspace/SOUL.md 0644 openclaw users -"
+      "f /var/lib/openclaw/workspace/TOOLS.md 0644 openclaw users -"
     ];
   };
 }
