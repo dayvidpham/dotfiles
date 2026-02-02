@@ -7,6 +7,10 @@ Generic replacement for launch-supervisor.py that supports any role
 
 Uses --append-system-prompt to preserve Task tool access for subagent spawning.
 
+Role instructions are loaded from:
+  1. {working_dir}/.claude/commands/aura:{role}.md (checked first)
+  2. ~/.claude/commands/aura:{role}.md (fallback)
+
 Usage:
     # Launch 3 reviewers
     ./scripts/launch-parallel.py --role reviewer -n 3 --prompt "Review the plan..."
@@ -15,10 +19,15 @@ Usage:
     ./scripts/launch-parallel.py --role reviewer -n 3 --skill aura:reviewer:review-plan \\
         --prompt "Review plan aura-xyz"
 
-    # Launch with task distribution
+    # Launch with task distribution (1:1 mapping)
     ./scripts/launch-parallel.py --role worker -n 3 \\
         --task-id impl-001 --task-id impl-002 --task-id impl-003 \\
         --prompt "Implement the assigned task"
+
+    # Launch single supervisor with multiple task IDs (all passed to one job)
+    ./scripts/launch-parallel.py --role supervisor -n 1 \\
+        --task-id task-001 --task-id task-002 --task-id task-003 \\
+        --prompt "Coordinate these tasks"
 
     # Dry run (show commands without executing)
     ./scripts/launch-parallel.py --role supervisor -n 1 --prompt "..." --dry-run
@@ -68,15 +77,24 @@ def run_command(cmd: list[str], capture: bool = False) -> subprocess.CompletedPr
     return subprocess.run(cmd)
 
 
-def get_role_instructions(role: str, working_dir: Path) -> str | None:
+def get_role_instructions(role: str, working_dir: Path) -> tuple[str | None, Path | None]:
     """Load role instructions from .claude/commands/aura:{role}.md.
 
-    Returns None if file doesn't exist.
+    Checks working_dir first, then falls back to ~/.claude/commands/.
+
+    Returns (content, path) tuple. Both are None if file doesn't exist in either location.
     """
+    # Check working directory first
     instructions_path = working_dir / f".claude/commands/aura:{role}.md"
-    if not instructions_path.exists():
-        return None
-    return instructions_path.read_text()
+    if instructions_path.exists():
+        return instructions_path.read_text(), instructions_path
+
+    # Fallback to user's home directory
+    home_path = Path.home() / f".claude/commands/aura:{role}.md"
+    if home_path.exists():
+        return home_path.read_text(), home_path
+
+    return None, None
 
 
 def get_git_root() -> Path | None:
@@ -112,8 +130,14 @@ def generate_session_name(role: str, num: int, task_id: str | None, max_retries:
     raise RuntimeError(f"Failed to generate unique session name after {max_retries} retries")
 
 
-def build_prompt(base_prompt: str, skill: str | None, task_id: str | None) -> str:
-    """Build the full prompt with skill invocation prefix if specified."""
+def build_prompt(base_prompt: str, skill: str | None, task_ids: list[str] | None) -> str:
+    """Build the full prompt with skill invocation prefix if specified.
+
+    Args:
+        base_prompt: The main prompt text
+        skill: Optional skill to invoke at start
+        task_ids: Optional list of task IDs to include as context
+    """
     parts = []
 
     # Skill invocation comes first if specified
@@ -129,9 +153,14 @@ def build_prompt(base_prompt: str, skill: str | None, task_id: str | None) -> st
     parts.append(base_prompt)
 
     # Task ID context if provided
-    if task_id:
+    if task_ids:
         parts.append("")
-        parts.append(f"Task ID: {task_id}")
+        if len(task_ids) == 1:
+            parts.append(f"Task ID: {task_ids[0]}")
+        else:
+            parts.append("Task IDs:")
+            for tid in task_ids:
+                parts.append(f"  - {tid}")
 
     return "\n".join(parts)
 
@@ -229,9 +258,7 @@ def validate_args(args: argparse.Namespace) -> list[str]:
     if args.njobs < 1:
         errors.append("--njobs must be at least 1")
 
-    # task-id count validation
-    if args.task_id and len(args.task_id) > args.njobs:
-        errors.append(f"More task IDs ({len(args.task_id)}) than jobs ({args.njobs})")
+    # Note: Multiple task IDs with n=1 is allowed - all IDs passed to single job
 
     return errors
 
@@ -291,7 +318,7 @@ Examples:
     parser.add_argument(
         "--task-id",
         action="append",
-        help="Beads task ID (repeatable, distributes to jobs)",
+        help="Beads task ID (repeatable). With n=1: all IDs passed to single job. With n>1: distributed 1:1",
     )
     parser.add_argument(
         "--working-dir",
@@ -333,14 +360,15 @@ Examples:
         else:
             working_dir = Path.cwd()
 
-    # Load role instructions
-    role_instructions = get_role_instructions(args.role, working_dir)
+    # Load role instructions (checks working_dir, then ~/.claude/commands/)
+    role_instructions, instructions_path = get_role_instructions(args.role, working_dir)
     if role_instructions is None:
         print(
             f"Error: Role file not found: .claude/commands/aura:{args.role}.md",
             file=sys.stderr,
         )
-        print(f"  Looked in: {working_dir}", file=sys.stderr)
+        print(f"  Looked in: {working_dir}/.claude/commands/", file=sys.stderr)
+        print(f"  Looked in: {Path.home()}/.claude/commands/", file=sys.stderr)
         return 1
 
     # Load prompt
@@ -365,10 +393,13 @@ Examples:
     if not args.dry_run:
         print(f"Launching {args.njobs} {args.role} agent(s)...")
         print(f"  Working directory: {working_dir}")
+        print(f"  Role instructions: {instructions_path}")
         print(f"  Model: {args.model}")
         print(f"  Permission mode: {args.permission_mode}")
         if args.skill:
             print(f"  Skill: {args.skill}")
+        if task_ids:
+            print(f"  Task IDs: {', '.join(task_ids)}")
         print()
 
     for i in range(args.njobs):
@@ -377,12 +408,19 @@ Examples:
             print(f"Skipping remaining {args.njobs - i} session(s) due to interrupt", file=sys.stderr)
             break
 
-        # Get task ID for this job (if available)
-        task_id = task_ids[i] if i < len(task_ids) else None
+        # Determine task IDs for this job
+        # If n=1, pass all task IDs to the single job
+        # If n>1, distribute task IDs across jobs (1:1 or None if not enough)
+        if args.njobs == 1:
+            job_task_ids = task_ids if task_ids else None
+            session_task_id = task_ids[0] if task_ids else None  # For session naming
+        else:
+            job_task_ids = [task_ids[i]] if i < len(task_ids) else None
+            session_task_id = task_ids[i] if i < len(task_ids) else None
 
-        # Generate session name
+        # Generate session name (uses first task ID for naming)
         try:
-            session_name = generate_session_name(args.role, i + 1, task_id)
+            session_name = generate_session_name(args.role, i + 1, session_task_id)
         except RuntimeError as e:
             results.append(SessionResult(f"{args.role}--{i + 1}--???", success=False, error=str(e)))
             continue
@@ -391,7 +429,7 @@ Examples:
             first_session_name = session_name
 
         # Build prompt for this instance
-        prompt = build_prompt(base_prompt, args.skill, task_id)
+        prompt = build_prompt(base_prompt, args.skill, job_task_ids)
 
         # Launch
         result = launch_tmux_session(
@@ -418,7 +456,7 @@ Examples:
     if args.dry_run:
         print("Dry run complete.")
         print()
-        print("Role instructions (from .claude/commands/aura:{role}.md):")
+        print(f"Role instructions (from {instructions_path}):")
         print("-" * 60)
         preview = role_instructions[:500] + "..." if len(role_instructions) > 500 else role_instructions
         print(preview)
@@ -427,7 +465,9 @@ Examples:
         print("Prompt content:")
         print("-" * 60)
         # Show prompt for first job as example
-        example_prompt = build_prompt(base_prompt, args.skill, task_ids[0] if task_ids else None)
+        # If n=1, all task IDs go to the single job
+        example_task_ids = task_ids if (args.njobs == 1 and task_ids) else ([task_ids[0]] if task_ids else None)
+        example_prompt = build_prompt(base_prompt, args.skill, example_task_ids)
         print(example_prompt)
         print("-" * 60)
     else:

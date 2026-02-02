@@ -219,6 +219,7 @@
           pkgs-stable
           niri
           nix-openclaw
+          sops-nix
           ;
       };
 

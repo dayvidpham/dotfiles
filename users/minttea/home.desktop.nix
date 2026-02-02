@@ -101,5 +101,17 @@ in
     enable = true;
     gatewayPort = 18789;
     # API key should be set via ANTHROPIC_API_KEY env var
+
+    secrets = {
+      enable = true;
+      sopsFile = ../../secrets/openclaw/secrets.yaml;
+      gatewayTokenKey = "gateway_token";
+    };
+  };
+
+  # Configure sops-nix for Home Manager
+  sops = {
+    age.keyFile = "/home/minttea/.config/sops/age/keys.txt";
+    defaultSopsFile = ../../secrets/openclaw/secrets.yaml;
   };
 }
