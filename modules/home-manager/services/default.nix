@@ -10,5 +10,6 @@
     ./podman
     ./xwayland-satellite
     ./syncthing
+    ./openclaw
   ];
 }

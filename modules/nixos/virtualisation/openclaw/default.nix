@@ -115,6 +115,24 @@ in
           Enable CUSTOM.virtualisation.openclaw.secrets.enable and configure sops-nix.
         '';
       }
+      # Zero-trust mode requires all three components
+      {
+        assertion = cfg.zeroTrust.enable -> (cfg.zeroTrust.keycloak.enable && cfg.zeroTrust.openbao.enable && cfg.zeroTrust.injector.enable);
+        message = ''
+          Zero-trust mode requires all three components enabled:
+          - CUSTOM.virtualisation.openclaw.zeroTrust.keycloak.enable
+          - CUSTOM.virtualisation.openclaw.zeroTrust.openbao.enable
+          - CUSTOM.virtualisation.openclaw.zeroTrust.injector.enable
+        '';
+      }
+      # Zero-trust requires sops for fallback and trust anchor
+      {
+        assertion = cfg.zeroTrust.enable -> cfg.secrets.enable;
+        message = ''
+          Zero-trust mode requires sops-nix as trust anchor for Keycloak client credentials.
+          Enable CUSTOM.virtualisation.openclaw.secrets.enable and configure sops-nix.
+        '';
+      }
     ];
 
     # Warning about secrets (can be suppressed for development)

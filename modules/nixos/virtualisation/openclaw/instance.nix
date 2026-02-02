@@ -146,6 +146,9 @@ let
       # Environment for rootless podman (system users don't have a login session)
       environment = {
         XDG_RUNTIME_DIR = "/run/openclaw-${name}";
+        # Use cgroupfs instead of systemd cgroup manager - system services can't access
+        # the user's D-Bus socket at /run/user/<uid>/bus needed for systemd cgroups
+        CONTAINERS_CGROUP_MANAGER = "cgroupfs";
       };
 
       serviceConfig = {
@@ -239,10 +242,9 @@ let
             --cap-drop ALL
             --userns keep-id
 
-            # Healthcheck
-            --health-cmd "curl -sf http://localhost:18789/health"
-            --health-interval 30s
-            --health-retries 3
+            # Disable healthcheck - requires systemd user session for timers
+            # which isn't available for system services running as system users
+            --no-healthcheck
 
             # Volume mounts
             --volume "${instanceCfg.workspace.path}:/workspace:rw"
