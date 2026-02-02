@@ -103,9 +103,10 @@ in
 
       # Create secrets directory on tmpfs
       # 0750: root can write, openclaw-secrets group can read (for QEMU 9p access)
+      # State dir: 0750 root:kvm - microvm user (in kvm group) needs access
       systemd.tmpfiles.rules = [
         "d ${toString cfg.secrets.mountPoint} 0750 root openclaw-secrets -"
-        "d ${toString cfg.stateDir} 0755 root root -"
+        "d ${toString cfg.stateDir} 0750 root kvm -"
       ];
 
       # Assertions
@@ -141,6 +142,8 @@ in
       # Ensure microvm starts after secrets are ready
       # The injector service (if using zero-trust) writes to secrets.mountPoint
       systemd.services."microvm@openclaw-vm" = {
+        after = [ "sops-nix.service" ];
+        wants = [ "sops-nix.service" ];
         # Wait for secrets directory to exist with config file
         unitConfig.ConditionPathExists = "${toString cfg.secrets.mountPoint}/openclaw.json";
       };
@@ -156,6 +159,7 @@ in
       sops.age.keyFile = lib.mkDefault cfg.secrets.ageKeyFile;
 
       # Generate openclaw.json config from sops secrets
+      # File must be readable by openclaw-secrets group for QEMU 9p access
       sops.templates."openclaw-vm-config" = {
         content = builtins.toJSON {
           gateway = {
@@ -166,9 +170,9 @@ in
           };
         };
         path = "${toString cfg.secrets.mountPoint}/openclaw.json";
-        mode = "0400";
+        mode = "0440";
         owner = "root";
-        group = "root";
+        group = "openclaw-secrets";
       };
     })
   ]);

@@ -242,7 +242,7 @@
     # Instance configurations
     instances = {
       alpha = {
-        enable = true;
+        enable = false;  # Disabled: using microvm instead
         ports = {
           webchat = 3000;
           gateway = 18789;
@@ -262,7 +262,7 @@
       };
 
       beta = {
-        enable = true;
+        enable = false;  # Disabled: using microvm instead
         ports = {
           webchat = 3001;
           gateway = 18790;
