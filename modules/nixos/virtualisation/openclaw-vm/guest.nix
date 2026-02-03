@@ -437,6 +437,9 @@ in
       # Gateway user config dirs (owned by gateway, not accessible to agent)
       "d /var/lib/openclaw 0755 openclaw-gateway openclaw-gateway -"
       "d /var/lib/openclaw/.config 0755 openclaw-gateway openclaw-gateway -"
+      "d /var/lib/openclaw/.openclaw 0755 openclaw-gateway openclaw-gateway -"
+      "d /var/lib/openclaw/.openclaw/canvas 0755 openclaw-gateway openclaw-gateway -"
+      "d /var/lib/openclaw/cron 0755 openclaw-gateway openclaw-gateway -"
 
       # Shared workspace with setgid for group ownership
       # Mode 2775: rwxrwsr-x - setgid ensures new files inherit openclaw-shared group
