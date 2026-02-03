@@ -210,6 +210,15 @@ in
       trustedInterfaces = lib.optionals cfg.tailscale.enable [ "tailscale0" ];
     };
 
+    # SSH access - only via Tailscale (TAP interface blocked by firewall)
+    services.openssh = lib.mkIf cfg.tailscale.enable {
+      enable = true;
+      settings = {
+        PasswordAuthentication = false;
+        PermitRootLogin = "no";
+      };
+    };
+
     # Tailscale for secure remote access
     services.tailscale = lib.mkIf cfg.tailscale.enable {
       enable = true;
@@ -220,6 +229,7 @@ in
         "--force-reauth"  # Required for ephemeral keys - cached state is stale after node deletion
         "--reset"         # Reset preferences to default before applying
         "--exit-node" ""  # Clear any persisted exit node (post-connect sets it if configured)
+        "--ssh"           # Enable Tailscale SSH - auth via Tailscale ACLs, no keys needed
       ] ++ lib.optionals (cfg.tailscale.loginServer != null) [
         "--login-server" cfg.tailscale.loginServer
       ] ++ lib.optionals (cfg.tailscale.advertiseTags != []) [
@@ -632,6 +642,8 @@ in
       "d /home/openclaw/.config/opencode 0755 openclaw users -"
       # OpenCode config pointing to local OpenClaw Gateway
       "f /home/openclaw/.config/opencode/config.json 0644 openclaw users - ${opencode-config}"
+      # SSH directory for authorized_keys (Tailscale SSH doesn't need this, but regular SSH does)
+      "d /home/openclaw/.ssh 0700 openclaw users -"
     ];
   };
 }
