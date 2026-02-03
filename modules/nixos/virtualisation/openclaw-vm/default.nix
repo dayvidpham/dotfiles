@@ -55,16 +55,19 @@ in
   options.CUSTOM.virtualisation.openclaw-vm = {
     enable = mkEnableOption "OpenClaw in microVM";
 
-    dangerousDevMode = mkOption {
-      type = types.bool;
-      default = false;
-      description = ''
+    dangerousDevMode = {
+      enable = lib.mkEnableOption ''
         DANGEROUS: Enables debug features that should never be used in production.
         - Auto-login as root on console
         - QEMU guest agent for host command execution
       '';
-    };
 
+      autologinUser = mkOption {
+        type = types.str;
+        default = "openclaw";
+        description = "user that the serial console automatically logs into";
+      };
+    };
     useVirtiofs = mkOption {
       type = types.bool;
       default = false;
@@ -85,7 +88,7 @@ in
     # Resource limits
     memory = mkOption {
       type = types.int;
-      default = 8192;  # 4096 MiB per vCPU with default 2 vCPUs
+      default = 8192; # 4096 MiB per vCPU with default 2 vCPUs
       description = "Memory allocation in MiB for the microVM";
     };
 
@@ -161,7 +164,7 @@ in
     vsock = {
       cid = mkOption {
         type = types.int;
-        default = 4;  # CID 3 used by llm-sandbox
+        default = 4; # CID 3 used by llm-sandbox
         description = ''
           VSOCK Context ID for this VM.
           CID 0 = hypervisor, 1 = loopback, 2 = host, 3+ = guests.
@@ -206,13 +209,20 @@ in
           description = "Enable Tailscale Serve to expose gateway via HTTPS";
         };
       };
+
+      sshAuthorizedKeys = mkOption {
+        type = types.listOf types.str;
+        default = [ ];
+        description = "SSH public keys authorized to connect to the openclaw user";
+        example = [ "ssh-ed25519 AAAAC3..." ];
+      };
     };
 
     # Network configuration
     network = {
       bridgeName = mkOption {
         type = types.str;
-        default = "br-openclaw";  # Max 15 chars for Linux interface names
+        default = "br-openclaw"; # Max 15 chars for Linux interface names
         description = "Name of the bridge interface for VM networking";
       };
 
@@ -240,7 +250,7 @@ in
     # Host-side config (works without microvm module)
     {
       # Dedicated group for secrets access
-      users.groups.openclaw-secrets = {};
+      users.groups.openclaw-secrets = { };
 
       # Grant microvm user access to secrets via group membership
       users.users.microvm.extraGroups = [ "openclaw-secrets" ];
@@ -302,7 +312,7 @@ in
       # Use loose rp_filter on bridge to allow VM traffic (strict mode can block bridged packets)
       boot.kernel.sysctl = {
         "net.ipv4.ip_forward" = 1;
-        "net.ipv4.conf.br-openclaw.rp_filter" = 0;  # Disable for bridge (nftables rpfilter handles it)
+        "net.ipv4.conf.br-openclaw.rp_filter" = 0; # Disable for bridge (nftables rpfilter handles it)
       };
 
       # Enable DNS forwarding for VM (systemd-resolved)
@@ -455,6 +465,7 @@ in
               loginServer = cfg.tailscale.loginServer;
               exitNode = cfg.tailscale.exitNode;
               serve.enable = cfg.tailscale.serve.enable;
+              sshAuthorizedKeys = cfg.tailscale.sshAuthorizedKeys;
             };
           };
         };
@@ -503,7 +514,7 @@ in
         };
         mode = "0440";
         owner = "root";
-        group = "openclaw-secrets";  # microvm user is in this group
+        group = "openclaw-secrets"; # microvm user is in this group
       };
     })
 

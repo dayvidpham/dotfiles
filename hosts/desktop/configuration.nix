@@ -286,8 +286,8 @@
   # OpenClaw VM - microVM-based isolation for gateway
   CUSTOM.virtualisation.openclaw-vm = {
     enable = true;
-    dangerousDevMode = false; # No auto-login, no guest agent
-    useVirtiofs = true;       # Fast rebuilds via host /nix/store
+    dangerousDevMode.enable = true; # No auto-login, no guest agent
+    useVirtiofs = true; # Fast rebuilds via host /nix/store
     gatewayPort = 18789;
     memory = 8192; # 4GB per vCPU
     vcpu = 2;
@@ -304,6 +304,9 @@
       hostname = "openclaw-vm";
       loginServer = "https://hs0.vpn.dhpham.com";
       exitNode = null; # Set after initial auth via post-connect service
+      sshAuthorizedKeys = [
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFE9Bzi5oGzx9d68d4lVLgo/d1GypUwE7MhAQ7Z32LlR minttea@flowX13"
+      ];
     };
   };
 

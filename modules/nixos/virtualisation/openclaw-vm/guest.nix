@@ -57,7 +57,7 @@ in
 
     mem = mkOption {
       type = types.int;
-      default = 8192;  # 4096 MiB per vCPU with default 2 vCPUs
+      default = 8192; # 4096 MiB per vCPU with default 2 vCPUs
       description = "Memory allocation in MiB";
     };
 
@@ -67,14 +67,18 @@ in
       description = "Port for the OpenClaw gateway";
     };
 
-    dangerousDevMode = mkOption {
-      type = types.bool;
-      default = false;
-      description = ''
+    dangerousDevMode = {
+      enable = lib.mkEnableOption ''
         DANGEROUS: Enables debug features that should never be used in production.
         - Auto-login as root on console
         - QEMU guest agent for host command execution
       '';
+
+      autologinUser = mkOption {
+        type = types.str;
+        default = "openclaw";
+        description = "user that the serial console automatically logs into";
+      };
     };
 
     useVirtiofs = mkOption {
@@ -119,7 +123,7 @@ in
     vsock = {
       cid = mkOption {
         type = types.int;
-        default = 4;  # CID 3 used by llm-sandbox
+        default = 4; # CID 3 used by llm-sandbox
         description = ''
           VSOCK Context ID for this VM.
           CID 0 = hypervisor, 1 = loopback, 2 = host, 3+ = guests.
@@ -153,7 +157,7 @@ in
       serve = {
         enable = mkOption {
           type = types.bool;
-          default = false;  # Disabled: Headscale doesn't support HTTPS cert provisioning (issue #1921)
+          default = false; # Disabled: Headscale doesn't support HTTPS cert provisioning (issue #1921)
           description = "Enable Tailscale Serve to expose gateway via HTTPS (requires Tailscale, not Headscale)";
         };
       };
@@ -169,6 +173,13 @@ in
         default = null;
         description = "Exit node hostname to route traffic through. Set to null to disable. Set AFTER initial connect via tailscale-post-connect service (not during tailscale up).";
         example = "portal";
+      };
+
+      sshAuthorizedKeys = mkOption {
+        type = types.listOf types.str;
+        default = [ ];
+        description = "SSH public keys authorized to connect to the openclaw user";
+        example = [ "ssh-ed25519 AAAAC3..." ];
       };
     };
   };
@@ -211,13 +222,45 @@ in
     };
 
     # SSH access - only via Tailscale (TAP interface blocked by firewall)
+    # Hardened config from ipcache-config
     services.openssh = lib.mkIf cfg.tailscale.enable {
       enable = true;
+      openFirewall = false; # Only accessible via tailscale0 (trusted interface)
+
+      sftpFlags = [ "-f AUTHPRIV" "-l INFO" ];
+
+      # Pubkey auth only, no root
       settings = {
         PasswordAuthentication = false;
+        KbdInteractiveAuthentication = false;
+        AuthenticationMethods = "publickey";
         PermitRootLogin = "no";
+        DenyUsers = [ "root" ];
+        DenyGroups = [ "root" ];
+        AllowGroups = [ "ssh-users" ];
+        AllowTcpForwarding = true;
+
+        X11Forwarding = false;
+        AllowStreamLocalForwarding = false;
+        AllowAgentForwarding = false;
+
+        # Strong ciphers only
+        Ciphers = [
+          "chacha20-poly1305@openssh.com"
+          "aes256-gcm@openssh.com"
+          "aes128-gcm@openssh.com"
+        ];
       };
+
+      authorizedKeysInHomedir = false;
+      authorizedKeysFiles = [
+        "%h/.ssh/authorized_keys"
+        "/etc/ssh/authorized_keys.d/%u"
+      ];
     };
+    users.users.openclaw.openssh.authorizedKeys.keys = lib.mkIf cfg.tailscale.enable ([
+
+    ] ++ cfg.tailscale.sshAuthorizedKeys);
 
     # Tailscale for secure remote access
     services.tailscale = lib.mkIf cfg.tailscale.enable {
@@ -225,15 +268,19 @@ in
       # Auth key injected via fw_cfg, read by systemd LoadCredential
       authKeyFile = "/run/credentials/tailscaled.service/tailscale-authkey";
       extraUpFlags = [
-        "--hostname" cfg.tailscale.hostname
-        "--force-reauth"  # Required for ephemeral keys - cached state is stale after node deletion
-        "--reset"         # Reset preferences to default before applying
-        "--exit-node" ""  # Clear any persisted exit node (post-connect sets it if configured)
-        "--ssh"           # Enable Tailscale SSH - auth via Tailscale ACLs, no keys needed
+        "--hostname"
+        cfg.tailscale.hostname
+        "--force-reauth" # Required for ephemeral keys - cached state is stale after node deletion
+        "--reset" # Reset preferences to default before applying
+        "--exit-node"
+        "" # Clear any persisted exit node (post-connect sets it if configured)
+        "--ssh" # Enable Tailscale SSH - auth via Tailscale ACLs, no keys needed
       ] ++ lib.optionals (cfg.tailscale.loginServer != null) [
-        "--login-server" cfg.tailscale.loginServer
-      ] ++ lib.optionals (cfg.tailscale.advertiseTags != []) [
-        "--advertise-tags" (lib.concatStringsSep "," cfg.tailscale.advertiseTags)
+        "--login-server"
+        cfg.tailscale.loginServer
+      ] ++ lib.optionals (cfg.tailscale.advertiseTags != [ ]) [
+        "--advertise-tags"
+        (lib.concatStringsSep "," cfg.tailscale.advertiseTags)
       ];
       # Note: exitNode is set separately after connect (see tailscale-post-connect service)
       # Use persistent volume for state (survives VM rebuilds)
@@ -357,10 +404,13 @@ in
     };
 
     # Shared group for workspace access - both users can read/write workspace files
-    users.groups.openclaw-shared = {};
+    users.groups.openclaw-shared = { };
 
     # Gateway user group
-    users.groups.openclaw-gateway = {};
+    users.groups.openclaw-gateway = { };
+
+    # SSH access group (required by AllowGroups in sshd config)
+    users.groups.ssh-users = { };
 
     # Gateway user (system user) - runs gateway service, owns credentials
     # System users cannot login interactively and have no home directory by default
@@ -375,7 +425,7 @@ in
     users.users.openclaw = {
       isNormalUser = true;
       home = "/home/openclaw";
-      extraGroups = [ "openclaw-shared" ];
+      extraGroups = [ "openclaw-shared" ] ++ lib.optionals cfg.tailscale.enable [ "ssh-users" ];
       description = "OpenClaw Agent";
     };
 
@@ -385,10 +435,10 @@ in
       pkgs.curl
       pkgs.jq
       pkgs.git
-      pkgs.bun                    # JavaScript runtime
-      pkgs.uv                     # Python package manager
-      opencode-pkg                # OpenCode CLI (OpenAI-compatible)
-      debug-tailscale             # Diagnostic script for Tailscale debugging
+      pkgs.bun # JavaScript runtime
+      pkgs.uv # Python package manager
+      opencode-pkg # OpenCode CLI (OpenAI-compatible)
+      debug-tailscale # Diagnostic script for Tailscale debugging
     ];
 
     # OpenClaw gateway service
@@ -528,11 +578,12 @@ in
     # Note: Port 443 accessible via Tailscale because tailscale0 is in trustedInterfaces
 
     # Dev mode only: auto-login as root for debugging/admin access via console
-    services.getty.autologinUser = lib.mkIf cfg.dangerousDevMode "root";
+    services.getty.autologinUser = lib.mkIf cfg.dangerousDevMode.enable
+      cfg.dangerousDevMode.autologinUser;
 
     # Dev mode only: QEMU Guest Agent for host-to-guest command execution
     # Use from host: ./scripts/vm-exec.sh "command"
-    services.qemuGuest.enable = cfg.dangerousDevMode;
+    services.qemuGuest.enable = cfg.dangerousDevMode.enable;
 
     # Security: no passwordless sudo
     security.sudo.wheelNeedsPassword = true;
@@ -572,14 +623,19 @@ in
       # Add console socket for interactive access (ttyS1)
       # Connect with: socat -,raw,echo=0 UNIX-CONNECT:console.sock
       qemu.extraArgs = [
-        "-chardev" "socket,id=console,path=console.sock,server=on,wait=off"
-        "-device" "isa-serial,chardev=console"
-      ] ++ lib.optionals cfg.dangerousDevMode [
+        "-chardev"
+        "socket,id=console,path=console.sock,server=on,wait=off"
+        "-device"
+        "isa-serial,chardev=console"
+      ] ++ lib.optionals cfg.dangerousDevMode.enable [
         # Dev mode only: QEMU Guest Agent socket for host-to-guest command execution
         # Usage: ./scripts/vm-exec.sh "command"
-        "-chardev" "socket,id=qga,path=guest-agent.sock,server=on,wait=off"
-        "-device" "virtio-serial-pci"
-        "-device" "virtserialport,chardev=qga,name=org.qemu.guest_agent.0"
+        "-chardev"
+        "socket,id=qga,path=guest-agent.sock,server=on,wait=off"
+        "-device"
+        "virtio-serial-pci"
+        "-device"
+        "virtserialport,chardev=qga,name=org.qemu.guest_agent.0"
       ];
 
       # TAP networking for proper isolation
