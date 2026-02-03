@@ -402,10 +402,10 @@ in
         Group = "openclaw-gateway";
         WorkingDirectory = "/var/lib/openclaw/workspace";
         StateDirectory = "openclaw";
-        # Bind mode depends on Tailscale:
-        # - With Tailscale: bind to tailnet IP directly (preserves client IPs for device pairing)
-        # - Without Tailscale: bind to localhost (VSOCK proxy handles host access)
-        ExecStart = "${openclaw-pkg}/bin/openclaw gateway --bind ${if cfg.tailscale.enable then "tailnet" else "auto"} --port ${toString cfg.gatewayPort}";
+        # Always bind to localhost - external access via:
+        # - VSOCK proxy (host access)
+        # - Caddy reverse proxy with HTTPS (Tailscale access)
+        ExecStart = "${openclaw-pkg}/bin/openclaw gateway --bind auto --port ${toString cfg.gatewayPort}";
         Restart = "always";
         RestartSec = 5;
         RestartSteps = 5;
@@ -488,8 +488,34 @@ in
       };
     };
 
-    # Note: No tailscale proxy needed - gateway binds directly to tailnet IP via --bind tailnet
-    # This preserves real client IPs for device pairing (localhost auto-approve security)
+    # Caddy reverse proxy for HTTPS access via Tailscale
+    # Required because control UI WebSocket needs secure context (HTTPS or localhost)
+    # Headscale doesn't support Tailscale Serve HTTPS certs, so we use Caddy with self-signed
+    services.caddy = lib.mkIf cfg.tailscale.enable {
+      enable = true;
+      # Bind to tailnet interface only (not exposed on TAP network)
+      globalConfig = ''
+        auto_https disable_redirects
+      '';
+      virtualHosts."https://:443" = {
+        extraConfig = ''
+          # Use Caddy's internal CA for HTTPS (self-signed)
+          # Clients must trust Caddy's CA or ignore cert errors
+          tls internal
+
+          # Reverse proxy to gateway on localhost
+          reverse_proxy localhost:${toString cfg.gatewayPort} {
+            # WebSocket support for control UI
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+          }
+        '';
+      };
+    };
+
+    # Note: Port 443 accessible via Tailscale because tailscale0 is in trustedInterfaces
 
     # Dev mode only: auto-login as root for debugging/admin access via console
     services.getty.autologinUser = lib.mkIf cfg.dangerousDevMode "root";
