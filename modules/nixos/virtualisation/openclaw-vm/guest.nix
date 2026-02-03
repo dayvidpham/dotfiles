@@ -705,6 +705,9 @@ in
 
       # SSH host keys on persistent volume (survive rebuilds)
       "d /var/lib/openclaw/ssh 0700 root root -"
+      # Ensure private keys are read-only (sshd only needs to read them)
+      "z /var/lib/openclaw/ssh/ssh_host_ed25519_key 0400 root root -"
+      "z /var/lib/openclaw/ssh/ssh_host_rsa_key 0400 root root -"
 
       # Shared workspace with setgid for group ownership
       # Mode 2775: rwxrwsr-x - setgid ensures new files inherit openclaw-shared group
