@@ -320,8 +320,8 @@ in
         RestrictSUIDSGID = true;
 
         # Memory protection
-        # NOTE: MemoryDenyWriteExecute=true breaks Node.js V8 JIT compiler
-        # V8 needs to allocate, write, then execute code (W^X violation)
+        # Testing: re-enabled to verify if V8 JIT actually needs this disabled
+        MemoryDenyWriteExecute = true;
         LockPersonality = true;
 
         # Capabilities
