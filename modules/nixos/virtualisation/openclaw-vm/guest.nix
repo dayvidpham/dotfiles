@@ -121,6 +121,13 @@ in
         default = [ "tag:openclaw-vm" ];
         description = "ACL tags to advertise for this node (requires pre-authorized auth key with these tags)";
       };
+
+      exitNode = mkOption {
+        type = types.nullOr types.str;
+        default = "portal";
+        description = "Exit node hostname to route traffic through. Set to null to disable.";
+        example = "exit-node.tail1234.ts.net";
+      };
     };
   };
 
@@ -172,6 +179,8 @@ in
         "--login-server" cfg.tailscale.loginServer
       ] ++ lib.optionals (cfg.tailscale.advertiseTags != []) [
         "--advertise-tags" (lib.concatStringsSep "," cfg.tailscale.advertiseTags)
+      ] ++ lib.optionals (cfg.tailscale.exitNode != null) [
+        "--exit-node" cfg.tailscale.exitNode
       ];
       # Use persistent volume for state (survives VM rebuilds)
       extraDaemonFlags = [ "--state=/var/lib/openclaw/tailscale/tailscaled.state" ];
