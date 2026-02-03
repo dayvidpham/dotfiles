@@ -57,7 +57,7 @@
     };
 
     opencode = {
-      url = "path:/home/minttea/codebases/opencode";
+      url = "github:anomalyco/opencode";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
 

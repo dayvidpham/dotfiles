@@ -602,13 +602,17 @@
         ]
       },
       "locked": {
-        "narHash": "sha256-xnyLvEu4PXaXQu5mJkIjD9/Z+fWFAXXbEPhWm4YxZ+0=",
-        "path": "/home/minttea/codebases/opencode",
-        "type": "path"
+        "lastModified": 1770131162,
+        "narHash": "sha256-P+KNkXtgMTCPP8sncc3Yjy16bTpTGGLWc1Z9EGdn98c=",
+        "owner": "anomalyco",
+        "repo": "opencode",
+        "rev": "76381f33d5b25f01867034767ab30650cb10fd32",
+        "type": "github"
       },
       "original": {
-        "path": "/home/minttea/codebases/opencode",
-        "type": "path"
+        "owner": "anomalyco",
+        "repo": "opencode",
+        "type": "github"
       }
     },
     "root": {
