@@ -375,6 +375,24 @@ in
     # Security: no passwordless sudo
     security.sudo.wheelNeedsPassword = true;
 
+    # Security: restrict systemctl/journalctl access for openclaw users
+    # Prevents compromised agent from enumerating services or reading system logs
+    security.polkit.extraConfig = ''
+      polkit.addRule(function(action, subject) {
+        // Deny systemd status/control queries for openclaw users
+        if (action.id.indexOf("org.freedesktop.systemd1") === 0 &&
+            (subject.user === "openclaw" || subject.user === "openclaw-gateway")) {
+          return polkit.Result.NO;
+        }
+        // Deny reading system journal
+        if (action.id === "org.freedesktop.login1.journal-read" &&
+            (subject.user === "openclaw" || subject.user === "openclaw-gateway")) {
+          return polkit.Result.NO;
+        }
+        return polkit.Result.NOT_HANDLED;
+      });
+    '';
+
     # Enable getty on ttyS1 for console socket access
     systemd.services."serial-getty@ttyS1".enable = true;
 
