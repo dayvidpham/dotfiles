@@ -43,8 +43,16 @@ in
         DANGEROUS: Enables debug features that should never be used in production.
         - Auto-login as root on console
         - QEMU guest agent for host command execution
-        - virtiofs /nix/store mount (instant rebuilds, not portable)
-        When false, uses erofs for /nix/store (slower builds, portable, secure).
+      '';
+    };
+
+    useVirtiofs = mkOption {
+      type = types.bool;
+      default = false;
+      description = ''
+        Use virtiofs for /nix/store instead of embedding in erofs image.
+        Enables instant rebuilds but requires host's /nix/store at runtime.
+        Disable for portable/CI builds (uses erofs for self-contained image).
       '';
     };
 
@@ -521,8 +529,8 @@ in
       }];
 
       # Shares configuration
-      shares = lib.optionals cfg.dangerousDevMode [{
-        # dangerousDevMode: mount host's /nix/store via virtiofs (instant rebuilds)
+      shares = lib.optionals cfg.useVirtiofs [{
+        # useVirtiofs: mount host's /nix/store via virtiofs (instant rebuilds)
         # Note: /nix/store is read-only by NixOS design (no explicit ro flag needed)
         # virtiofs respects host permissions; /nix/store is immutable on the host
         tag = "nix-store";
@@ -531,12 +539,12 @@ in
         proto = "virtiofs";
       }];
 
-      # dangerousDevMode: don't embed /nix/store in image (use virtiofs instead)
-      storeOnDisk = !cfg.dangerousDevMode;
+      # useVirtiofs: don't embed /nix/store in image (use virtiofs instead)
+      storeOnDisk = !cfg.useVirtiofs;
 
-      # non-dangerousDevMode: use erofs with multi-threaded compression
+      # erofs: use multi-threaded compression when not using virtiofs
       # -j0 = auto-detect CPU count for parallel compression
-      storeDiskErofsFlags = lib.mkIf (!cfg.dangerousDevMode) [ "-zlz4hc" "-Eztailpacking" "-j0" ];
+      storeDiskErofsFlags = lib.mkIf (!cfg.useVirtiofs) [ "-zlz4hc" "-Eztailpacking" "-j0" ];
     };
 
     # Create directories for openclaw state

@@ -57,10 +57,19 @@ in
       type = types.bool;
       default = false;
       description = ''
-        DANGEROUS: Enables debug features - auto-login, guest agent, virtiofs.
+        DANGEROUS: Enables debug features that should never be used in production.
+        - Auto-login as root on console
+        - QEMU guest agent for host command execution
+      '';
+    };
+
+    useVirtiofs = mkOption {
+      type = types.bool;
+      default = false;
+      description = ''
         Use virtiofs for /nix/store instead of embedding in erofs image.
         Enables instant rebuilds but requires host's /nix/store at runtime.
-        Disable for portable/CI builds (uses erofs without dedupe for faster builds).
+        Disable for portable/CI builds (uses erofs for self-contained image).
       '';
     };
 
@@ -425,6 +434,7 @@ in
             mem = cfg.memory;
             gatewayPort = cfg.gatewayPort;
             dangerousDevMode = cfg.dangerousDevMode;
+            useVirtiofs = cfg.useVirtiofs;
             # Pass network config to ensure host and guest stay in sync
             network = {
               vmAddress = cfg.network.vmAddress;

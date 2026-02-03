@@ -286,7 +286,8 @@
   # OpenClaw VM - microVM-based isolation for gateway
   CUSTOM.virtualisation.openclaw-vm = {
     enable = true;
-    dangerousDevMode = true; # Dev only: auto-login, guest agent, virtiofs
+    dangerousDevMode = false; # No auto-login, no guest agent
+    useVirtiofs = true;       # Fast rebuilds via host /nix/store
     gatewayPort = 18789;
     memory = 8192; # 4GB per vCPU
     vcpu = 2;
