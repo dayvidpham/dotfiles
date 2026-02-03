@@ -67,6 +67,12 @@ in
       description = "Port for the OpenClaw gateway";
     };
 
+    opencodeServerPort = mkOption {
+      type = types.port;
+      default = 4096;
+      description = "Port for the OpenCode server (clients attach via opencode attach http://localhost:<port>)";
+    };
+
     dangerousDevMode = {
       enable = lib.mkEnableOption ''
         DANGEROUS: Enables debug features that should never be used in production.
@@ -427,6 +433,9 @@ in
     # Gateway user group
     users.groups.openclaw-gateway = { };
 
+    # OpenCode server group
+    users.groups.opencode-server = { };
+
     # SSH access group (required by AllowGroups in sshd config)
     users.groups.ssh-users = { };
 
@@ -437,6 +446,15 @@ in
       group = "openclaw-gateway";
       extraGroups = [ "openclaw-shared" ];
       description = "OpenClaw Gateway Service";
+    };
+
+    # OpenCode server user (system user) - runs OpenCode server with gateway access
+    # Keeps API credentials isolated from interactive openclaw user
+    users.users.opencode-server = {
+      isSystemUser = true;
+      group = "opencode-server";
+      extraGroups = [ "openclaw-shared" ];
+      description = "OpenCode Server Service";
     };
 
     # Agent/interactive user (normal user) - interactive sessions, agent processes
@@ -542,6 +560,81 @@ in
       };
     };
 
+    # OpenCode server - headless server that clients attach to
+    # Runs with gateway credentials so openclaw user doesn't need direct API access
+    # Usage: openclaw user runs `opencode attach http://localhost:${cfg.opencodeServerPort}`
+    systemd.services.opencode-server = {
+      description = "OpenCode Server";
+      after = [ "network-online.target" "openclaw-gateway.service" ];
+      wants = [ "network-online.target" ];
+      # Require gateway - opencode needs it to function
+      requires = [ "openclaw-gateway.service" ];
+      wantedBy = [ "multi-user.target" ];
+
+      # Crash protection - prevent resource exhaustion from crash loops
+      startLimitBurst = 5;
+      startLimitIntervalSec = 300;
+
+      serviceConfig = {
+        Type = "simple";
+        User = "opencode-server";
+        Group = "opencode-server";
+        WorkingDirectory = "/var/lib/openclaw/workspace";
+        # Headless server mode on configured port
+        ExecStart = "${opencode-pkg}/bin/opencode serve --port ${toString cfg.opencodeServerPort} --hostname 127.0.0.1";
+        Restart = "always";
+        RestartSec = 5;
+        RestartSteps = 5;
+        RestartMaxDelaySec = "60s";
+
+        # Process isolation - hide from agent's /proc view
+        ProtectProc = "invisible";
+        ProcSubset = "pid";
+        NoNewPrivileges = true;
+
+        # Filesystem isolation
+        ProtectSystem = "strict";
+        ProtectHome = true;
+        PrivateTmp = true;
+        PrivateDevices = true;
+        # ReadWritePaths for opencode's state/cache directories
+        ReadWritePaths = [
+          "/var/lib/opencode-server"
+        ];
+
+        # Kernel hardening
+        ProtectKernelTunables = true;
+        ProtectKernelModules = true;
+        ProtectKernelLogs = true;
+        ProtectControlGroups = true;
+
+        # Namespace restrictions
+        RestrictNamespaces = true;
+        RestrictSUIDSGID = true;
+
+        # Memory protection
+        # NOTE: MemoryDenyWriteExecute incompatible with Node.js V8 JIT
+        LockPersonality = true;
+
+        # Capabilities
+        CapabilityBoundingSet = "";
+        AmbientCapabilities = "";
+
+        # System call filtering
+        SystemCallFilter = [ "@system-service" "~@privileged" "~@resources" ];
+        SystemCallArchitectures = "native";
+
+        # XDG directories for OpenCode - isolated from gateway and agent
+        Environment = [
+          "HOME=/var/lib/opencode-server"
+          "XDG_CONFIG_HOME=/var/lib/opencode-server/.config"
+          "XDG_DATA_HOME=/var/lib/opencode-server/.local/share"
+          "XDG_CACHE_HOME=/var/lib/opencode-server/.cache"
+          "XDG_STATE_HOME=/var/lib/opencode-server/.local/state"
+        ];
+      };
+    };
+
     # VSOCK gateway proxy - forwards VSOCK connections to gateway's localhost port
     # This allows host connections via VSOCK to appear as localhost to the gateway
     systemd.services.vsock-gateway-proxy = {
@@ -615,12 +708,12 @@ in
       polkit.addRule(function(action, subject) {
         // Deny systemd status/control queries for openclaw users
         if (action.id.indexOf("org.freedesktop.systemd1") === 0 &&
-            (subject.user === "openclaw" || subject.user === "openclaw-gateway")) {
+            (subject.user === "openclaw" || subject.user === "openclaw-gateway" || subject.user === "opencode-server")) {
           return polkit.Result.NO;
         }
         // Deny reading system journal
         if (action.id === "org.freedesktop.login1.journal-read" &&
-            (subject.user === "openclaw" || subject.user === "openclaw-gateway")) {
+            (subject.user === "openclaw" || subject.user === "openclaw-gateway" || subject.user === "opencode-server")) {
           return polkit.Result.NO;
         }
         return polkit.Result.NOT_HANDLED;
@@ -717,6 +810,20 @@ in
       "d /var/lib/openclaw/workspace 2775 root openclaw-shared -"
       # Z = recursive ownership fix for existing files (from before dual-user migration)
       "Z /var/lib/openclaw/workspace - root openclaw-shared -"
+
+      # OpenCode server directories (isolated from gateway and agent)
+      "d /var/lib/opencode-server 0750 opencode-server opencode-server -"
+      "d /var/lib/opencode-server/.config 0750 opencode-server opencode-server -"
+      "d /var/lib/opencode-server/.config/opencode 0750 opencode-server opencode-server -"
+      "d /var/lib/opencode-server/.local 0750 opencode-server opencode-server -"
+      "d /var/lib/opencode-server/.local/share 0750 opencode-server opencode-server -"
+      "d /var/lib/opencode-server/.local/share/opencode 0750 opencode-server opencode-server -"
+      "d /var/lib/opencode-server/.local/state 0750 opencode-server opencode-server -"
+      "d /var/lib/opencode-server/.local/state/opencode 0750 opencode-server opencode-server -"
+      "d /var/lib/opencode-server/.cache 0750 opencode-server opencode-server -"
+      "d /var/lib/opencode-server/.cache/opencode 0750 opencode-server opencode-server -"
+      # OpenCode config pointing to local OpenClaw Gateway (same config as agent user)
+      "f /var/lib/opencode-server/.config/opencode/config.json 0640 opencode-server opencode-server - ${opencode-config}"
 
       # Agent user home directories
       "d /home/openclaw 0755 openclaw users -"
