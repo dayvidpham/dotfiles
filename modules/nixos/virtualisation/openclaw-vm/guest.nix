@@ -235,8 +235,6 @@ in
         KbdInteractiveAuthentication = false;
         AuthenticationMethods = "publickey";
         PermitRootLogin = if cfg.dangerousDevMode.enable then "prohibit-password" else "no";
-        DenyUsers = lib.optionals (!cfg.dangerousDevMode.enable) [ "root" ];
-        DenyGroups = lib.optionals (!cfg.dangerousDevMode.enable) [ "root" ];
         AllowGroups = [ "ssh-users" ] ++ lib.optionals cfg.dangerousDevMode.enable [ "root" ];
         AllowTcpForwarding = true;
 
@@ -250,6 +248,10 @@ in
           "aes256-gcm@openssh.com"
           "aes128-gcm@openssh.com"
         ];
+      } // lib.optionalAttrs (!cfg.dangerousDevMode.enable) {
+        # Only deny root when not in dev mode (empty lists cause sshd config errors)
+        DenyUsers = [ "root" ];
+        DenyGroups = [ "root" ];
       };
 
       authorizedKeysInHomedir = false;
