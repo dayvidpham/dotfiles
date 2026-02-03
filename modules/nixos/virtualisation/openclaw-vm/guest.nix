@@ -21,30 +21,31 @@ let
 
   # OpenCode configuration for OpenClaw Gateway
   # Uses localhost since OpenCode runs inside the VM where gateway binds
+  # Schema: https://opencode.ai/config.json
   opencode-config = builtins.toJSON {
-    providers = {
+    "$schema" = "https://opencode.ai/config.json";
+    # Custom provider using OpenAI-compatible SDK
+    provider = {
       openclaw = {
+        npm = "@ai-sdk/openai-compatible";
         name = "OpenClaw Gateway";
-        apiKind = "openai";
-        baseUrl = "http://127.0.0.1:${toString cfg.gatewayPort}/v1";
-        models = [
-          {
-            id = "openclaw:main";
+        options = {
+          baseURL = "http://127.0.0.1:${toString cfg.gatewayPort}/v1";
+        };
+        models = {
+          "openclaw:main" = {
             name = "Claude Sonnet 4 (via OpenClaw)";
-            maxTokens = 16384;
-            contextLength = 200000;
-            supportsStreaming = true;
-            supportsFunctions = true;
-            supportsReasoning = false;
-          }
-        ];
+            limit = {
+              context = 200000;
+              output = 16384;
+            };
+          };
+        };
       };
     };
     # Default model uses openclaw provider
-    models = {
-      big = "openclaw/openclaw:main";
-      small = "openclaw/openclaw:main";
-    };
+    model = "openclaw/openclaw:main";
+    small_model = "openclaw/openclaw:main";
   };
 in
 {
