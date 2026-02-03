@@ -229,15 +229,15 @@ in
 
       sftpFlags = [ "-f AUTHPRIV" "-l INFO" ];
 
-      # Pubkey auth only, no root
+      # Pubkey auth only, root allowed in devMode
       settings = {
         PasswordAuthentication = false;
         KbdInteractiveAuthentication = false;
         AuthenticationMethods = "publickey";
-        PermitRootLogin = "no";
-        DenyUsers = [ "root" ];
-        DenyGroups = [ "root" ];
-        AllowGroups = [ "ssh-users" ];
+        PermitRootLogin = if cfg.dangerousDevMode.enable then "prohibit-password" else "no";
+        DenyUsers = lib.optionals (!cfg.dangerousDevMode.enable) [ "root" ];
+        DenyGroups = lib.optionals (!cfg.dangerousDevMode.enable) [ "root" ];
+        AllowGroups = [ "ssh-users" ] ++ lib.optionals cfg.dangerousDevMode.enable [ "root" ];
         AllowTcpForwarding = true;
 
         X11Forwarding = false;
@@ -258,9 +258,12 @@ in
         "/etc/ssh/authorized_keys.d/%u"
       ];
     };
-    users.users.openclaw.openssh.authorizedKeys.keys = lib.mkIf cfg.tailscale.enable ([
+    users.users.openclaw.openssh.authorizedKeys.keys = lib.mkIf cfg.tailscale.enable
+      cfg.tailscale.sshAuthorizedKeys;
 
-    ] ++ cfg.tailscale.sshAuthorizedKeys);
+    # Dev mode: allow root SSH with same keys
+    users.users.root.openssh.authorizedKeys.keys = lib.mkIf (cfg.tailscale.enable && cfg.dangerousDevMode.enable)
+      cfg.tailscale.sshAuthorizedKeys;
 
     # Tailscale for secure remote access
     services.tailscale = lib.mkIf cfg.tailscale.enable {
