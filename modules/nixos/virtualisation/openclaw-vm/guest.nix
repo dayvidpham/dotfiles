@@ -597,9 +597,10 @@ in
         ProtectHome = true;
         PrivateTmp = true;
         PrivateDevices = true;
-        # ReadWritePaths for opencode's state/cache directories
+        # ReadWritePaths for opencode's state/cache directories and workspace
         ReadWritePaths = [
           "/var/lib/opencode-server"
+          "/var/lib/openclaw/workspace"  # WorkingDirectory - where opencode edits code
         ];
 
         # Kernel hardening
