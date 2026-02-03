@@ -64,5 +64,5 @@ sync-branch: "beads-sync"
 
 # Daemon settings for git worktree sync
 daemon.auto-commit: true
-daemon.auto-pull: true
-daemon.auto-push: true
+daemon.auto-pull: false
+daemon.auto-push: false
