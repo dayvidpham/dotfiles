@@ -47,7 +47,8 @@
       "Bash(ninja -C build:*)",
       "Bash(ff :*)",
       "Bash(ffg :*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "WebFetch(domain:docs.anthropic.com)"
     ],
     "deny": [
       "Bash(bd burn:*)",
@@ -68,4 +69,3 @@
     ]
   }
 }
-
