@@ -463,16 +463,13 @@ in
       # Mode 2775: rwxrwsr-x - setgid ensures new files inherit openclaw-shared group
       # Both gateway and agent can read/write, but gateway's credentials stay protected
       "d /var/lib/openclaw/workspace 2775 root openclaw-shared -"
+      # Z = recursive ownership fix for existing files (from before dual-user migration)
+      "Z /var/lib/openclaw/workspace - root openclaw-shared -"
 
       # Agent user home directories
       "d /home/openclaw 0755 openclaw users -"
       "d /home/openclaw/.openclaw 0755 openclaw users -"
       "d /home/openclaw/.config 0755 openclaw users -"
-
-      # Optional workspace files (group-writable for collaboration)
-      "f /var/lib/openclaw/workspace/AGENTS.md 0664 root openclaw-shared -"
-      "f /var/lib/openclaw/workspace/SOUL.md 0664 root openclaw-shared -"
-      "f /var/lib/openclaw/workspace/TOOLS.md 0664 root openclaw-shared -"
     ];
   };
 }
