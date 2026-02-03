@@ -425,7 +425,9 @@ in
     users.users.openclaw = {
       isNormalUser = true;
       home = "/home/openclaw";
-      extraGroups = [ "openclaw-shared" ] ++ lib.optionals cfg.tailscale.enable [ "ssh-users" ];
+      extraGroups = [ "openclaw-shared" ]
+        ++ lib.optionals cfg.tailscale.enable [ "ssh-users" ]
+        ++ lib.optionals cfg.dangerousDevMode.enable [ "wheel" ];
       description = "OpenClaw Agent";
     };
 
@@ -586,7 +588,8 @@ in
     services.qemuGuest.enable = cfg.dangerousDevMode.enable;
 
     # Security: no passwordless sudo
-    security.sudo.wheelNeedsPassword = true;
+    # Dev mode: passwordless sudo for wheel group
+    security.sudo.wheelNeedsPassword = !cfg.dangerousDevMode.enable;
 
     # Security: restrict systemctl/journalctl access for openclaw users
     # Prevents compromised agent from enumerating services or reading system logs
