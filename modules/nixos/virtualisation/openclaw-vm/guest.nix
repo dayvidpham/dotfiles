@@ -320,8 +320,8 @@ in
         RestrictSUIDSGID = true;
 
         # Memory protection
-        # Testing: re-enabled to verify if V8 JIT actually needs this disabled
-        MemoryDenyWriteExecute = true;
+        # NOTE: MemoryDenyWriteExecute incompatible with Node.js V8 JIT
+        # V8 requires mprotect(PROT_EXEC) on previously writable memory
         LockPersonality = true;
 
         # Capabilities
