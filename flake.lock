@@ -595,6 +595,22 @@
         "type": "github"
       }
     },
+    "opencode": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs-unstable"
+        ]
+      },
+      "locked": {
+        "narHash": "sha256-xnyLvEu4PXaXQu5mJkIjD9/Z+fWFAXXbEPhWm4YxZ+0=",
+        "path": "/home/minttea/codebases/opencode",
+        "type": "path"
+      },
+      "original": {
+        "path": "/home/minttea/codebases/opencode",
+        "type": "path"
+      }
+    },
     "root": {
       "inputs": {
         "determinate-nix": "determinate-nix",
@@ -611,6 +627,7 @@
         "nixpkgs-stable": "nixpkgs-stable",
         "nixpkgs-unstable": "nixpkgs-unstable",
         "nixpkgs-wsl": "nixpkgs-wsl",
+        "opencode": "opencode",
         "sops-nix": "sops-nix"
       }
     },

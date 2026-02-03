@@ -2,8 +2,10 @@
 # Simple microvm that runs openclaw gateway with network access to safemolt
 { config
 , pkgs
+, pkgs-unstable
 , lib ? pkgs.lib
 , nix-openclaw
+, opencode
 , ...
 }:
 let
@@ -14,7 +16,36 @@ let
 
   cfg = config.CUSTOM.virtualisation.openclaw-vm.guest;
   openclaw-pkg = nix-openclaw.packages.${pkgs.system}.openclaw;
+  opencode-pkg = opencode.packages.${pkgs.system}.opencode;
   debug-tailscale = import ./debug-tailscale.nix { inherit pkgs; };
+
+  # OpenCode configuration for OpenClaw Gateway
+  # Uses localhost since OpenCode runs inside the VM where gateway binds
+  opencode-config = builtins.toJSON {
+    providers = {
+      openclaw = {
+        name = "OpenClaw Gateway";
+        apiKind = "openai";
+        baseUrl = "http://127.0.0.1:${toString cfg.gatewayPort}/v1";
+        models = [
+          {
+            id = "openclaw:main";
+            name = "Claude Sonnet 4 (via OpenClaw)";
+            maxTokens = 16384;
+            contextLength = 200000;
+            supportsStreaming = true;
+            supportsFunctions = true;
+            supportsReasoning = false;
+          }
+        ];
+      };
+    };
+    # Default model uses openclaw provider
+    models = {
+      big = "openclaw/openclaw:main";
+      small = "openclaw/openclaw:main";
+    };
+  };
 in
 {
   options.CUSTOM.virtualisation.openclaw-vm.guest = {
@@ -344,9 +375,10 @@ in
       pkgs.curl
       pkgs.jq
       pkgs.git
-      pkgs.bun        # JavaScript runtime
-      pkgs.uv         # Python package manager
-      debug-tailscale # Diagnostic script for Tailscale debugging
+      pkgs.bun                    # JavaScript runtime
+      pkgs.uv                     # Python package manager
+      opencode-pkg                # OpenCode CLI (OpenAI-compatible)
+      debug-tailscale             # Diagnostic script for Tailscale debugging
     ];
 
     # OpenClaw gateway service
@@ -571,6 +603,9 @@ in
       "d /home/openclaw 0755 openclaw users -"
       "d /home/openclaw/.openclaw 0755 openclaw users -"
       "d /home/openclaw/.config 0755 openclaw users -"
+      "d /home/openclaw/.config/opencode 0755 openclaw users -"
+      # OpenCode config pointing to local OpenClaw Gateway
+      "f /home/openclaw/.config/opencode/config.json 0644 openclaw users - ${opencode-config}"
     ];
   };
 }

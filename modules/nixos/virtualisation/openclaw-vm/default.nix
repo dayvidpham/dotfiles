@@ -13,8 +13,10 @@
 { config
 , options
 , pkgs
+, pkgs-unstable
 , lib ? pkgs.lib
 , nix-openclaw
+, opencode
 , ...
 }:
 let
@@ -424,7 +426,7 @@ in
     (optionalAttrs hasMicrovm {
       microvm.vms.openclaw-vm = {
         inherit pkgs;
-        specialArgs = { inherit nix-openclaw; };
+        specialArgs = { inherit pkgs-unstable nix-openclaw opencode; };
 
         config = { config, ... }: {
           imports = [ ./guest.nix ];
@@ -490,6 +492,12 @@ in
               # 2. Tailscale Serve injects verified identity headers
               # 3. OpenClaw verifies via local tailscale daemon (tailscale whois)
               allowTailscale = true;
+            };
+            # Enable OpenAI-compatible HTTP endpoint for OpenCode
+            http = {
+              endpoints = {
+                chatCompletions = { enabled = true; };
+              };
             };
           };
         };

@@ -56,6 +56,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    opencode = {
+      url = "path:/home/minttea/codebases/opencode";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+    };
+
     # Secrets management
     sops-nix = {
       url = "github:Mic92/sops-nix";
@@ -82,6 +87,7 @@
     , llm-agents
     , microvm
     , nix-openclaw
+    , opencode
     , sops-nix
     , ...
     }:
@@ -209,6 +215,7 @@
           niri
           microvm
           nix-openclaw
+          opencode
           sops-nix
           ;
       };
@@ -302,7 +309,7 @@
         # OpenClaw microVM - runs openclaw gateway with network access to safemolt
         openclaw-vm = mkMinimalHost {
           name = "openclaw-vm";
-          hostSpecialArgs = { inherit pkgs pkgs-unstable nix-openclaw; };
+          hostSpecialArgs = { inherit pkgs pkgs-unstable nix-openclaw opencode; };
           modules = [
             microvm.nixosModules.microvm
             ./modules/nixos/virtualisation/openclaw-vm/guest.nix
