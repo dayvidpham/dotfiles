@@ -286,12 +286,24 @@
   # OpenClaw VM - microVM-based isolation for gateway
   CUSTOM.virtualisation.openclaw-vm = {
     enable = true;
+    dangerousDevMode = false; # No auto-login, no guest agent
+    useVirtiofs = true;       # Fast rebuilds via host /nix/store
     gatewayPort = 18789;
-    memory = 8192;  # 4GB per vCPU
+    memory = 8192; # 4GB per vCPU
     vcpu = 2;
     secrets = {
       enable = true;
       sopsFile = ../../secrets/openclaw/secrets.yaml;
+    };
+    # Caddy reverse proxy disabled - using Tailscale Serve instead
+    # Tailscale Serve provides HTTPS + identity-based auth via tailnet
+    caddy.enable = false;
+    # Tailscale for remote access via tailnet (using Headscale)
+    tailscale = {
+      enable = true;
+      hostname = "openclaw-vm";
+      loginServer = "https://hs0.vpn.dhpham.com";
+      exitNode = null; # Set after initial auth via post-connect service
     };
   };
 
