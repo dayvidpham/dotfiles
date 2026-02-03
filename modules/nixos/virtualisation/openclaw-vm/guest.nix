@@ -14,6 +14,7 @@ let
 
   cfg = config.CUSTOM.virtualisation.openclaw-vm.guest;
   openclaw-pkg = nix-openclaw.packages.${pkgs.system}.openclaw;
+  debug-tailscale = import ./debug-tailscale.nix { inherit pkgs; };
 in
 {
   options.CUSTOM.virtualisation.openclaw-vm.guest = {
@@ -76,7 +77,7 @@ in
     vsock = {
       cid = mkOption {
         type = types.int;
-        default = 3;
+        default = 4;  # CID 3 used by llm-sandbox
         description = ''
           VSOCK Context ID for this VM.
           CID 0 = hypervisor, 1 = loopback, 2 = host, 3+ = guests.
@@ -87,6 +88,39 @@ in
         type = types.port;
         default = 18789;
         description = "VSOCK port for gateway proxy (matches gateway port for clarity)";
+      };
+    };
+
+    # Tailscale configuration for remote access
+    tailscale = {
+      enable = lib.mkEnableOption "Tailscale for secure remote access via tailnet";
+
+      hostname = mkOption {
+        type = types.str;
+        default = "openclaw-vm";
+        description = "Hostname for this machine on the tailnet";
+      };
+
+      loginServer = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        description = "Custom control server URL (e.g., Headscale). If null, uses Tailscale's default servers.";
+        example = "https://headscale.example.com";
+      };
+
+      serve = {
+        enable = mkOption {
+          type = types.bool;
+          default = true;
+          description = "Enable Tailscale Serve to expose gateway via HTTPS";
+        };
+      };
+
+      advertiseTags = mkOption {
+        type = types.listOf types.str;
+        default = [ "tag:openclaw-vm" ];
+        description = "ACL tags to advertise for this node (requires pre-authorized auth key with these tags)";
+        example = [ "tag:openclaw-vm" "tag:server" ];
       };
     };
   };
@@ -115,19 +149,97 @@ in
       address = cfg.network.gatewayAddress;
       interface = "enp0s4";
     };
+    # Use host as DNS resolver (more secure - uses host's encrypted DNS config)
     networking.nameservers = [ cfg.network.gatewayAddress ];
 
     networking.firewall = {
       enable = true;
       # Gateway binds to localhost only (VSOCK handles host access)
-      # No TCP ports need to be exposed
+      # No TCP ports need to be exposed on TAP interface
       allowedTCPPorts = [ ];
+      # Trust Tailscale interface for inbound connections when enabled
+      trustedInterfaces = lib.optionals cfg.tailscale.enable [ "tailscale0" ];
     };
 
-    # OpenClaw user
+    # Tailscale for secure remote access
+    services.tailscale = lib.mkIf cfg.tailscale.enable {
+      enable = true;
+      # Auth key injected via fw_cfg, read by systemd LoadCredential
+      authKeyFile = "/run/credentials/tailscaled.service/tailscale-authkey";
+      extraUpFlags = [
+        "--hostname" cfg.tailscale.hostname
+      ] ++ lib.optionals (cfg.tailscale.loginServer != null) [
+        "--login-server" cfg.tailscale.loginServer
+      ] ++ lib.optionals (cfg.tailscale.advertiseTags != []) [
+        "--advertise-tags" (lib.concatStringsSep "," cfg.tailscale.advertiseTags)
+      ];
+      # Use persistent volume for state (survives VM rebuilds)
+      extraDaemonFlags = [ "--state=/var/lib/openclaw/tailscale/tailscaled.state" ];
+    };
+
+    # Configure tailscaled to read auth key from fw_cfg credential
+    systemd.services.tailscaled = lib.mkIf cfg.tailscale.enable {
+      serviceConfig = {
+        LoadCredential = [ "tailscale-authkey" ];
+        # State in persistent volume, not default /var/lib/tailscale
+        StateDirectory = lib.mkForce "";
+      };
+    };
+
+    # Tailscale Serve: expose gateway via HTTPS
+    # Runs after tailscale is online, configures serve to proxy to gateway
+    systemd.services.tailscale-serve = lib.mkIf (cfg.tailscale.enable && cfg.tailscale.serve.enable) {
+      description = "Configure Tailscale Serve for OpenClaw Gateway";
+      after = [ "tailscaled.service" "network-online.target" ];
+      requires = [ "tailscaled.service" ];
+      wants = [ "network-online.target" ];
+      wantedBy = [ "multi-user.target" ];
+
+      # Wait for tailscale to be ready before configuring serve
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        # Serve HTTPS, proxy to gateway's localhost port
+        ExecStart = "${pkgs.tailscale}/bin/tailscale serve --bg --https=443 http://localhost:${toString cfg.gatewayPort}";
+        # Retry if tailscale not ready yet
+        Restart = "on-failure";
+        RestartSec = 5;
+        RestartMaxDelaySec = "60s";
+      };
+    };
+
+    # Security: Tailscale state directory with strict permissions
+    # Prevents openclaw user from reading node keys
+    systemd.tmpfiles.settings."10-tailscale" = lib.mkIf cfg.tailscale.enable {
+      "/var/lib/openclaw/tailscale" = {
+        d = {
+          mode = "0700";
+          user = "root";
+          group = "root";
+        };
+      };
+    };
+
+    # Shared group for workspace access - both users can read/write workspace files
+    users.groups.openclaw-shared = {};
+
+    # Gateway user group
+    users.groups.openclaw-gateway = {};
+
+    # Gateway user (system user) - runs gateway service, owns credentials
+    # System users cannot login interactively and have no home directory by default
+    users.users.openclaw-gateway = {
+      isSystemUser = true;
+      group = "openclaw-gateway";
+      extraGroups = [ "openclaw-shared" ];
+      description = "OpenClaw Gateway Service";
+    };
+
+    # Agent/interactive user (normal user) - interactive sessions, agent processes
     users.users.openclaw = {
       isNormalUser = true;
       home = "/home/openclaw";
+      extraGroups = [ "openclaw-shared" ];
       description = "OpenClaw Agent";
     };
 
@@ -139,34 +251,82 @@ in
       pkgs.git
       pkgs.bun        # JavaScript runtime
       pkgs.uv         # Python package manager
+      debug-tailscale # Diagnostic script for Tailscale debugging
     ];
 
     # OpenClaw gateway service
     systemd.services.openclaw-gateway = {
       description = "OpenClaw Gateway";
-      after = [ "network-online.target" ];
+      after = [ "network-online.target" ]
+        ++ lib.optionals cfg.tailscale.enable [ "tailscaled.service" "tailscale-serve.service" ];
       wants = [ "network-online.target" ];
+      # When tailscale enabled, require it for fail-closed security
+      requires = lib.optionals cfg.tailscale.enable [ "tailscaled.service" ];
       wantedBy = [ "multi-user.target" ];
+
+      # Crash protection - prevent resource exhaustion from crash loops
+      # 5 failures in 5 minutes triggers cooldown
+      startLimitBurst = 5;
+      startLimitIntervalSec = 300;
 
       serviceConfig = {
         Type = "simple";
-        User = "openclaw";
+        User = "openclaw-gateway";
+        Group = "openclaw-gateway";
         WorkingDirectory = "/var/lib/openclaw/workspace";
         StateDirectory = "openclaw";
-        # Bind to localhost only - connections come via VSOCK (appears as localhost)
-        ExecStart = "${openclaw-pkg}/bin/openclaw gateway --bind localhost --port ${toString cfg.gatewayPort}";
+        # Auto: tries loopback first, falls back to LAN if needed
+        # VSOCK connections appear as localhost, so loopback binding works
+        ExecStart = "${openclaw-pkg}/bin/openclaw gateway --bind auto --port ${toString cfg.gatewayPort}";
         Restart = "always";
         RestartSec = 5;
         RestartSteps = 5;
         RestartMaxDelaySec = "60s";
         # Disabled: openclaw gateway doesn't implement systemd watchdog notifications
         # WatchdogSec = "30s";
+
         # Load credentials via fw_cfg
         LoadCredential = "openclaw-config";
+
+        # Process isolation - hide gateway from agent's /proc view
+        # Prevents compromised agent from seeing gateway process or terminating it
+        ProtectProc = "invisible";
+        ProcSubset = "pid";
+        NoNewPrivileges = true;
+
+        # Filesystem isolation
+        ProtectSystem = "strict";
+        ProtectHome = true;
+        PrivateTmp = true;
+        PrivateDevices = true;
+
+        # Kernel hardening
+        ProtectKernelTunables = true;
+        ProtectKernelModules = true;
+        ProtectKernelLogs = true;
+        ProtectControlGroups = true;
+
+        # Namespace restrictions
+        RestrictNamespaces = true;
+        RestrictSUIDSGID = true;
+
+        # Memory protection
+        MemoryDenyWriteExecute = true;
+        LockPersonality = true;
+
+        # Capabilities
+        CapabilityBoundingSet = "";
+        AmbientCapabilities = "";
+
+        # System call filtering
+        SystemCallFilter = [ "@system-service" "~@privileged" "~@resources" ];
+        SystemCallArchitectures = "native";
+
         # %d = credentials directory
+        # HOME points to gateway's config dir, not agent's home
         Environment = [
-          "HOME=/home/openclaw"
-          "XDG_CONFIG_HOME=/home/openclaw/.config"
+          "HOME=/var/lib/openclaw"
+          "XDG_CONFIG_HOME=/var/lib/openclaw/.config"
           "OPENCLAW_CONFIG_PATH=%d/openclaw-config"
           "OPENCLAW_STATE_DIR=/var/lib/openclaw"
         ];
@@ -199,8 +359,8 @@ in
       };
     };
 
-    # Auto-login for easy access
-    services.getty.autologinUser = "openclaw";
+    # Auto-login as root for debugging/admin access
+    services.getty.autologinUser = "root";
 
     # Enable getty on ttyS1 for console socket access
     systemd.services."serial-getty@ttyS1".enable = true;
@@ -256,13 +416,29 @@ in
     };
 
     # Create directories for openclaw state
+    # Dual-user model:
+    # - openclaw-gateway: system user that runs gateway, owns credentials and config
+    # - openclaw: normal user for interactive/agent sessions
+    # - openclaw-shared: group for shared workspace access
     systemd.tmpfiles.rules = [
+      # Gateway user config dirs (owned by gateway, not accessible to agent)
+      "d /var/lib/openclaw 0755 openclaw-gateway openclaw-gateway -"
+      "d /var/lib/openclaw/.config 0755 openclaw-gateway openclaw-gateway -"
+
+      # Shared workspace with setgid for group ownership
+      # Mode 2775: rwxrwsr-x - setgid ensures new files inherit openclaw-shared group
+      # Both gateway and agent can read/write, but gateway's credentials stay protected
+      "d /var/lib/openclaw/workspace 2775 root openclaw-shared -"
+
+      # Agent user home directories
+      "d /home/openclaw 0755 openclaw users -"
       "d /home/openclaw/.openclaw 0755 openclaw users -"
       "d /home/openclaw/.config 0755 openclaw users -"
-      "d /var/lib/openclaw/workspace 0755 openclaw users -"
-      "f /var/lib/openclaw/workspace/AGENTS.md 0644 openclaw users -"
-      "f /var/lib/openclaw/workspace/SOUL.md 0644 openclaw users -"
-      "f /var/lib/openclaw/workspace/TOOLS.md 0644 openclaw users -"
+
+      # Optional workspace files (group-writable for collaboration)
+      "f /var/lib/openclaw/workspace/AGENTS.md 0664 root openclaw-shared -"
+      "f /var/lib/openclaw/workspace/SOUL.md 0664 root openclaw-shared -"
+      "f /var/lib/openclaw/workspace/TOOLS.md 0664 root openclaw-shared -"
     ];
   };
 }
