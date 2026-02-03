@@ -257,6 +257,19 @@ in
         "%h/.ssh/authorized_keys"
         "/etc/ssh/authorized_keys.d/%u"
       ];
+
+      # Store host keys on persistent volume so they survive rebuilds
+      hostKeys = [
+        {
+          path = "/var/lib/openclaw/ssh/ssh_host_ed25519_key";
+          type = "ed25519";
+        }
+        {
+          path = "/var/lib/openclaw/ssh/ssh_host_rsa_key";
+          type = "rsa";
+          bits = 4096;
+        }
+      ];
     };
     users.users.openclaw.openssh.authorizedKeys.keys = lib.mkIf cfg.tailscale.enable
       cfg.tailscale.sshAuthorizedKeys;
@@ -689,6 +702,9 @@ in
       "d /var/lib/openclaw/.openclaw 0755 openclaw-gateway openclaw-gateway -"
       "d /var/lib/openclaw/.openclaw/canvas 0755 openclaw-gateway openclaw-gateway -"
       "d /var/lib/openclaw/cron 0755 openclaw-gateway openclaw-gateway -"
+
+      # SSH host keys on persistent volume (survive rebuilds)
+      "d /var/lib/openclaw/ssh 0700 root root -"
 
       # Shared workspace with setgid for group ownership
       # Mode 2775: rwxrwsr-x - setgid ensures new files inherit openclaw-shared group
