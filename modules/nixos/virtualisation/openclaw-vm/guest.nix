@@ -128,10 +128,13 @@ in
     system.stateVersion = "25.11";
     networking.hostName = "openclaw-vm";
 
-    # Blacklist qemu_fw_cfg kernel module - prevents /sys/firmware/qemu_fw_cfg/ from existing
-    # systemd reads fw_cfg credentials via direct I/O port access (0x510/0x511), not sysfs
-    # This closes the attack vector entirely rather than just restricting permissions
-    boot.blacklistedKernelModules = [ "qemu_fw_cfg" ];
+    # Restrict fw_cfg sysfs to root only - systemd reads as root, then places
+    # credentials in service-specific directory. Prevents compromised agent
+    # from reading raw credentials via /sys/firmware/qemu_fw_cfg/
+    # NOTE: Cannot blacklist qemu_fw_cfg module - systemd needs sysfs to import credentials
+    services.udev.extraRules = ''
+      SUBSYSTEM=="firmware", DRIVER=="qemu_fw_cfg", MODE="0400", OWNER="root", GROUP="root"
+    '';
 
     # Static IP configuration for TAP networking
     networking.useDHCP = false;
@@ -308,7 +311,8 @@ in
         RestrictSUIDSGID = true;
 
         # Memory protection
-        MemoryDenyWriteExecute = true;
+        # NOTE: MemoryDenyWriteExecute=true breaks Node.js V8 JIT compiler
+        # V8 needs to allocate, write, then execute code (W^X violation)
         LockPersonality = true;
 
         # Capabilities
@@ -356,8 +360,8 @@ in
       };
     };
 
-    # Auto-login as openclaw user (unprivileged agent user)
-    services.getty.autologinUser = "openclaw";
+    # Auto-login as root for debugging/admin access via console
+    services.getty.autologinUser = "root";
 
     # Security: no passwordless sudo
     security.sudo.wheelNeedsPassword = true;
