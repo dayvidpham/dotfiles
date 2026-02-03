@@ -286,8 +286,9 @@
   # OpenClaw VM - microVM-based isolation for gateway
   CUSTOM.virtualisation.openclaw-vm = {
     enable = true;
+    dangerousDevMode = true; # Dev only: auto-login, guest agent, virtiofs
     gatewayPort = 18789;
-    memory = 8192;  # 4GB per vCPU
+    memory = 8192; # 4GB per vCPU
     vcpu = 2;
     secrets = {
       enable = true;
@@ -301,6 +302,7 @@
       enable = true;
       hostname = "openclaw-vm";
       loginServer = "https://hs0.vpn.dhpham.com";
+      exitNode = null; # Set after initial auth via post-connect service
     };
   };
 

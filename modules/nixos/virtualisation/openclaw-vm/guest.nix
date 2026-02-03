@@ -36,12 +36,15 @@ in
       description = "Port for the OpenClaw gateway";
     };
 
-    devMode = mkOption {
+    dangerousDevMode = mkOption {
       type = types.bool;
-      default = true;
+      default = false;
       description = ''
-        Use virtiofs for /nix/store (instant rebuilds, not portable).
-        When false, uses erofs without dedupe (faster builds, portable).
+        DANGEROUS: Enables debug features that should never be used in production.
+        - Auto-login as root on console
+        - QEMU guest agent for host command execution
+        - virtiofs /nix/store mount (instant rebuilds, not portable)
+        When false, uses erofs for /nix/store (slower builds, portable, secure).
       '';
     };
 
@@ -111,8 +114,8 @@ in
       serve = {
         enable = mkOption {
           type = types.bool;
-          default = true;
-          description = "Enable Tailscale Serve to expose gateway via HTTPS";
+          default = false;  # Disabled: Headscale doesn't support HTTPS cert provisioning (issue #1921)
+          description = "Enable Tailscale Serve to expose gateway via HTTPS (requires Tailscale, not Headscale)";
         };
       };
 
@@ -124,9 +127,9 @@ in
 
       exitNode = mkOption {
         type = types.nullOr types.str;
-        default = "portal";
-        description = "Exit node hostname to route traffic through. Set to null to disable.";
-        example = "exit-node.tail1234.ts.net";
+        default = null;
+        description = "Exit node hostname to route traffic through. Set to null to disable. Set AFTER initial connect via tailscale-post-connect service (not during tailscale up).";
+        example = "portal";
       };
     };
   };
@@ -161,10 +164,10 @@ in
 
     networking.firewall = {
       enable = true;
-      # Gateway binds to localhost only (VSOCK handles host access)
-      # No TCP ports need to be exposed on TAP interface
+      # No TCP ports exposed on TAP interface (host uses VSOCK proxy)
       allowedTCPPorts = [ ];
-      # Trust Tailscale interface for inbound connections when enabled
+      # Trust Tailscale interface - allows direct gateway access on port ${gatewayPort}
+      # (trustedInterfaces bypasses all firewall rules for that interface)
       trustedInterfaces = lib.optionals cfg.tailscale.enable [ "tailscale0" ];
     };
 
@@ -175,13 +178,15 @@ in
       authKeyFile = "/run/credentials/tailscaled.service/tailscale-authkey";
       extraUpFlags = [
         "--hostname" cfg.tailscale.hostname
+        "--force-reauth"  # Required for ephemeral keys - cached state is stale after node deletion
+        "--reset"         # Reset preferences to default before applying
+        "--exit-node" ""  # Clear any persisted exit node (post-connect sets it if configured)
       ] ++ lib.optionals (cfg.tailscale.loginServer != null) [
         "--login-server" cfg.tailscale.loginServer
       ] ++ lib.optionals (cfg.tailscale.advertiseTags != []) [
         "--advertise-tags" (lib.concatStringsSep "," cfg.tailscale.advertiseTags)
-      ] ++ lib.optionals (cfg.tailscale.exitNode != null) [
-        "--exit-node" cfg.tailscale.exitNode
       ];
+      # Note: exitNode is set separately after connect (see tailscale-post-connect service)
       # Use persistent volume for state (survives VM rebuilds)
       extraDaemonFlags = [ "--state=/var/lib/openclaw/tailscale/tailscaled.state" ];
     };
@@ -195,26 +200,99 @@ in
       };
     };
 
+    # Post-connect configuration: set exit node after tailscale is online
+    # Exit node cannot be set during initial `tailscale up` with --force-reauth
+    systemd.services.tailscale-post-connect = lib.mkIf (cfg.tailscale.enable && cfg.tailscale.exitNode != null) {
+      description = "Configure Tailscale exit node after connection";
+      after = [ "tailscaled.service" "tailscaled-autoconnect.service" "network-online.target" ];
+      requires = [ "tailscaled.service" "tailscaled-autoconnect.service" ];
+      wants = [ "network-online.target" ];
+      wantedBy = [ "multi-user.target" ];
+
+      path = [ pkgs.tailscale pkgs.jq ];
+
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+      };
+
+      script = ''
+        set -euo pipefail
+
+        echo "Waiting for Tailscale to be fully connected..."
+        for i in $(seq 1 60); do
+          state=$(tailscale status --json 2>/dev/null | jq -r '.BackendState // "Unknown"' || echo "Unknown")
+          if [ "$state" = "Running" ]; then
+            echo "Tailscale connected (state: $state)"
+            break
+          fi
+          echo "Tailscale state: $state (attempt $i/60)"
+          sleep 2
+        done
+
+        if [ "$state" != "Running" ]; then
+          echo "Timeout waiting for Tailscale to connect"
+          exit 1
+        fi
+
+        echo "Setting exit node to ${cfg.tailscale.exitNode}..."
+        tailscale set --exit-node=${cfg.tailscale.exitNode}
+        echo "Exit node configured successfully"
+      '';
+    };
+
     # Tailscale Serve: expose gateway via HTTPS
     # Runs after tailscale is online, configures serve to proxy to gateway
     systemd.services.tailscale-serve = lib.mkIf (cfg.tailscale.enable && cfg.tailscale.serve.enable) {
       description = "Configure Tailscale Serve for OpenClaw Gateway";
-      after = [ "tailscaled.service" "network-online.target" ];
-      requires = [ "tailscaled.service" ];
+      after = [ "tailscaled.service" "tailscaled-autoconnect.service" "network-online.target" ];
+      requires = [ "tailscaled.service" "tailscaled-autoconnect.service" ];
       wants = [ "network-online.target" ];
       wantedBy = [ "multi-user.target" ];
 
-      # Wait for tailscale to be ready before configuring serve
+      path = [ pkgs.tailscale pkgs.jq ];
+
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
-        # Serve HTTPS, proxy to gateway's localhost port
-        ExecStart = "${pkgs.tailscale}/bin/tailscale serve --bg --https=443 http://localhost:${toString cfg.gatewayPort}";
-        # Retry if tailscale not ready yet
-        Restart = "on-failure";
-        RestartSec = 5;
-        RestartMaxDelaySec = "60s";
       };
+
+      # Combined script: wait for Running state, then retry serve command with backoff
+      # The HTTPS feature API may return 404/500 until certificates are provisioned
+      script = ''
+        set -euo pipefail
+
+        echo "Waiting for Tailscale to be fully connected..."
+        for i in $(seq 1 60); do
+          state=$(tailscale status --json 2>/dev/null | jq -r '.BackendState // "Unknown"' || echo "Unknown")
+          if [ "$state" = "Running" ]; then
+            echo "Tailscale connected (state: $state)"
+            break
+          fi
+          echo "Tailscale state: $state (attempt $i/60)"
+          sleep 2
+        done
+
+        if [ "$state" != "Running" ]; then
+          echo "Timeout waiting for Tailscale to connect"
+          exit 1
+        fi
+
+        # Retry serve command - HTTPS feature API may not be ready immediately
+        # Returns 404/500 until coordination server provisions certificates
+        echo "Configuring Tailscale Serve (with retries for HTTPS readiness)..."
+        for i in $(seq 1 30); do
+          if tailscale serve --bg --https=443 http://localhost:${toString cfg.gatewayPort} 2>&1; then
+            echo "Tailscale Serve configured successfully"
+            exit 0
+          fi
+          echo "Tailscale serve not ready yet (attempt $i/30), waiting..."
+          sleep 5
+        done
+
+        echo "Timeout waiting for Tailscale Serve to configure"
+        exit 1
+      '';
     };
 
     # Security: Tailscale state directory with strict permissions
@@ -267,7 +345,7 @@ in
     systemd.services.openclaw-gateway = {
       description = "OpenClaw Gateway";
       after = [ "network-online.target" ]
-        ++ lib.optionals cfg.tailscale.enable [ "tailscaled.service" "tailscale-serve.service" ];
+        ++ lib.optionals cfg.tailscale.enable [ "tailscaled.service" ];
       wants = [ "network-online.target" ];
       # When tailscale enabled, require it for fail-closed security
       requires = lib.optionals cfg.tailscale.enable [ "tailscaled.service" ];
@@ -284,9 +362,10 @@ in
         Group = "openclaw-gateway";
         WorkingDirectory = "/var/lib/openclaw/workspace";
         StateDirectory = "openclaw";
-        # Auto: tries loopback first, falls back to LAN if needed
-        # VSOCK connections appear as localhost, so loopback binding works
-        ExecStart = "${openclaw-pkg}/bin/openclaw gateway --bind auto --port ${toString cfg.gatewayPort}";
+        # Bind mode depends on Tailscale:
+        # - With Tailscale: bind to tailnet IP directly (preserves client IPs for device pairing)
+        # - Without Tailscale: bind to localhost (VSOCK proxy handles host access)
+        ExecStart = "${openclaw-pkg}/bin/openclaw gateway --bind ${if cfg.tailscale.enable then "tailnet" else "auto"} --port ${toString cfg.gatewayPort}";
         Restart = "always";
         RestartSec = 5;
         RestartSteps = 5;
@@ -369,8 +448,15 @@ in
       };
     };
 
-    # Auto-login as root for debugging/admin access via console
-    services.getty.autologinUser = "root";
+    # Note: No tailscale proxy needed - gateway binds directly to tailnet IP via --bind tailnet
+    # This preserves real client IPs for device pairing (localhost auto-approve security)
+
+    # Dev mode only: auto-login as root for debugging/admin access via console
+    services.getty.autologinUser = lib.mkIf cfg.dangerousDevMode "root";
+
+    # Dev mode only: QEMU Guest Agent for host-to-guest command execution
+    # Use from host: ./scripts/vm-exec.sh "command"
+    services.qemuGuest.enable = cfg.dangerousDevMode;
 
     # Security: no passwordless sudo
     security.sudo.wheelNeedsPassword = true;
@@ -412,6 +498,12 @@ in
       qemu.extraArgs = [
         "-chardev" "socket,id=console,path=console.sock,server=on,wait=off"
         "-device" "isa-serial,chardev=console"
+      ] ++ lib.optionals cfg.dangerousDevMode [
+        # Dev mode only: QEMU Guest Agent socket for host-to-guest command execution
+        # Usage: ./scripts/vm-exec.sh "command"
+        "-chardev" "socket,id=qga,path=guest-agent.sock,server=on,wait=off"
+        "-device" "virtio-serial-pci"
+        "-device" "virtserialport,chardev=qga,name=org.qemu.guest_agent.0"
       ];
 
       # TAP networking for proper isolation
@@ -429,8 +521,8 @@ in
       }];
 
       # Shares configuration
-      shares = lib.optionals cfg.devMode [{
-        # devMode: mount host's /nix/store via virtiofs (instant rebuilds)
+      shares = lib.optionals cfg.dangerousDevMode [{
+        # dangerousDevMode: mount host's /nix/store via virtiofs (instant rebuilds)
         # Note: /nix/store is read-only by NixOS design (no explicit ro flag needed)
         # virtiofs respects host permissions; /nix/store is immutable on the host
         tag = "nix-store";
@@ -439,11 +531,12 @@ in
         proto = "virtiofs";
       }];
 
-      # devMode: don't embed /nix/store in image (use virtiofs instead)
-      storeOnDisk = !cfg.devMode;
+      # dangerousDevMode: don't embed /nix/store in image (use virtiofs instead)
+      storeOnDisk = !cfg.dangerousDevMode;
 
-      # non-devMode: use erofs without dedupe for faster multi-threaded builds
-      storeDiskErofsFlags = lib.mkIf (!cfg.devMode) [ "-zlz4hc" "-Eztailpacking" ];
+      # non-dangerousDevMode: use erofs with multi-threaded compression
+      # -j0 = auto-detect CPU count for parallel compression
+      storeDiskErofsFlags = lib.mkIf (!cfg.dangerousDevMode) [ "-zlz4hc" "-Eztailpacking" "-j0" ];
     };
 
     # Create directories for openclaw state

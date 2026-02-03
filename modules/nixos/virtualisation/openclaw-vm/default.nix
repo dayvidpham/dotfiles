@@ -53,10 +53,11 @@ in
   options.CUSTOM.virtualisation.openclaw-vm = {
     enable = mkEnableOption "OpenClaw in microVM";
 
-    devMode = mkOption {
+    dangerousDevMode = mkOption {
       type = types.bool;
-      default = true;
+      default = false;
       description = ''
+        DANGEROUS: Enables debug features - auto-login, guest agent, virtiofs.
         Use virtiofs for /nix/store instead of embedding in erofs image.
         Enables instant rebuilds but requires host's /nix/store at runtime.
         Disable for portable/CI builds (uses erofs without dedupe for faster builds).
@@ -178,6 +179,13 @@ in
         default = null;
         description = "Custom control server URL (e.g., Headscale). If null, uses Tailscale's default servers.";
         example = "https://headscale.example.com";
+      };
+
+      exitNode = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        description = "Exit node hostname to route traffic through. Set AFTER initial connect via tailscale-post-connect service.";
+        example = "portal";
       };
 
       serve = {
@@ -416,7 +424,7 @@ in
             vcpu = cfg.vcpu;
             mem = cfg.memory;
             gatewayPort = cfg.gatewayPort;
-            devMode = cfg.devMode;
+            dangerousDevMode = cfg.dangerousDevMode;
             # Pass network config to ensure host and guest stay in sync
             network = {
               vmAddress = cfg.network.vmAddress;
@@ -433,6 +441,7 @@ in
               enable = cfg.tailscale.enable;
               hostname = cfg.tailscale.hostname;
               loginServer = cfg.tailscale.loginServer;
+              exitNode = cfg.tailscale.exitNode;
               serve.enable = cfg.tailscale.serve.enable;
             };
           };
