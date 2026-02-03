@@ -622,9 +622,10 @@ in
         CapabilityBoundingSet = "";
         AmbientCapabilities = "";
 
-        # System call filtering
-        SystemCallFilter = [ "@system-service" "~@privileged" "~@resources" ];
-        SystemCallArchitectures = "native";
+        # System call filtering - DISABLED pending proper Bun runtime audit
+        # See deferred ticket for re-enabling with correct syscall allowlist
+        # SystemCallFilter = [ "@system-service" "~@privileged" "~@resources" ];
+        # SystemCallArchitectures = "native";
 
         # XDG directories for OpenCode - isolated from gateway and agent
         Environment = [
@@ -681,6 +682,19 @@ in
           # Reverse proxy to gateway on localhost
           reverse_proxy localhost:${toString cfg.gatewayPort} {
             # WebSocket support for control UI
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+          }
+        '';
+      };
+      # OpenCode server - browser UI for coding assistant
+      virtualHosts."https://${cfg.tailscale.hostname}:${toString cfg.opencodeServerPort}" = {
+        extraConfig = ''
+          tls internal
+
+          reverse_proxy localhost:${toString cfg.opencodeServerPort} {
             header_up Host {host}
             header_up X-Real-IP {remote_host}
             header_up X-Forwarded-For {remote_host}
