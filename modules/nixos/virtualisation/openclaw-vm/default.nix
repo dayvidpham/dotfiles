@@ -461,8 +461,16 @@ in
         content = builtins.toJSON {
           gateway = {
             mode = "local";
+            bind = "loopback";
             auth = {
+              mode = "token";
               token = config.sops.placeholder."openclaw/gateway-token";
+              # Accept Tailscale Serve identity headers for authentication
+              # This is secure because:
+              # 1. Gateway binds to loopback only
+              # 2. Tailscale Serve injects verified identity headers
+              # 3. OpenClaw verifies via local tailscale daemon (tailscale whois)
+              allowTailscale = true;
             };
           };
         };

@@ -293,13 +293,14 @@
       enable = true;
       sopsFile = ../../secrets/openclaw/secrets.yaml;
     };
-    # Caddy reverse proxy for HTTPS access
-    caddy = {
+    # Caddy reverse proxy disabled - using Tailscale Serve instead
+    # Tailscale Serve provides HTTPS + identity-based auth via tailnet
+    caddy.enable = false;
+    # Tailscale for remote access via tailnet (using Headscale)
+    tailscale = {
       enable = true;
-      domain = "localhost";
-      httpsPort = 8443;
-      httpPort = 8080;
-      internalCa = true;  # Uses Caddy's internal CA for localhost
+      hostname = "openclaw-vm";
+      loginServer = "https://hs0.vpn.dhpham.com";
     };
   };
 

@@ -120,7 +120,6 @@ in
         type = types.listOf types.str;
         default = [ "tag:openclaw-vm" ];
         description = "ACL tags to advertise for this node (requires pre-authorized auth key with these tags)";
-        example = [ "tag:openclaw-vm" "tag:server" ];
       };
     };
   };
@@ -129,12 +128,10 @@ in
     system.stateVersion = "25.11";
     networking.hostName = "openclaw-vm";
 
-    # Restrict fw_cfg sysfs to root only - systemd reads as root, then places
-    # credentials in service-specific directory. Prevents compromised agent
-    # from reading raw credentials via /sys/firmware/qemu_fw_cfg/
-    services.udev.extraRules = ''
-      SUBSYSTEM=="firmware", DRIVER=="qemu_fw_cfg", MODE="0400", OWNER="root", GROUP="root"
-    '';
+    # Blacklist qemu_fw_cfg kernel module - prevents /sys/firmware/qemu_fw_cfg/ from existing
+    # systemd reads fw_cfg credentials via direct I/O port access (0x510/0x511), not sysfs
+    # This closes the attack vector entirely rather than just restricting permissions
+    boot.blacklistedKernelModules = [ "qemu_fw_cfg" ];
 
     # Static IP configuration for TAP networking
     networking.useDHCP = false;
@@ -359,8 +356,11 @@ in
       };
     };
 
-    # Auto-login as root for debugging/admin access
-    services.getty.autologinUser = "root";
+    # Auto-login as openclaw user (unprivileged agent user)
+    services.getty.autologinUser = "openclaw";
+
+    # Security: no passwordless sudo
+    security.sudo.wheelNeedsPassword = true;
 
     # Enable getty on ttyS1 for console socket access
     systemd.services."serial-getty@ttyS1".enable = true;
