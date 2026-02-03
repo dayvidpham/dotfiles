@@ -573,11 +573,11 @@ in
     # Headscale doesn't support Tailscale Serve HTTPS certs, so we use Caddy with self-signed
     services.caddy = lib.mkIf cfg.tailscale.enable {
       enable = true;
-      # Bind to tailnet interface only (not exposed on TAP network)
       globalConfig = ''
         auto_https disable_redirects
       '';
-      virtualHosts."https://:443" = {
+      # Use tailscale hostname so Caddy knows what certificate to issue
+      virtualHosts."https://${cfg.tailscale.hostname}" = {
         extraConfig = ''
           # Use Caddy's internal CA for HTTPS (self-signed)
           # Clients must trust Caddy's CA or ignore cert errors
