@@ -37,7 +37,7 @@ class TestGroupByLevel:
 
 class TestResolve:
     def test_pub_file_in_ssh_allowed(self):
-        """*.pub (L2, ALLOW) supersedes ~/.ssh/* (L5, DENY)"""
+        """*.pub (L2, ALLOW) supersedes ~/.ssh/* (L6, DENY)"""
         home = str(Path.home())
         decision, reason, pattern, level = resolve(f"{home}/.ssh/id_ed25519.pub", False)
         assert decision == "allow"
@@ -46,7 +46,7 @@ class TestResolve:
         assert pattern.pattern == "*.pub"
 
     def test_env_in_dotfiles_denied(self):
-        """*.env (L2, DENY) supersedes ~/dotfiles/* (L5, ALLOW)"""
+        """*.env (L2, DENY) supersedes ~/dotfiles/* (L6, ALLOW)"""
         home = str(Path.home())
         decision, reason, pattern, level = resolve(f"{home}/dotfiles/.env", False)
         assert decision == "deny"
@@ -54,27 +54,36 @@ class TestResolve:
         assert pattern.pattern == "*.env"
 
     def test_ssh_config_denied(self):
-        """~/.ssh/config matches only ~/.ssh/* (L5, DENY)"""
+        """~/.ssh/config matches only ~/.ssh/* (L6, DENY)"""
         home = str(Path.home())
         decision, reason, pattern, level = resolve(f"{home}/.ssh/config", False)
         assert decision == "deny"
         assert level == SpecificityLevel.DIR_GLOB
 
     def test_dotfiles_nix_allowed(self):
-        """~/dotfiles/flake.nix matches only ~/dotfiles/* (L5, ALLOW)"""
+        """~/dotfiles/flake.nix matches only ~/dotfiles/* (L6, ALLOW)"""
         home = str(Path.home())
         decision, reason, pattern, level = resolve(f"{home}/dotfiles/flake.nix", False)
         assert decision == "allow"
         assert level == SpecificityLevel.DIR_GLOB
 
     def test_secrets_dir_denied(self):
-        """**/secrets/** (L6, DENY)"""
+        """**/secrets/** (L4, DENY - SECURITY_DIRECTORY)"""
         decision, reason, pattern, level = resolve("/home/user/project/secrets/api.key", False)
         assert decision == "deny"
-        assert level == SpecificityLevel.GLOB_MIDDLE
+        assert level == SpecificityLevel.SECURITY_DIRECTORY
+
+    def test_dotfiles_secrets_denied(self):
+        """~/dotfiles/secrets should be DENIED by **/secrets/** (L4) not ALLOWED by ~/dotfiles/* (L6)"""
+        home = str(Path.home())
+        # This is the critical test: secrets dir inside trusted dotfiles should be denied
+        decision, reason, pattern, level = resolve(f"{home}/dotfiles/secrets", False)
+        assert decision == "deny"
+        assert level == SpecificityLevel.SECURITY_DIRECTORY
+        assert pattern.pattern == "**/secrets/**"
 
     def test_restrictive_perms_denied(self):
-        """Mode 600 file with no pattern matches -> DENY at L4"""
+        """Mode 600 file with no pattern matches -> DENY at L5"""
         decision, reason, pattern, level = resolve("/tmp/random.txt", True)
         assert decision == "deny"
         assert level == SpecificityLevel.PERMISSIONS

@@ -31,9 +31,10 @@ Uses specificity-based precedence for security decisions:
 1. FILE_NAME (exact path) - highest priority
 2. FILE_EXTENSION (*.pub, *.env)
 3. DIRECTORY (exact directory)
-4. PERMISSIONS (file mode bits)
-5. DIR_GLOB (~/.ssh/*)
-6. GLOB_MIDDLE (**/secrets/**) - lowest priority
+4. SECURITY_DIRECTORY (**/secrets/**, *credentials*) - security-critical patterns
+5. PERMISSIONS (file mode bits)
+6. DIR_GLOB (~/.ssh/*, ~/dotfiles/*)
+7. GLOB_MIDDLE (other glob patterns) - lowest priority
 
 At each level, DENY supersedes ALLOW.
 

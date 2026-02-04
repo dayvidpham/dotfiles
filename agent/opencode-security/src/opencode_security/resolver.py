@@ -35,9 +35,9 @@ def resolve(
     Algorithm (from REQUIREMENTS dotfiles-oytq UAT-3):
     1. Find all matching patterns
     2. Group by specificity level
-    3. Check levels in order: FILE_NAME(1) > FILE_EXTENSION(2) > DIRECTORY(3) > PERMISSIONS(4) > DIR_GLOB(5) > GLOB_MIDDLE(6)
+    3. Check levels in order: FILE_NAME(1) > FILE_EXTENSION(2) > DIRECTORY(3) > SECURITY_DIRECTORY(4) > PERMISSIONS(5) > DIR_GLOB(6) > GLOB_MIDDLE(7)
     4. At each level: DENY supersedes ALLOW
-    5. Level 4 (PERMISSIONS): check file mode bits
+    5. Level 5 (PERMISSIONS): check file mode bits
     6. If no matches: pass through
 
     Returns:
@@ -46,8 +46,8 @@ def resolve(
     matches = find_matching_patterns(canonical_path)
     grouped = group_by_level(matches)
 
-    # Check levels 1-3 (file name, extension, directory)
-    for level in [SpecificityLevel.FILE_NAME, SpecificityLevel.FILE_EXTENSION, SpecificityLevel.DIRECTORY]:
+    # Check levels 1-4 (file name, extension, directory, security directory)
+    for level in [SpecificityLevel.FILE_NAME, SpecificityLevel.FILE_EXTENSION, SpecificityLevel.DIRECTORY, SpecificityLevel.SECURITY_DIRECTORY]:
         if level in grouped:
             patterns_at_level = grouped[level]
             # DENY supersedes ALLOW at same level
@@ -58,11 +58,11 @@ def resolve(
                 if match.pattern.decision == "allow":
                     return ("allow", f"Allowed by {match.pattern.pattern} ({match.pattern.description})", match.pattern, level)
 
-    # Level 4: Permission mode bits
+    # Level 5: Permission mode bits
     if has_restrictive_perms:
         return ("deny", "File has restrictive permissions (no others read)", None, SpecificityLevel.PERMISSIONS)
 
-    # Check levels 5-6 (dir-glob, glob-middle)
+    # Check levels 6-7 (dir-glob, glob-middle)
     for level in [SpecificityLevel.DIR_GLOB, SpecificityLevel.GLOB_MIDDLE]:
         if level in grouped:
             patterns_at_level = grouped[level]

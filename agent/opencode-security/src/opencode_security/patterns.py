@@ -30,25 +30,25 @@ PATTERNS: list[SecurityPattern] = [
     SecurityPattern(
         "~/.config/sops/*", "deny", SpecificityLevel.DIR_GLOB, "SOPS secrets"
     ),
-    # Level 5: Directory + trailing glob (ALLOW - trusted paths)
+    # Level 4: Security-critical directory names (DENY - high priority)
+    SecurityPattern(
+        "**/secrets/**", "deny", SpecificityLevel.SECURITY_DIRECTORY, "Secrets dirs"
+    ),
+    SecurityPattern(
+        "**/.secrets/**", "deny", SpecificityLevel.SECURITY_DIRECTORY, "Hidden secrets"
+    ),
+    SecurityPattern(
+        "*credentials*", "deny", SpecificityLevel.SECURITY_DIRECTORY, "Credentials files"
+    ),
+    SecurityPattern(
+        "*password*", "deny", SpecificityLevel.SECURITY_DIRECTORY, "Password files"
+    ),
+    # Level 6: Directory + trailing glob (ALLOW - trusted paths)
     SecurityPattern(
         "~/dotfiles/*", "allow", SpecificityLevel.DIR_GLOB, "Trusted: dotfiles"
     ),
     SecurityPattern(
         "~/codebases/*", "allow", SpecificityLevel.DIR_GLOB, "Trusted: codebases"
-    ),
-    # Level 6: Glob in middle (DENY)
-    SecurityPattern(
-        "**/secrets/**", "deny", SpecificityLevel.GLOB_MIDDLE, "Secrets dirs"
-    ),
-    SecurityPattern(
-        "**/.secrets/**", "deny", SpecificityLevel.GLOB_MIDDLE, "Hidden secrets"
-    ),
-    SecurityPattern(
-        "*credentials*", "deny", SpecificityLevel.GLOB_MIDDLE, "Credentials files"
-    ),
-    SecurityPattern(
-        "*password*", "deny", SpecificityLevel.GLOB_MIDDLE, "Password files"
     ),
 ]
 
@@ -96,7 +96,22 @@ def _match_recursive(pattern: str, path: str) -> bool:
     # Convert pattern for fnmatch compatibility
     # ** should match any number of path components
 
-    # Handle **/X/** pattern (glob in middle)
+    # Handle **/X/** pattern (glob in middle) - should match:
+    # - /path/to/X (the directory itself)
+    # - /path/to/X/anything (contents of the directory)
+    if "/**" in pattern and pattern.endswith("/**"):
+        # Extract the middle part (e.g., "secrets" from "**/secrets/**")
+        # This pattern should match both the directory and its contents
+        middle = pattern.rstrip("/**").lstrip("**/").lstrip("/")
+        path_parts = Path(path).parts
+        # Check if any path component matches the middle pattern
+        for i, part in enumerate(path_parts):
+            if fnmatch.fnmatch(part, middle):
+                # Matches - this could be the directory or something inside it
+                return True
+        return False
+
+    # Handle **/X pattern (glob at start)
     if pattern.startswith("**"):
         # Match anywhere in path
         suffix = pattern[2:].lstrip("/")

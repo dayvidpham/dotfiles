@@ -11,9 +11,10 @@ class SpecificityLevel(IntEnum):
     FILE_NAME = 1  # Exact file path: ~/.ssh/id_ed25519
     FILE_EXTENSION = 2  # Extension glob: *.pub, *.env
     DIRECTORY = 3  # Exact directory: ~/.ssh/
-    PERMISSIONS = 4  # Mode bits: 600, 400
-    DIR_GLOB = 5  # Dir + glob: ~/.ssh/*, ~/dotfiles/*
-    GLOB_MIDDLE = 6  # Glob in middle: **/secrets/**
+    SECURITY_DIRECTORY = 4  # Security-critical dir names: **/secrets/**, *credentials*
+    PERMISSIONS = 5  # Mode bits: 600, 400
+    DIR_GLOB = 6  # Dir + glob: ~/.ssh/*, ~/dotfiles/*
+    GLOB_MIDDLE = 7  # Glob in middle: other patterns
 
 
 Decision = Literal["allow", "deny", "pass"]

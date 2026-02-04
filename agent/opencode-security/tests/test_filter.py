@@ -47,7 +47,7 @@ class TestSecurityFilterCheck:
         """**/secrets/** should be denied"""
         result = filter.check("/home/user/project/secrets/api.key")
         assert result.decision == "deny"
-        assert result.matched_level == SpecificityLevel.GLOB_MIDDLE
+        assert result.matched_level == SpecificityLevel.SECURITY_DIRECTORY
 
     def test_restrictive_perms_denied(self, filter, tmp_path):
         """Files with mode 600 should be denied"""

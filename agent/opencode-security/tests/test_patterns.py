@@ -43,6 +43,9 @@ class TestMatchPattern:
     def test_glob_middle_secrets(self):
         assert match_pattern("**/secrets/**", "/any/path/secrets/api.key")
         assert match_pattern("**/secrets/**", "/home/user/project/secrets/db.json")
+        # Should also match the directory itself, not just contents
+        assert match_pattern("**/secrets/**", "/any/path/secrets")
+        assert match_pattern("**/secrets/**", "/home/user/project/secrets")
 
     def test_glob_middle_credentials(self):
         assert match_pattern("*credentials*", "/path/to/credentials.json")
@@ -77,4 +80,4 @@ class TestPatternsConfig:
         assert SpecificityLevel.FILE_NAME in levels_present
         assert SpecificityLevel.FILE_EXTENSION in levels_present
         assert SpecificityLevel.DIR_GLOB in levels_present
-        assert SpecificityLevel.GLOB_MIDDLE in levels_present
+        assert SpecificityLevel.SECURITY_DIRECTORY in levels_present
