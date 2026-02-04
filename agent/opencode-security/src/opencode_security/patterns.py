@@ -35,10 +35,16 @@ PATTERNS: list[SecurityPattern] = [
         "**/secrets/**", "deny", SpecificityLevel.SECURITY_DIRECTORY, "Secrets dirs"
     ),
     SecurityPattern(
+        "**/secret/**", "deny", SpecificityLevel.SECURITY_DIRECTORY, "Secret dir (singular)"
+    ),
+    SecurityPattern(
         "**/.secrets/**", "deny", SpecificityLevel.SECURITY_DIRECTORY, "Hidden secrets"
     ),
     SecurityPattern(
-        "*credentials*", "deny", SpecificityLevel.SECURITY_DIRECTORY, "Credentials files"
+        "**/.secret/**", "deny", SpecificityLevel.SECURITY_DIRECTORY, "Hidden secret (singular)"
+    ),
+    SecurityPattern(
+        "*credential*", "deny", SpecificityLevel.SECURITY_DIRECTORY, "Credential files (singular/plural)"
     ),
     SecurityPattern(
         "*password*", "deny", SpecificityLevel.SECURITY_DIRECTORY, "Password files"

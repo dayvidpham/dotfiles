@@ -71,12 +71,14 @@ class TestSpecificityLevels:
         security_patterns = [
             p for p in PATTERNS if p.level == SpecificityLevel.SECURITY_DIRECTORY
         ]
-        assert len(security_patterns) >= 4, "Should have at least 4 security patterns"
+        assert len(security_patterns) >= 6, "Should have at least 6 security patterns"
 
-        # Verify key security patterns are present
+        # Verify key security patterns are present (both singular and plural)
         pattern_strings = {p.pattern for p in security_patterns}
         assert "**/secrets/**" in pattern_strings
+        assert "**/secret/**" in pattern_strings
         assert "**/.secrets/**" in pattern_strings
+        assert "**/.secret/**" in pattern_strings
 
 
 class TestPatternMatching:
@@ -172,6 +174,15 @@ class TestSecurityDirectoryPrecedence:
             level == SpecificityLevel.SECURITY_DIRECTORY
         ), f"Expected SECURITY_DIRECTORY but got {level}"
         assert pattern is not None and pattern.pattern == "**/secrets/**"
+
+    def test_dotfiles_secret_singular_denied(self):
+        """~/dotfiles/secret (singular) should also be DENIED."""
+        home = str(Path.home())
+        decision, reason, pattern, level = resolve(f"{home}/dotfiles/secret", False)
+
+        assert decision == "deny", f"Expected deny but got {decision}: {reason}"
+        assert level == SpecificityLevel.SECURITY_DIRECTORY
+        assert pattern is not None and pattern.pattern == "**/secret/**"
 
     def test_dotfiles_normal_allowed(self):
         """~/dotfiles/flake.nix should still be ALLOWED."""
