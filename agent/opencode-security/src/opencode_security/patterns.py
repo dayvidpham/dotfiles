@@ -66,7 +66,8 @@ def match_pattern(pattern: str, path: str) -> bool:
     Handles:
     - ~ expansion to home directory
     - ** for recursive matching
-    - * for single-level matching
+    - * for single-level matching in DIR_GLOB patterns (does NOT cross directory boundaries)
+    - * matches any characters including / in FILE_EXTENSION patterns
     """
     expanded_pattern = expand_pattern(pattern)
 
@@ -76,7 +77,17 @@ def match_pattern(pattern: str, path: str) -> bool:
         # Split into parts and match recursively
         return _match_recursive(expanded_pattern, path)
 
-    # Simple fnmatch for non-recursive patterns
+    # For DIR_GLOB patterns (dir/*), ensure * doesn't match subdirectories
+    # e.g., ~/.ssh/* should match ~/.ssh/config but NOT ~/.ssh/subdir/file
+    # But *.pub should match any .pub file at any depth
+    if "/" in expanded_pattern and "*" in expanded_pattern:
+        # This is a directory glob - depth should match
+        pattern_depth = len(Path(expanded_pattern).parts)
+        path_depth = len(Path(path).parts)
+        if path_depth != pattern_depth:
+            return False
+
+    # Simple fnmatch for extension and other patterns
     return fnmatch.fnmatch(path, expanded_pattern)
 
 

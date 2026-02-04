@@ -13,6 +13,7 @@ from .acp import (
     serialize_message,
 )
 from .filter import SecurityFilter
+from .proxy import SecurityProxy
 from .paths import (
     MAX_SYMLINK_DEPTH,
     canonicalize,
@@ -51,6 +52,7 @@ __all__ = [
     "PathResolutionError",
     "CircularSymlinkError",
     "SecurityFilter",
+    "SecurityProxy",
     "MAX_SYMLINK_DEPTH",
     "canonicalize",
     "resolve_symlinks",
