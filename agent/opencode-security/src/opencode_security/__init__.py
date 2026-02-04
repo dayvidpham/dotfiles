@@ -1,0 +1,61 @@
+"""OpenCode Security Filter - Pattern-based security for file access."""
+
+from .acp import (
+    SECURITY_BLOCK_ERROR_CODE,
+    create_auto_allow_response,
+    create_passthrough_response,
+    create_rejection,
+    create_security_block_error,
+    extract_paths_from_tool,
+    is_permission_request,
+    parse_message,
+    parse_permission_request,
+    serialize_message,
+)
+from .paths import (
+    MAX_SYMLINK_DEPTH,
+    canonicalize,
+    is_restrictive_permissions,
+    resolve_symlinks,
+)
+from .types import (
+    CheckResult,
+    CircularSymlinkError,
+    Decision,
+    PathResolutionError,
+    PatternMatch,
+    PermissionOutcome,
+    PermissionRequest,
+    PermissionResponse,
+    SecurityFilterError,
+    SecurityPattern,
+    SpecificityLevel,
+)
+
+__all__ = [
+    "SpecificityLevel",
+    "Decision",
+    "PermissionOutcome",
+    "SecurityPattern",
+    "PatternMatch",
+    "CheckResult",
+    "PermissionRequest",
+    "PermissionResponse",
+    "SecurityFilterError",
+    "PathResolutionError",
+    "CircularSymlinkError",
+    "MAX_SYMLINK_DEPTH",
+    "canonicalize",
+    "resolve_symlinks",
+    "is_restrictive_permissions",
+    "parse_message",
+    "serialize_message",
+    "is_permission_request",
+    "parse_permission_request",
+    "extract_paths_from_tool",
+    "create_rejection",
+    "create_passthrough_response",
+    "SECURITY_BLOCK_ERROR_CODE",
+    "create_security_block_error",
+    "create_auto_allow_response",
+]
