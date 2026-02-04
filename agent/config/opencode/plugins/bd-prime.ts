@@ -62,7 +62,7 @@ export const BdPrimePlugin: Plugin = async ({ client, directory }) => {
         // Inject bd-prime context into the new session
         try {
           await client.session.prompt({
-            path: { id: event.properties.id },
+            path: { id: event.properties.info.id },
             body: {
               noReply: true,
               parts: [{ 
@@ -74,7 +74,7 @@ export const BdPrimePlugin: Plugin = async ({ client, directory }) => {
           client.app.log({
             service: "bd-prime",
             level: "info",
-            message: `Injected bd-prime context into session ${event.properties.id}`,
+            message: `Injected bd-prime context into session ${event.properties.info.id}`,
           }).catch(() => {})
         } catch (err) {
           client.app.log({
