@@ -32,28 +32,29 @@
       "Bash(npx vitest run:*)",
       "Bash(pnpm test:*)",
       "Bash(yarn test:*)",
-      "Bash(git status :*)",
-      "Bash(git diff :*)",
-      "Bash(git log :*)",
-      "Bash(git add :*)",
-      "Bash(git commit:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git add:*)",
       "Bash(git agent-commit:*)",
       "Bash(git push)",
-      "Bash(tail :*)",
-      "Bash(tree :*)",
+      "Bash(tail:*)",
+      "Bash(tree:*)",
       "Read(/tmp/*)",
       "Skill(aura:*)",
       "Skill(beads:*)",
       "Bash(ninja -C build:*)",
       "Bash(ff :*)",
       "Bash(ffg :*)",
-      "Bash(git add:*)",
-      "WebFetch(domain:docs.anthropic.com)"
+      "WebFetch(domain:docs.anthropic.com)",
+      "Bash(ls:*)",
+      "WebFetch(domain:agentclientprotocol.com)",
+      "Bash(python -m pytest:*)",
+      "WebSearch",
+      "Bash(uv run python:*)",
+      "Bash(.venv/bin/pytest tests/ -v --tb=short -q)"
     ],
     "deny": [
-      "Bash(bd burn:*)",
-      "Bash(bd reset:*)",
-      "Bash(bd compact:*)",
       "Edit(.beads/**)",
       "Write(.beads/**)",
       "Edit(.aura/claude-backup/**)",
@@ -62,10 +63,8 @@
     "ask": [
       "Edit(.beads/config.yaml)",
       "Write(.beads/config.yaml)",
-      "Edit(scripts/launch-supervisor.py)",
-      "Write(scripts/launch-supervisor.py)",
-      "Edit(scripts/launch-parallel.py)",
-      "Write(scripts/launch-parallel.py)"
+      "Edit(~/dotfiles/scripts/launch-parallel.py)",
+      "Write(~/dotfiles/scripts/launch-parallel.py)"
     ]
   }
 }

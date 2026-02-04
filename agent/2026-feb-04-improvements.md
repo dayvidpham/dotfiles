@@ -6,6 +6,7 @@
   slices, but this will be unavoidable. At the synchronization points, the workers should stop work and allow
   the supervisor to agent-commit the work.
 
+/aura:supervisor Should NOT implement changes yourself. MUST run parallel workers to make changes. Let's "bake the cake and slice it up". Plan the tasks out, horizontal layer cakes of tasks, and then end-to-end vertical slices. Each vertical slice should be allocated to a Haiku subagent, with minimal synchronization points between vertical slices. Should commit each horizontal layer.
 
 ❯ The questions should not be general: "exactly matches feedback, mostly matches feedback, requires revisions, ..." . Questions should be about examples of how the requirements were met using various abstractions in the
   possible software engineering design space. These questions should be multiSelect, because the user can choose multiple tradeoffs/design choices. For example, "Should this be statically-allocated, allocated at runtime, ...?"
