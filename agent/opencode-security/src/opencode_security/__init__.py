@@ -18,6 +18,11 @@ from .paths import (
     is_restrictive_permissions,
     resolve_symlinks,
 )
+from .resolver import (
+    find_matching_patterns,
+    group_by_level,
+    resolve,
+)
 from .types import (
     CheckResult,
     CircularSymlinkError,
@@ -48,6 +53,9 @@ __all__ = [
     "canonicalize",
     "resolve_symlinks",
     "is_restrictive_permissions",
+    "find_matching_patterns",
+    "group_by_level",
+    "resolve",
     "parse_message",
     "serialize_message",
     "is_permission_request",
