@@ -75,10 +75,10 @@ class TestSpecificityLevels:
 
         # Verify key security patterns are present (both singular and plural)
         pattern_strings = {p.pattern for p in security_patterns}
-        assert "**/secrets/**" in pattern_strings
-        assert "**/secret/**" in pattern_strings
-        assert "**/.secrets/**" in pattern_strings
-        assert "**/.secret/**" in pattern_strings
+        assert "(^|/)secrets(/|$)" in pattern_strings
+        assert "(^|/)secret(/|$)" in pattern_strings
+        assert r"(^|/)\.secrets(/|$)" in pattern_strings
+        assert r"(^|/)\.secret(/|$)" in pattern_strings
 
 
 class TestPatternMatching:
@@ -173,7 +173,7 @@ class TestSecurityDirectoryPrecedence:
         assert (
             level == SpecificityLevel.SECURITY_DIRECTORY
         ), f"Expected SECURITY_DIRECTORY but got {level}"
-        assert pattern is not None and pattern.pattern == "**/secrets/**"
+        assert pattern is not None and pattern.pattern == "(^|/)secrets(/|$)"
 
     def test_dotfiles_secret_singular_denied(self):
         """~/dotfiles/secret (singular) should also be DENIED."""
@@ -182,7 +182,7 @@ class TestSecurityDirectoryPrecedence:
 
         assert decision == "deny", f"Expected deny but got {decision}: {reason}"
         assert level == SpecificityLevel.SECURITY_DIRECTORY
-        assert pattern is not None and pattern.pattern == "**/secret/**"
+        assert pattern is not None and pattern.pattern == "(^|/)secret(/|$)"
 
     def test_dotfiles_normal_allowed(self):
         """~/dotfiles/flake.nix should still be ALLOWED."""
@@ -199,7 +199,7 @@ class TestSecurityDirectoryPrecedence:
 
         assert decision == "deny"
         assert level == SpecificityLevel.FILE_EXTENSION
-        assert pattern is not None and pattern.pattern == "*.env"
+        assert pattern is not None and pattern.pattern == r"\.env$"
 
     def test_pub_key_allowed_in_ssh(self):
         """~/.ssh/id_ed25519.pub should be ALLOWED by *.pub (L2), not DENIED by ~/.ssh/* (L6)."""
@@ -208,7 +208,7 @@ class TestSecurityDirectoryPrecedence:
 
         assert decision == "allow"
         assert level == SpecificityLevel.FILE_EXTENSION
-        assert pattern is not None and pattern.pattern == "*.pub"
+        assert pattern is not None and pattern.pattern == r"\.pub$"
 
 
 class TestResolverDecisions:
@@ -345,7 +345,7 @@ class TestSecurityFilterIntegration:
         assert result.decision == "deny"
         assert result.matched_level == SpecificityLevel.SECURITY_DIRECTORY
         assert result.matched_pattern is not None
-        assert result.matched_pattern.pattern == "**/secrets/**"
+        assert result.matched_pattern.pattern == "(^|/)secrets(/|$)"
 
     def test_filter_allows_dotfiles(self):
         """SecurityFilter should allow normal files in dotfiles."""

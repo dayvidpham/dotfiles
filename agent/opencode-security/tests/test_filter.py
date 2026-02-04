@@ -20,7 +20,8 @@ class TestSecurityFilterCheck:
         result = filter.check(f"{home}/.ssh/id_ed25519.pub")
         assert result.decision == "allow"
         assert result.matched_level == SpecificityLevel.FILE_EXTENSION
-        assert "*.pub" in result.matched_pattern.pattern
+        # Pattern is now regex: \.pub$ instead of *.pub
+        assert result.matched_pattern.pattern == r"\.pub$"
 
     def test_env_in_dotfiles_denied(self, filter):
         """*.env denied even in trusted directories"""

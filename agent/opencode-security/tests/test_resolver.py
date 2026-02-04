@@ -23,7 +23,7 @@ class TestFindMatchingPatterns:
         home = str(Path.home())
         matches = find_matching_patterns(f"{home}/.ssh/id_ed25519.pub")
         patterns = [m.pattern.pattern for m in matches]
-        assert "*.pub" in patterns
+        assert r"\.pub$" in patterns
 
 
 class TestGroupByLevel:
@@ -43,7 +43,7 @@ class TestResolve:
         assert decision == "allow"
         assert level == SpecificityLevel.FILE_EXTENSION
         assert pattern is not None
-        assert pattern.pattern == "*.pub"
+        assert pattern.pattern == r"\.pub$"
 
     def test_env_in_dotfiles_denied(self):
         """*.env (L2, DENY) supersedes ~/dotfiles/* (L6, ALLOW)"""
@@ -51,7 +51,7 @@ class TestResolve:
         decision, reason, pattern, level = resolve(f"{home}/dotfiles/.env", False)
         assert decision == "deny"
         assert level == SpecificityLevel.FILE_EXTENSION
-        assert pattern.pattern == "*.env"
+        assert pattern.pattern == r"\.env$"
 
     def test_ssh_config_denied(self):
         """~/.ssh/config matches only ~/.ssh/* (L6, DENY)"""
@@ -80,7 +80,7 @@ class TestResolve:
         decision, reason, pattern, level = resolve(f"{home}/dotfiles/secrets", False)
         assert decision == "deny"
         assert level == SpecificityLevel.SECURITY_DIRECTORY
-        assert pattern.pattern == "**/secrets/**"
+        assert pattern.pattern == "(^|/)secrets(/|$)"
 
     def test_restrictive_perms_denied(self):
         """Mode 600 file with no pattern matches -> DENY at L5"""

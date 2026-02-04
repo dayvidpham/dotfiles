@@ -1,6 +1,7 @@
 """OpenCode Security Filter - Type definitions."""
 
-from dataclasses import dataclass
+import re
+from dataclasses import dataclass, field
 from enum import IntEnum
 from typing import Literal
 
@@ -23,14 +24,51 @@ PermissionOutcome = Literal[
 ]
 
 
-@dataclass(frozen=True)
+@dataclass
 class SecurityPattern:
-    """A security pattern with its decision and specificity level."""
+    """A security pattern with its decision and specificity level.
+
+    The pattern field contains a regex string that will be compiled on first use.
+    Use the matches() method to check if a path matches the pattern.
+    """
 
     pattern: str
     decision: Literal["allow", "deny"]
     level: SpecificityLevel
     description: str
+    _regex: re.Pattern | None = field(default=None, init=False, repr=False, compare=False)
+
+    def __post_init__(self) -> None:
+        """Compile the regex pattern on initialization."""
+        object.__setattr__(self, "_regex", re.compile(self.pattern))
+
+    def matches(self, path: str) -> bool:
+        """Check if the given path matches this pattern.
+
+        Args:
+            path: The file path to check against the pattern.
+
+        Returns:
+            True if the pattern matches the path, False otherwise.
+        """
+        if self._regex is None:
+            object.__setattr__(self, "_regex", re.compile(self.pattern))
+        return self._regex.search(path) is not None
+
+    def __hash__(self) -> int:
+        """Make SecurityPattern hashable for use in sets and as dict keys."""
+        return hash((self.pattern, self.decision, self.level, self.description))
+
+    def __eq__(self, other: object) -> bool:
+        """Check equality based on pattern fields (not the compiled regex)."""
+        if not isinstance(other, SecurityPattern):
+            return NotImplemented
+        return (
+            self.pattern == other.pattern
+            and self.decision == other.decision
+            and self.level == other.level
+            and self.description == other.description
+        )
 
 
 @dataclass(frozen=True)

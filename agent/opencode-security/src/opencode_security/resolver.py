@@ -10,7 +10,7 @@ def find_matching_patterns(canonical_path: str) -> list[PatternMatch]:
     """Find all patterns that match the given path."""
     matches = []
     for pattern in PATTERNS:
-        if match_pattern(pattern.pattern, canonical_path):
+        if pattern.matches(canonical_path):
             matches.append(PatternMatch(pattern=pattern, matched_path=canonical_path))
     return matches
 
