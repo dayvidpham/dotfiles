@@ -1,0 +1,565 @@
+# Combinatorial Test Fixture for Pattern Matching
+# ================================================
+#
+# This fixture defines reusable components that can be combined to generate
+# comprehensive test cases for security pattern matching. Instead of manually
+# listing hundreds of test paths, we define:
+#
+# 1. path_prefixes: Where files can live (absolute paths and home-relative)
+# 2. denied_patterns: Security-sensitive patterns that should be blocked
+# 3. allowed_patterns: Trusted patterns that should be allowed
+# 4. negative_cases: Edge cases that look similar but should NOT match
+#
+# Test generators combine these components as:
+#   - For directories: prefix + "/" + dir_name + "/" + child_file
+#   - For files: prefix + "/" + filename
+#   - For extensions: prefix + "/" + any_name + extension
+
+# Path prefixes where patterns should be tested
+# Includes absolute paths, user directories, and project structures
+path_prefixes:
+  # Relative paths (critical edge cases)
+  - "."           # Current directory: ./secrets
+  - "./src"       # Relative with subdirectory
+  - "./config"    # Relative with config subdir
+  - ""            # Bare name: secrets (no prefix)
+
+  # Root-level paths
+  - "/"           # Root: /secrets
+
+  # System paths
+  - /etc
+  - /var
+  - /var/log
+  - /var/cache
+  - /usr/local
+
+  # User home-relative (will be combined with ~ expansion)
+  - "~"
+  - "~/.config"
+
+  # Project structure - common scenarios
+  - "/project"
+  - "/project/src"
+  - "/project/config"
+  - "/project/src/config"
+
+  # User application directories
+  - "/home/user"
+  - "/home/user/app"
+  - "/home/user/app/config"
+  - "/home/user/projects"
+  - "/home/user/projects/myapp"
+
+  # Deep nesting - to test recursive patterns
+  - "/home/user/projects/myapp/src"
+  - "/home/user/projects/myapp/src/config"
+  - "/home/user/projects/myapp/config/nested"
+
+# ==================
+# DENIED PATTERNS
+# ==================
+# These patterns should ALL result in DENY decisions.
+# Organized by category and pattern type.
+
+denied_patterns:
+
+  # ============
+  # Environment Files
+  # ============
+  env_files:
+    decision: deny
+    level: FILE_EXTENSION
+    description: "Environment variable files (*.env*)"
+    patterns:
+      - "*.env"
+      - "*.env.*"
+    filenames:
+      - ".env"
+      - ".env.local"
+      - ".env.development"
+      - ".env.production"
+      - ".env.staging"
+      - ".env.test"
+      - "app.env"
+      - "config.env"
+      - "database.env"
+    # Extensions to combine with basenames
+    extensions:
+      - ".env"
+  # Test combinations:
+  # - /project/.env
+  # - /project/.env.local
+  # - /home/user/app/.env.production
+  # - /home/user/app/config/.env.development
+
+  # ============
+  # Secret/Credential Directories (RECURSIVE)
+  # ============
+  # These match **/secrets/** and **/secret/** anywhere in path
+  secret_dirs:
+    decision: deny
+    level: SECURITY_DIRECTORY
+    description: "Secrets directory (plural and singular)"
+    patterns:
+      - "**/secrets/**"
+      - "**/secret/**"
+    dir_names:
+      - "secrets"
+      - "secret"
+    # Files that would appear inside secrets directories
+    child_files:
+      - "api.key"
+      - "db.json"
+      - "config.yaml"
+      - "credentials.json"
+      - "token.txt"
+      - "password.txt"
+      - "private.key"
+      - ""  # Empty string = directory itself
+  # Test combinations:
+  # - /project/secrets
+  # - /project/secrets/api.key
+  # - /project/config/secrets/db.json
+  # - /home/user/projects/myapp/src/secret/credentials.json
+
+  # ============
+  # Hidden Secret Directories
+  # ============
+  hidden_secret_dirs:
+    decision: deny
+    level: SECURITY_DIRECTORY
+    description: "Hidden secrets directory (.secrets or .secret)"
+    patterns:
+      - "**/.secrets/**"
+      - "**/.secret/**"
+    dir_names:
+      - ".secrets"
+      - ".secret"
+    child_files:
+      - "api.key"
+      - "token"
+      - "key.json"
+      - "credentials"
+      - ""  # Directory itself
+  # Test combinations:
+  # - /project/.secrets
+  # - /project/.secrets/api.key
+  # - /home/user/projects/myapp/.secret/token
+
+  # ============
+  # Credential Files (GLOB)
+  # ============
+  # Pattern: *credential* matches anywhere in filename
+  credential_files:
+    decision: deny
+    level: SECURITY_DIRECTORY
+    description: "Credential files (*credential*)"
+    patterns:
+      - "*credential*"
+    filenames:
+      - "credentials.json"
+      - "credentials.yaml"
+      - "credentials.yml"
+      - "credentials"
+      - "credential.json"
+      - "my-credentials"
+      - "aws-credentials"
+      - ".credentials"
+      - "app-credentials.env"
+      - "service_credentials.json"
+    # Variations in different contexts
+    variations:
+      - "credentials_backup.json"
+      - "credentials_old.json"
+      - "credentials_temp.yaml"
+  # Test combinations:
+  # - /project/credentials.json
+  # - /project/config/credentials.yaml
+  # - /home/user/app/.credentials
+  # - /home/user/app/service_credentials.json
+
+  # ============
+  # Password Files (GLOB)
+  # ============
+  # Pattern: *password* matches anywhere in filename
+  password_files:
+    decision: deny
+    level: SECURITY_DIRECTORY
+    description: "Password files (*password*)"
+    patterns:
+      - "*password*"
+    filenames:
+      - "passwords.txt"
+      - "passwords.json"
+      - "password.json"
+      - "password.yaml"
+      - "password.yml"
+      - ".password"
+      - "my-password"
+      - "db-password"
+      - "api-password.txt"
+      - "admin_password.txt"
+    variations:
+      - "passwords_backup.txt"
+      - "passwords_old.json"
+  # Test combinations:
+  # - /project/passwords.txt
+  # - /project/config/password.json
+  # - /home/user/app/.password
+
+  # ============
+  # Standard User Credential/Key Directories (DIR_GLOB)
+  # ============
+  # These are user home directory patterns at specificity level DIR_GLOB
+  ssh_directory:
+    decision: deny
+    level: DIR_GLOB
+    description: "SSH directory (~/.ssh/*)"
+    patterns:
+      - "~/.ssh/*"
+    parent_dir: ".ssh"
+    child_files:
+      - "id_rsa"
+      - "id_ed25519"
+      - "id_ecdsa"
+      - "config"
+      - "authorized_keys"
+      - "known_hosts"
+      - "private.key"
+  # Matches: ~/.ssh/id_rsa, ~/.ssh/config
+  # Does NOT match: ~/.ssh/subdir/file (single * doesn't recurse)
+
+  gnupg_directory:
+    decision: deny
+    level: DIR_GLOB
+    description: "GPG directory (~/.gnupg/*)"
+    patterns:
+      - "~/.gnupg/*"
+    parent_dir: ".gnupg"
+    child_files:
+      - "pubring.gpg"
+      - "secring.gpg"
+      - "trustdb.gpg"
+      - "gpg.conf"
+  # Matches: ~/.gnupg/secring.gpg
+
+  aws_directory:
+    decision: deny
+    level: DIR_GLOB
+    description: "AWS credentials directory (~/.aws/*)"
+    patterns:
+      - "~/.aws/*"
+    parent_dir: ".aws"
+    child_files:
+      - "credentials"
+      - "config"
+      - ".aws/credentials"
+  # Matches: ~/.aws/credentials, ~/.aws/config
+
+  gcloud_directory:
+    decision: deny
+    level: DIR_GLOB
+    description: "Google Cloud credentials (~/.config/gcloud/*)"
+    patterns:
+      - "~/.config/gcloud/*"
+    parent_dir: ".config/gcloud"
+    nested_parent: ".config"
+    child_files:
+      - "credentials.json"
+      - "application_default_credentials.json"
+      - "gcloud.conf"
+  # Matches: ~/.config/gcloud/credentials.json
+
+  azure_directory:
+    decision: deny
+    level: DIR_GLOB
+    description: "Azure credentials directory (~/.azure/*)"
+    patterns:
+      - "~/.azure/*"
+    parent_dir: ".azure"
+    child_files:
+      - "credentials"
+      - "config"
+      - "accessTokens.json"
+  # Matches: ~/.azure/credentials, ~/.azure/config
+
+  sops_directory:
+    decision: deny
+    level: DIR_GLOB
+    description: "SOPS secrets directory (~/.config/sops/*)"
+    patterns:
+      - "~/.config/sops/*"
+    parent_dir: ".config/sops"
+    nested_parent: ".config"
+    child_files:
+      - ".sops.yaml"
+      - "keys.txt"
+  # Matches: ~/.config/sops/.sops.yaml
+
+  # ============
+  # Specific File Names (FILE_NAME)
+  # ============
+  netrc_file:
+    decision: deny
+    level: FILE_NAME
+    description: "FTP/HTTP credentials file (~/.netrc)"
+    patterns:
+      - "~/.netrc"
+    filenames:
+      - ".netrc"
+  # Matches ONLY: ~/.netrc (exact location)
+  # Does NOT match: ~/.ssh/.netrc or /home/user/.netrc
+
+
+# ==================
+# ALLOWED PATTERNS
+# ==================
+# These patterns should result in ALLOW decisions.
+# These are typically safe patterns that override denies.
+
+allowed_patterns:
+
+  # ============
+  # Public Keys (FILE_EXTENSION)
+  # ============
+  public_keys:
+    decision: allow
+    level: FILE_EXTENSION
+    description: "Public key files (*.pub)"
+    patterns:
+      - "*.pub"
+    filenames:
+      - "id_rsa.pub"
+      - "id_ed25519.pub"
+      - "id_ecdsa.pub"
+      - "key.pub"
+      - "signing.pub"
+      - "encrypted.pub"
+    # Should match at any depth
+  # Matches: /project/id_rsa.pub, ~/.ssh/id_ed25519.pub
+
+  # ============
+  # PEM Certificates (FILE_EXTENSION)
+  # ============
+  pem_certificates:
+    decision: allow
+    level: FILE_EXTENSION
+    description: "PEM certificate files (*.pem)"
+    patterns:
+      - "*.pem"
+    filenames:
+      - "cert.pem"
+      - "ca-bundle.pem"
+      - "ca.pem"
+      - "server.pem"
+      - "client.pem"
+      - "certificate.pem"
+      - "tls.pem"
+    # Should match at any depth
+  # Matches: /project/cert.pem, /project/certs/ca.pem
+
+  # ============
+  # Trusted Directories (DIR_GLOB)
+  # ============
+  # These directories are trusted/public and override denies
+  dotfiles_directory:
+    decision: allow
+    level: DIR_GLOB
+    description: "Trusted dotfiles directory (~/dotfiles/*)"
+    patterns:
+      - "~/dotfiles/*"
+    parent_dir: "dotfiles"
+    child_files:
+      - "bashrc"
+      - "vimrc"
+      - "config.yaml"
+      - "setup.sh"
+      - "README.md"
+      - ".gitignore"
+    note: "Dotfiles are considered safe/public by default"
+  # Matches: ~/dotfiles/bashrc, ~/dotfiles/config.yaml
+  # Does NOT match: ~/dotfiles/subdir/file
+
+  codebases_directory:
+    decision: allow
+    level: DIR_GLOB
+    description: "Trusted codebases directory (~/codebases/*)"
+    patterns:
+      - "~/codebases/*"
+    parent_dir: "codebases"
+    child_files:
+      - "myapp"
+      - "framework"
+      - "library"
+      - "src"
+      - "main.py"
+      - "package.json"
+    note: "Codebases are trusted/public source code"
+  # Matches: ~/codebases/myapp, ~/codebases/main.py
+  # Does NOT match: ~/codebases/subdir/file
+
+
+# ==================
+# NEGATIVE CASES
+# ==================
+# Edge cases that LOOK similar to denied patterns but should NOT match.
+# These are critical for validating the pattern matching logic.
+
+negative_cases:
+
+  # ============
+  # Words containing "secret" but not directory
+  # ============
+  secret_word_variants:
+    should_match: false
+    description: "Contains 'secret' in word but not as directory component"
+    cases:
+      # File with 'secret' in name, not directory
+      - "/project/secretive.txt"  # 'secret' is part of word
+      - "/project/top-secret-file.txt"  # 'secret' is part of word
+      - "/project/mysecrets.log"  # No path separator, is a file not dir
+      - "/project/secrets-list.txt"  # File, not directory
+      - "/project/secret-keys.txt"  # File, not directory
+      - "/project/secretconfig"  # No separator, is a file
+
+  # ============
+  # Words containing "credential" but not exactly
+  # ============
+  credential_word_variants:
+    should_match: false
+    description: "Contains 'credential' in word but shouldn't match glob"
+    cases:
+      - "/project/credentialing-service"  # Different word
+      - "/project/credentialed-user.json"  # Different word
+      - "/project/credential_backup_script.sh"  # Script file
+      - "/project/mycredentialstore"  # Not matching pattern boundary
+
+  # ============
+  # Password-like but not matching pattern
+  # ============
+  password_word_variants:
+    should_match: false
+    description: "Contains 'password' but as different context"
+    cases:
+      - "/project/password-manager"  # Directory/tool name, not secrets file
+      - "/project/password_hasher.py"  # Code file, not credentials
+      - "/project/change-password.md"  # Documentation
+      - "/project/passwordless.txt"  # Technical term, not credentials file
+
+  # ============
+  # SSH-like but not in .ssh directory
+  # ============
+  ssh_pattern_variants:
+    should_match: false
+    description: "Contains 'ssh' but not in ~/.ssh/ directory"
+    cases:
+      - "/project/ssh-client"  # Tool/directory, not keys
+      - "/project/openssh-config.yaml"  # Configuration file
+      - "/project/ssh_key_manager.py"  # Code file
+      - "/project/my-ssh-service"  # Service name
+
+  # ============
+  # .env-like but not matching pattern
+  # ============
+  env_variants:
+    should_match: false
+    description: "Contains '.env' but doesn't match extension pattern"
+    cases:
+      - "/project/env_vars.py"  # Not .env extension
+      - "/project/environment.txt"  # Different word
+      - "/project/dev.env.backup"  # Has .env in middle but not matching
+      - "/project/config/.env.example"  # .env.example may or may not match depending on policy
+
+  # ============
+  # Public paths that are safe
+  # ============
+  public_safe_paths:
+    should_match: false
+    decision: allow
+    description: "Paths that are publicly safe and should NOT be denied"
+    cases:
+      - "/project/README.md"
+      - "/project/LICENSE"
+      - "/project/src/main.py"
+      - "/project/config.example.yaml"
+      - "/project/docs/setup.md"
+      - "/project/public/index.html"
+
+
+# ==================
+# PATTERN MATCHING TEST MATRIX
+# ==================
+# This section documents expected behavior for generated test cases.
+# Format: pattern + test_case -> expected_decision
+
+test_matrix:
+  # FILE_EXTENSION patterns
+  file_extension:
+    - pattern: "*.pub"
+      path: "/project/id_rsa.pub"
+      expected: allow
+      level: FILE_EXTENSION
+
+    - pattern: "*.pem"
+      path: "/project/cert.pem"
+      expected: allow
+      level: FILE_EXTENSION
+
+    - pattern: "*.env"
+      path: "/project/.env"
+      expected: deny
+      level: FILE_EXTENSION
+
+    - pattern: "*.env.*"
+      path: "/project/.env.local"
+      expected: deny
+      level: FILE_EXTENSION
+
+  # FILE_NAME patterns
+  file_name:
+    - pattern: "~/.netrc"
+      path: "~/.netrc"
+      expected: deny
+      level: FILE_NAME
+      note: "Matches only exact location"
+
+  # DIR_GLOB patterns (single * doesn't recurse)
+  dir_glob:
+    - pattern: "~/.ssh/*"
+      path: "~/.ssh/id_rsa"
+      expected: deny
+      level: DIR_GLOB
+
+    - pattern: "~/.ssh/*"
+      path: "~/.ssh/subdir/file"
+      expected: no_match  # Single * doesn't match subdirectories
+      level: DIR_GLOB
+
+    - pattern: "~/dotfiles/*"
+      path: "~/dotfiles/bashrc"
+      expected: allow
+      level: DIR_GLOB
+
+  # SECURITY_DIRECTORY patterns (recursive with **)
+  security_directory:
+    - pattern: "**/secrets/**"
+      path: "/project/secrets/api.key"
+      expected: deny
+      level: SECURITY_DIRECTORY
+
+    - pattern: "**/secrets/**"
+      path: "/project/config/secrets"
+      expected: deny
+      level: SECURITY_DIRECTORY
+      note: "Should match directory itself"
+
+    - pattern: "*credential*"
+      path: "/project/credentials.json"
+      expected: deny
+      level: SECURITY_DIRECTORY
+
+    - pattern: "*password*"
+      path: "/project/passwords.txt"
+      expected: deny
+      level: SECURITY_DIRECTORY
