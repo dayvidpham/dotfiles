@@ -244,3 +244,74 @@ export const getSecurityCriticalCases = () =>
 
 export const getCasesByCategory = (category: CommandTestCase["category"]) =>
   COMMAND_TEST_CASES.filter((c) => c.category === category)
+
+// =============================================================================
+// Search pattern test cases
+// Note: Pattern blocking is handled by the Python CLI which has comprehensive
+// rules for sensitive filenames (id_rsa, id_ed25519, credential, password, etc.)
+// =============================================================================
+
+export interface SearchPatternTestCase {
+  /** The bash command with a search pattern */
+  command: string
+  /** Expected search patterns extracted */
+  expectedPatterns: string[]
+  /** Whether the pattern should be blocked (by Python CLI) */
+  shouldBlock: boolean
+  /** Description for test output */
+  description: string
+}
+
+export const SEARCH_PATTERN_TEST_CASES: SearchPatternTestCase[] = [
+  // Sensitive patterns that SHOULD be blocked (by Python CLI)
+  {
+    command: "ls -al | grep -e 'id_ed25519'",
+    expectedPatterns: ["id_ed25519"],
+    shouldBlock: true,
+    description: "blocks grep for SSH key filename",
+  },
+  {
+    command: "grep id_rsa .",
+    expectedPatterns: ["id_rsa"],
+    shouldBlock: true,
+    description: "blocks grep for id_rsa",
+  },
+  {
+    command: "grep 'credential' .",
+    expectedPatterns: ["credential"],
+    shouldBlock: true,
+    description: "blocks grep for credential",
+  },
+  {
+    command: "rg password /var/log",
+    expectedPatterns: ["password"],
+    shouldBlock: true,
+    description: "blocks rg for password",
+  },
+
+  // Safe patterns that SHOULD be allowed
+  {
+    command: "grep TODO src/",
+    expectedPatterns: ["TODO"],
+    shouldBlock: false,
+    description: "allows grep for TODO",
+  },
+  {
+    command: "rg 'function' .",
+    expectedPatterns: ["function"],
+    shouldBlock: false,
+    description: "allows rg for function keyword",
+  },
+  {
+    command: "grep -r 'import' src/",
+    expectedPatterns: ["import"],
+    shouldBlock: false,
+    description: "allows grep for import statements",
+  },
+]
+
+export const getBlockedPatternCases = () =>
+  SEARCH_PATTERN_TEST_CASES.filter((c) => c.shouldBlock)
+
+export const getAllowedPatternCases = () =>
+  SEARCH_PATTERN_TEST_CASES.filter((c) => !c.shouldBlock)

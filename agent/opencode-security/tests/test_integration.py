@@ -244,7 +244,7 @@ class TestResolverDecisions:
             (
                 "{home}/.ssh/id_rsa",
                 "deny",
-                SpecificityLevel.DIR_GLOB,
+                SpecificityLevel.FILE_NAME,  # Matches new id_rsa filename pattern
                 "private key in .ssh",
             ),
             (

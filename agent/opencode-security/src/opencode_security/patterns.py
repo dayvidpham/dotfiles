@@ -104,6 +104,45 @@ PATTERNS: list[SecurityPattern] = [
         "FTP/HTTP credentials",
     ),
 
+    # Private key filenames - match anywhere in path (but not .pub)
+    # These catch bare filenames like "id_rsa" or paths like "/any/path/id_rsa"
+    SecurityPattern(
+        r"(^|/)id_rsa$",
+        "deny",
+        SpecificityLevel.FILE_NAME,
+        "RSA private key",
+    ),
+    SecurityPattern(
+        r"(^|/)id_ed25519$",
+        "deny",
+        SpecificityLevel.FILE_NAME,
+        "Ed25519 private key",
+    ),
+    SecurityPattern(
+        r"(^|/)id_ecdsa$",
+        "deny",
+        SpecificityLevel.FILE_NAME,
+        "ECDSA private key",
+    ),
+    SecurityPattern(
+        r"(^|/)id_dsa$",
+        "deny",
+        SpecificityLevel.FILE_NAME,
+        "DSA private key",
+    ),
+    SecurityPattern(
+        r"(^|/)id_ecdsa_sk$",
+        "deny",
+        SpecificityLevel.FILE_NAME,
+        "ECDSA-SK private key",
+    ),
+    SecurityPattern(
+        r"(^|/)id_ed25519_sk$",
+        "deny",
+        SpecificityLevel.FILE_NAME,
+        "Ed25519-SK private key",
+    ),
+
     # Level 6: Directory + direct children (DENY)
     # ~/.ssh/* -> matches ~/.ssh/config but NOT ~/.ssh/subdir/file
     SecurityPattern(
