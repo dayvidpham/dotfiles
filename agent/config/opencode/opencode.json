@@ -1,0 +1,123 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugin": [
+  ],
+  "permission": {
+    "edit": {
+      "*": "ask",
+      ".beads/**": "deny",
+      ".beads/config.yaml": "ask",
+      ".aura/claude-backup/**": "deny",
+      "~/.claude/transcripts/**": "deny",
+      "scripts/launch-supervisor.py": "ask",
+      "scripts/launch-parallel.py": "ask"
+    },
+    "read": {
+      "*": "allow",
+      ".claude/commands/*": "allow",
+      "~/.claude/.credentials.json": "deny",
+      "/tmp/claude*": "allow",
+      "*.env": "deny",
+      "*.env.*": "deny"
+    },
+    "bash": {
+      "*": "ask",
+      "python3 scripts/launch-parallel.py*": "allow",
+      "python3 ~/scripts/launch-parallel.py*": "allow",
+      
+      "bd": "allow",
+      "bd *": "allow",
+      
+      "npm test*": "allow",
+      "npm run test*": "allow",
+      "npm run typecheck*": "allow",
+      "npm run lint*": "allow",
+      "npm run build*": "allow",
+      "npx vitest*": "allow",
+      "pnpm test*": "allow",
+      "yarn test*": "allow",
+      
+      "nix flake check*": "allow",
+      "nix eval*": "allow",
+      "nix build*": "allow",
+      
+      "systemctl status*": "allow",
+      "systemctl --user status*": "allow",
+      "systemctl cat*": "allow",
+      "systemctl --user cat*": "allow",
+      "journalctl --no-pager*": "allow",
+      "journalctl --user*": "allow",
+      
+      "python -m pytest*": "allow",
+      "uv run python*": "allow",
+      "ninja -C build*": "allow",
+      
+      "ff *": "allow",
+      "ffg *": "allow",
+      
+      "git status*": "allow",
+      "git diff*": "allow",
+      "git log*": "allow",
+      "git add*": "allow",
+      "git branch*": "allow",
+      "git show*": "allow",
+      "git worktree*": "allow",
+      "git rev-parse*": "allow",
+      "git remote*": "allow",
+      "git ls-files*": "allow",
+      "git cat-file*": "allow",
+      "git describe*": "allow",
+      "git for-each-ref*": "allow",
+      "git name-rev*": "allow",
+      "git commit*": "deny",
+      "git agent-commit*": "allow",
+      "git push": "allow",
+      
+      "ls*": "allow",
+      "cat *": "allow",
+      "head*": "allow",
+      "tail*": "allow",
+      "tree*": "allow",
+      "wc *": "allow",
+      "file *": "allow",
+      "stat *": "allow",
+      "find *": "allow",
+      "which *": "allow",
+      "whoami": "allow",
+      "pwd": "allow",
+      "echo *": "allow",
+      
+      "grep *": "allow",
+      "rg *": "allow",
+      "ag *": "allow",
+      
+      "jq *": "allow",
+      "sort *": "allow",
+      "uniq *": "allow",
+      "cut *": "allow",
+      "tr *": "allow",
+      "sed *": "allow",
+      "awk *": "allow",
+      "xargs *": "allow",
+      
+      "bd burn*": "deny",
+      "bd reset*": "deny",
+      "bd compact*": "deny",
+      "bd edit*": "deny"
+    },
+    "external_directory": "ask",
+    "doom_loop": "ask",
+    "webfetch": "ask",
+    "websearch": "ask",
+    "codesearch": "ask"
+  },
+  "mcp": {
+    "context7": {
+      "type": "remote",
+      "url": "https://mcp.context7.com/mcp",
+      "headers": {
+        "CONTEXT7_API_KEY": "ctx7sk-c404745e-7fd0-457c-8f46-0d4e169905d0"
+      }
+    }
+  },
+}
