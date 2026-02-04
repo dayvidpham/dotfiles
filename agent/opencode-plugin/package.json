@@ -1,23 +1,20 @@
 {
   "name": "@dotfiles/opencode-security-plugin",
-  "version": "0.1.0",
-  "description": "Security plugin for OpenCode that filters sensitive file access",
+  "version": "0.2.0",
+  "description": "Security plugin for OpenCode that filters sensitive file access using AST-based bash parsing",
   "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "src/security-filter.ts",
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch"
+    "install-to-opencode": "cp src/security-filter.ts ~/.config/opencode/plugins/"
   },
   "dependencies": {
-    "minimatch": "^9.0.0"
+    "@opencode-ai/plugin": "^1.1.40",
+    "bash-parser": "^0.5.0"
   },
   "devDependencies": {
-    "@anthropic-ai/sdk": "^0.30.0",
-    "@types/node": "^20.0.0",
-    "typescript": "^5.0.0"
+    "@types/node": "^22.0.0"
   },
   "peerDependencies": {
-    "@anthropic-ai/sdk": ">=0.30.0"
+    "opencode-security-filter": ">=0.1.0"
   }
 }
