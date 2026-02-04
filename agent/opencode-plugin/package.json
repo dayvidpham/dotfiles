@@ -1,20 +1,25 @@
 {
   "name": "@dotfiles/opencode-security-plugin",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Security plugin for OpenCode that filters sensitive file access using AST-based bash parsing",
   "type": "module",
   "main": "src/security-filter.ts",
   "scripts": {
-    "install-to-opencode": "cp src/security-filter.ts ~/.config/opencode/plugins/"
+    "install-to-opencode": "cp src/security-filter.ts ~/.config/opencode/plugins/",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@opencode-ai/plugin": "^1.1.40",
     "bash-parser": "^0.5.0"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0"
+    "@types/node": "^22.0.0",
+    "vitest": "^2.1.8"
   },
-  "peerDependencies": {
-    "opencode-security-filter": ">=0.1.0"
+  "peerDependenciesMeta": {
+    "opencode-security-filter": {
+      "optional": true
+    }
   }
 }

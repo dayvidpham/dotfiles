@@ -55,14 +55,10 @@ You MUST propose alternative approaches that don't require sensitive file access
   const PATTERN_FIRST_COMMANDS = new Set(["grep", "rg", "ag", "ack"])
 
   /**
-   * Check if a string looks like a file path
-   */
-  const looksLikePath = (s: string): boolean => {
-    return s.includes("/") || s.startsWith("~") || s.startsWith(".")
-  }
-
-  /**
-   * Extract file paths from a bash AST command node
+   * Extract file paths from a bash AST command node.
+   *
+   * For security, ALL non-flag arguments to file commands are treated as potential
+   * paths. The Python filter CLI decides if they match blocked patterns.
    */
   const extractPathsFromCommand = (cmd: any): string[] => {
     const paths: string[] = []
@@ -79,12 +75,12 @@ You MUST propose alternative approaches that don't require sensitive file access
     }
 
     if (READ_COMMANDS.has(name) || COPY_COMMANDS.has(name)) {
-      // Filter to only path-like arguments
-      paths.push(...args.filter(looksLikePath))
+      // All non-flag args are potential file paths
+      paths.push(...args)
     } else if (WRITE_COMMANDS.has(name)) {
-      // Last arg is usually the file
+      // Last arg is the destination file
       const last = args[args.length - 1]
-      if (last && looksLikePath(last)) paths.push(last)
+      if (last) paths.push(last)
     }
 
     return paths
@@ -92,15 +88,53 @@ You MUST propose alternative approaches that don't require sensitive file access
 
   /**
    * Recursively walk AST to find all Command nodes
+   * Handles: pipes, subshells, logical expressions, command substitutions
    */
   const walkCommands = (node: any, visitor: (cmd: any) => void) => {
     if (!node) return
 
     if (node.type === "Command") {
       visitor(node)
+
+      // Check command suffix for expansions (command substitution in args)
+      if (node.suffix) {
+        for (const item of node.suffix) {
+          if (item.expansion) {
+            for (const exp of item.expansion) {
+              if (exp.type === "CommandExpansion" && exp.commandAST) {
+                walkCommands(exp.commandAST, visitor)
+              }
+            }
+          }
+        }
+      }
+
+      // Check redirects for command substitutions
+      if (node.redirect) {
+        for (const redir of node.redirect) {
+          if (redir.file?.expansion) {
+            for (const exp of redir.file.expansion) {
+              if (exp.type === "CommandExpansion" && exp.commandAST) {
+                walkCommands(exp.commandAST, visitor)
+              }
+            }
+          }
+        }
+      }
     }
 
-    // Walk children
+    // Handle subshells: (cat secret)
+    if (node.type === "Subshell" && node.list) {
+      walkCommands(node.list, visitor)
+    }
+
+    // Handle logical operations: cmd1 && cmd2 || cmd3
+    if (node.type === "LogicalExpression") {
+      if (node.left) walkCommands(node.left, visitor)
+      if (node.right) walkCommands(node.right, visitor)
+    }
+
+    // Walk children (handles pipes and compound lists)
     if (node.commands) {
       for (const child of node.commands) {
         walkCommands(child, visitor)
