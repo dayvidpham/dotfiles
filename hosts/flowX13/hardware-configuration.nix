@@ -106,6 +106,8 @@
 
     RUNTIME_PM_DISABLE = "08:00.3 08:00.4";
     RUNTIME_PM_DRIVER_DENYLIST = "mei_me nouveau radeon xhci_hcd";
+    USB_AUTOSUSPEND = 0;
+    USB_BLACKLIST = "0bda:8156";
 
     PCIE_ASPM_ON_AC = "default";
     PCIE_ASPM_ON_BAT = "powersave";
