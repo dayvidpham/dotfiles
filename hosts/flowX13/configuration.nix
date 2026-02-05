@@ -105,6 +105,7 @@ in
       '';
     };
     loader.efi.canTouchEfiVariables = true;
+    kernelParams = [ "usbcore.autosuspend=-1" ];
     kernelPackages = pkgs.linuxPackages_6_12;
   };
 
