@@ -66,5 +66,7 @@
       "Edit(~/dotfiles/scripts/launch-parallel.py)",
       "Write(~/dotfiles/scripts/launch-parallel.py)"
     ]
-  }
+  },
+  "prefersReducedMotion": false,
+  "outputStyle": "Explanatory"
 }
