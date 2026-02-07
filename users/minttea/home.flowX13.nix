@@ -22,4 +22,8 @@ in
 
   programs.opencode.enable = true;
   CUSTOM.services.syncthing.enable = true;
+  CUSTOM.services.syncthing.secrets = {
+    enable = true;
+    apiKeyFile = "/run/secrets/syncthing/apikey";
+  };
 }

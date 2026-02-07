@@ -10,6 +10,19 @@ creation_rules:
           # Private key at: /var/lib/sops-nix/keys.txt
           - age1r2ev7w50syd2adu9e0uus4dllfqy9yc0j3w6ezdntjcsqn9gqejs34qxh9
 
+  # Syncthing secrets - accessible by host keys (non-interactive decryption)
+  - path_regex: secrets/syncthing/.*\.yaml$
+    key_groups:
+      - age:
+          # Desktop host key (NixOS sops-nix)
+          # Private key at: /var/lib/sops-nix/keys.txt
+          - age1r2ev7w50syd2adu9e0uus4dllfqy9yc0j3w6ezdntjcsqn9gqejs34qxh9
+          # User key (portable across machines)
+          # Private key at: ~/.config/sops/age/keys.txt
+          - age1avxj2pmr8s2e4y7ucse6ks5xfwdftu357lec9ty8qvemw68p6epqq3k04y
+          # flowX13
+          - age1qceaa6au6jdtzeadyax8gq36tt8krt2age4k97sa298qnae4x4lqzlx3ag
+
   # SafeMolt secrets - accessible by host or user key
   - path_regex: secrets/safemolt/.*\.yaml$
     key_groups:
@@ -25,4 +38,7 @@ creation_rules:
   - path_regex: secrets/.*\.yaml$
     key_groups:
       - age:
+          # desktop
           - age1r2ev7w50syd2adu9e0uus4dllfqy9yc0j3w6ezdntjcsqn9gqejs34qxh9
+          # flowX13
+          - age1qceaa6au6jdtzeadyax8gq36tt8krt2age4k97sa298qnae4x4lqzlx3ag

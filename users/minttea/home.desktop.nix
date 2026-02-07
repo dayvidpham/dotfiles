@@ -86,6 +86,10 @@ in
   programs.lutris.enable = true;
 
   CUSTOM.services.syncthing.enable = true;
+  CUSTOM.services.syncthing.secrets = {
+    enable = true;
+    apiKeyFile = "/run/secrets/syncthing/apikey";
+  };
 
   ##################
   # Virtualisation

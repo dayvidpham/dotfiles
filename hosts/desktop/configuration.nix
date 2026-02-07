@@ -311,8 +311,15 @@
     };
   };
 
-  # Configure sops-nix for system-level secrets (used by openclaw-vm)
+  # Configure sops-nix for system-level secrets
   sops.age.keyFile = "/var/lib/sops-nix/keys.txt";
+
+  # Syncthing API key (decrypted by NixOS sops-nix, read by user service via LoadCredential)
+  sops.secrets."syncthing/apikey" = {
+    sopsFile = ../../secrets/syncthing/secrets.yaml;
+    key = "desktop-apikey";
+    owner = "minttea";
+  };
 
   # Try getting AMD iGPU to work @_@
   # hardware.amdgpu = {

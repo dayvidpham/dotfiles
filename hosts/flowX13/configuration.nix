@@ -239,6 +239,16 @@ in
     user = "minttea";
   };
 
+  # Configure sops-nix for system-level secrets
+  sops.age.keyFile = "/var/lib/sops-nix/keys.txt";
+
+  # Syncthing API key (decrypted by NixOS sops-nix, read by user service via LoadCredential)
+  sops.secrets."syncthing/apikey" = {
+    sopsFile = ../../secrets/syncthing/secrets.yaml;
+    key = "flowX13-apikey";
+    owner = "minttea";
+  };
+
   ######################################
   # Some user setup: Most user-stuff will be in home-manager
   users.users.minttea = {
