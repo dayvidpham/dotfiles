@@ -104,7 +104,5 @@ in
   # Disabled: openclaw now runs via VM (CUSTOM.virtualisation.openclaw-vm in host config)
   CUSTOM.services.openclaw.enable = false;
 
-  # sops-nix: HM module needs to know where the age key lives
-  sops.age.keyFile = "/home/minttea/.config/sops/age/keys.txt";
 
 }
