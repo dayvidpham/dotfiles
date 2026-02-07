@@ -106,11 +106,11 @@ in
             "desktop" = {
               id = "PBNVVR2-AC7HNJ2-ZNSWJOH-N33ZXDL-4PLSE2K-3KF2TUT-36AVMYK-6PTXRQZ";
               # Hardcode the Headscale IP. Port 22000 is standard.
-              addresses = [ "tcp://${desktopIp}:22000" ];
+              addresses = [ "quic://${desktopIp}:22000" ];
             };
             "flowX13" = {
               id = "RS4XGM6-YFBMSFV-MWJJVZP-QXYM7UN-SOT7PKK-4PPDR4L-XMIE6EJ-5JEZOAR";
-              addresses = [ "tcp://${flowx13Ip}:22000" ];
+              addresses = [ "quic://${flowx13Ip}:22000" ];
             };
           };
 
