@@ -241,6 +241,7 @@ in
 
   # Configure sops-nix for system-level secrets
   sops.age.keyFile = "/var/lib/sops-nix/keys.txt";
+  environment.variables.SOPS_AGE_KEY_FILE = "/var/lib/sops-nix/keys.txt";
 
   # Syncthing API key (decrypted by NixOS sops-nix, read by user service via LoadCredential)
   sops.secrets."syncthing/apikey" = {
