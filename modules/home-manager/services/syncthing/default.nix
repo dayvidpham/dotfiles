@@ -79,6 +79,12 @@ in
   config = mkIf (cfg.enable) (mkMerge [
     # Base syncthing configuration
     {
+      # Ensure syncthingtray starts after waybar has registered the
+      # StatusNotifierWatcher on D-Bus. Without this, both start on
+      # graphical-session.target simultaneously and syncthingtray
+      # fails to find a tray host.
+      systemd.user.services.syncthingtray.Unit.After = [ "waybar.service" ];
+
       services.syncthing = {
         enable = true;
         tray.enable = true;
