@@ -124,7 +124,7 @@ in
               versioning = {
                 type = "simple";
                 params = {
-                  keep = 5;
+                  keep = "5";
                 };
               };
             };
