@@ -7,7 +7,6 @@ let
     mkIf
     mkMerge
     types
-    getExe
     ;
 
   # Replace with the actual Headscale IPs of your other devices
@@ -16,50 +15,6 @@ let
 
   cfg = config.CUSTOM.services.syncthing;
   secretsCfg = cfg.secrets;
-
-  # Script that PATCHes the syncthing API key from a credential file.
-  # Reads the current key from config.xml, skips if already matching.
-  apikeyScript = pkgs.writeShellScript "syncthing-set-apikey" ''
-    set -euo pipefail
-
-    APIKEY=$(< "$CREDENTIALS_DIRECTORY/apikey")
-    CONFIG_XML="${config.home.homeDirectory}/.local/state/syncthing/config.xml"
-
-    # Wait for config.xml to exist (syncthing writes it on first start)
-    for i in $(seq 1 30); do
-      [ -f "$CONFIG_XML" ] && break
-      sleep 1
-    done
-
-    if [ ! -f "$CONFIG_XML" ]; then
-      echo "ERROR: config.xml not found after 30s" >&2
-      exit 1
-    fi
-
-    # Extract current API key from config.xml
-    CURRENT=$(${getExe pkgs.xmlstarlet} sel -t -v "/configuration/gui/apikey" "$CONFIG_XML" 2>/dev/null || echo "")
-
-    if [ "$CURRENT" = "$APIKEY" ]; then
-      echo "API key already matches, skipping PATCH"
-      exit 0
-    fi
-
-    # Extract current API key for auth header (syncthing may have regenerated it)
-    if [ -z "$CURRENT" ]; then
-      echo "ERROR: could not read current API key from config.xml" >&2
-      exit 1
-    fi
-
-    # PATCH the stable key via REST API
-    ${getExe pkgs.curl} -sf \
-      -X PATCH \
-      -H "X-API-Key: $CURRENT" \
-      -H "Content-Type: application/json" \
-      -d "{\"apiKey\": \"$APIKEY\"}" \
-      http://127.0.0.1:8384/rest/config/gui
-
-    echo "API key PATCHed successfully"
-  '';
 in
 {
   options.CUSTOM.services.syncthing = {
@@ -79,15 +34,8 @@ in
   config = mkIf (cfg.enable) (mkMerge [
     # Base syncthing configuration
     {
-      # Ensure syncthingtray starts after waybar has registered the
-      # StatusNotifierWatcher on D-Bus. Without this, both start on
-      # graphical-session.target simultaneously and syncthingtray
-      # fails to find a tray host.
-      systemd.user.services.syncthingtray.Unit.After = [ "waybar.service" ];
-
       services.syncthing = {
         enable = true;
-        tray.enable = true;
 
         settings = {
           # 1. Network Privacy Settings
@@ -139,25 +87,23 @@ in
       };
     }
 
-    # API key service (only when secrets.enable = true)
+    # Stable API key via STGUIAPIKEY env var (only when secrets.enable = true)
     (mkIf secretsCfg.enable {
-      systemd.user.services.syncthing-apikey = {
-        Unit = {
-          Description = "Set stable Syncthing API key";
-          After = [ "syncthing-init.service" ];
-          Requires = [ "syncthing-init.service" ];
-        };
-
-        Service = {
-          Type = "oneshot";
-          RemainAfterExit = true;
-          LoadCredential = "apikey:${secretsCfg.apiKeyFile}";
-          ExecStart = toString apikeyScript;
-        };
-
-        Install = {
-          WantedBy = [ "syncthing-init.service" ];
-        };
+      # LoadCredential puts the secret at $CREDENTIALS_DIRECTORY/apikey.
+      # ExecStartPre writes it to a tmpfs env file in RuntimeDirectory;
+      # EnvironmentFile loads it into syncthing's process only.
+      # The env file lives in /run/user/<uid>/syncthing/ (RAM, user-only,
+      # cleaned up by systemd on service stop).
+      systemd.user.services.syncthing.Service = {
+        LoadCredential = "apikey:${secretsCfg.apiKeyFile}";
+        RuntimeDirectory = "syncthing";
+        ExecStartPre = toString (pkgs.writeShellScript "syncthing-load-apikey" ''
+          set -euo pipefail
+          umask 0177
+          echo "STGUIAPIKEY=$(< "$CREDENTIALS_DIRECTORY/apikey")" \
+            > "$RUNTIME_DIRECTORY/apikey.env"
+        '');
+        EnvironmentFile = "-%t/syncthing/apikey.env";
       };
     })
   ]);
