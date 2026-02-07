@@ -61,6 +61,11 @@
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
 
+    openclaw-modules = {
+      url = "github:dayvidpham/nix-openclaw-vm";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Secrets management
     sops-nix = {
       url = "github:Mic92/sops-nix";
@@ -88,6 +93,7 @@
     , microvm
     , nix-openclaw
     , opencode
+    , openclaw-modules
     , sops-nix
     , ...
     }:
@@ -159,6 +165,7 @@
         niri.nixosModules.niri
         microvm.nixosModules.host
         sops-nix.nixosModules.sops
+        openclaw-modules.nixosModules.default
 
         # Custom modules
         ./modules/nixos
@@ -312,7 +319,7 @@
           hostSpecialArgs = { inherit pkgs pkgs-unstable nix-openclaw opencode; };
           modules = [
             microvm.nixosModules.microvm
-            ./modules/nixos/virtualisation/openclaw-vm/guest.nix
+            openclaw-modules.nixosModules.openclaw-vm-guest
           ];
         };
       };

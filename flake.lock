@@ -595,6 +595,26 @@
         "type": "github"
       }
     },
+    "openclaw-modules": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1770481141,
+        "narHash": "sha256-jvXG8KptbL8M4ENWJ2U/mcjWub5VJhYC2AuGisy5eZg=",
+        "owner": "dayvidpham",
+        "repo": "nix-openclaw-vm",
+        "rev": "ca158085b0a4eee54ed56237f1187ad7c5f81409",
+        "type": "github"
+      },
+      "original": {
+        "owner": "dayvidpham",
+        "repo": "nix-openclaw-vm",
+        "type": "github"
+      }
+    },
     "opencode": {
       "inputs": {
         "nixpkgs": [
@@ -631,6 +651,7 @@
         "nixpkgs-stable": "nixpkgs-stable",
         "nixpkgs-unstable": "nixpkgs-unstable",
         "nixpkgs-wsl": "nixpkgs-wsl",
+        "openclaw-modules": "openclaw-modules",
         "opencode": "opencode",
         "sops-nix": "sops-nix"
       }

@@ -15,7 +15,7 @@ Plan ratified and user has approved proceeding with implementation.
 
 **Given** RATIFIED_PLAN task **when** handing off **then** create IMPLEMENTATION_PLAN task **should never** hand off without linking to ratified plan
 
-**Given** handoff **when** spawning supervisor **then** use `scripts/launch-parallel.py --role supervisor` **should never** spawn supervisor as Task tool subagent
+**Given** handoff **when** spawning supervisor **then** use `~/codebases/dayvidpham/aura-scripts/launch-parallel.py --role supervisor` **should never** spawn supervisor as Task tool subagent
 
 **Given** implementation planning **when** handing off **then** let supervisor create layer-cake tasks **should never** create implementation tasks as architect
 
@@ -36,10 +36,10 @@ Plan ratified and user has approved proceeding with implementation.
 2. Launch supervisor using the Python script:
    ```bash
    # Dry run first to verify prompt
-   ./scripts/launch-parallel.py --role supervisor -n 1 --prompt "..." --dry-run
+   ~/codebases/dayvidpham/aura-scripts/launch-parallel.py --role supervisor -n 1 --prompt "..." --dry-run
 
    # Launch in tmux session
-   ./scripts/launch-parallel.py --role supervisor -n 1 --prompt "..."
+   ~/codebases/dayvidpham/aura-scripts/launch-parallel.py --role supervisor -n 1 --prompt "..."
    ```
 
    The script will:
@@ -80,7 +80,7 @@ Read the ratified plan with `bd show <ratified-plan-id>` to understand the full 
 Pass the prompt to the script:
 
 ```bash
-./scripts/launch-parallel.py --role supervisor -n 1 --prompt "$(cat <<'EOF'
+~/codebases/dayvidpham/aura-scripts/launch-parallel.py --role supervisor -n 1 --prompt "$(cat <<'EOF'
 Implement the ratified plan for User Authentication.
 
 ## Context
@@ -109,16 +109,16 @@ EOF
 ## Script Options
 
 ```bash
-./scripts/launch-parallel.py --role supervisor -n 1 --prompt "..."             # Launch supervisor
-./scripts/launch-parallel.py --role reviewer -n 3 --prompt "..."               # Launch 3 reviewers
-./scripts/launch-parallel.py --role worker -n 2 --task-id id1 --task-id id2    # Workers with tasks
-./scripts/launch-parallel.py --role supervisor -n 1 --prompt "..." --dry-run   # Preview without launching
-./scripts/launch-parallel.py --role supervisor -n 1 --prompt-file prompt.md    # Read prompt from file
+~/codebases/dayvidpham/aura-scripts/launch-parallel.py --role supervisor -n 1 --prompt "..."             # Launch supervisor
+~/codebases/dayvidpham/aura-scripts/launch-parallel.py --role reviewer -n 3 --prompt "..."               # Launch 3 reviewers
+~/codebases/dayvidpham/aura-scripts/launch-parallel.py --role worker -n 2 --task-id id1 --task-id id2    # Workers with tasks
+~/codebases/dayvidpham/aura-scripts/launch-parallel.py --role supervisor -n 1 --prompt "..." --dry-run   # Preview without launching
+~/codebases/dayvidpham/aura-scripts/launch-parallel.py --role supervisor -n 1 --prompt-file prompt.md    # Read prompt from file
 ```
 
 ## IMPORTANT
 
-- **DO NOT** spawn supervisor as a Task tool subagent - use `scripts/launch-parallel.py`
+- **DO NOT** spawn supervisor as a Task tool subagent - use `~/codebases/dayvidpham/aura-scripts/launch-parallel.py`
 - **DO NOT** create implementation tasks yourself - the supervisor creates layer-cake tasks
 - **DO NOT** implement the plan yourself - your role is handoff and monitoring
 - The supervisor reads the ratified plan and determines layer structure

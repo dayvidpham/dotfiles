@@ -2,7 +2,12 @@
   "permissions": {
     "allow": [
       "Read(.claude/commands/*)",
-      "Bash(python3 scripts/launch-parallel.py:*)",
+      "Bash(python3 ~/codebases/dayvidpham/aura-scripts/launch-parallel.py:*)",
+      "Edit(~/codebases/dayvidpham/aura-scripts/launch-parallel.py)",
+      "Write(~/codebases/dayvidpham/aura-scripts/launch-parallel.py)",
+      "Read(~/codebases/**)",
+      "Edit(~/codebases/dayvidpham/**)",
+      "Write(~/codebases/dayvidpham/**)",
       "Bash(bd:*)",
       "Bash(bd show:*)",
       "Bash(bd list:*)",
@@ -59,7 +64,9 @@
       "WebFetch(domain:raw.githubusercontent.com)",
       "Bash(journalctl:*)",
       "Bash(echo:*)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(wc:*)",
+      "Bash(gh repo list:*)"
     ],
     "deny": [
       "Edit(.beads/**)",
@@ -69,9 +76,7 @@
     ],
     "ask": [
       "Edit(.beads/config.yaml)",
-      "Write(.beads/config.yaml)",
-      "Edit(~/dotfiles/scripts/launch-parallel.py)",
-      "Write(~/dotfiles/scripts/launch-parallel.py)"
+      "Write(.beads/config.yaml)"
     ]
   },
   "outputStyle": "Explanatory",

@@ -33,7 +33,7 @@ Supervisor spawns 3 parallel reviewers:
 
 ```bash
 # Use launch-parallel.py to spawn reviewers
-python scripts/launch-parallel.py \
+python ~/codebases/dayvidpham/aura-scripts/launch-parallel.py \
   --count 3 \
   --prompt "Skill(/aura-reviewer-review-code)
 You are Reviewer {{N}}.

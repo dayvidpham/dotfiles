@@ -6,8 +6,7 @@
       ".beads/**": "deny",
       ".beads/config.yaml": "ask",
       ".aura/claude-backup/**": "deny",
-      "scripts/launch-supervisor.py": "ask",
-      "scripts/launch-parallel.py": "ask"
+      "~/codebases/dayvidpham/aura-scripts/launch-parallel.py": "ask"
     },
     "read": {
       "*": "allow",
@@ -18,7 +17,7 @@
     },
     "bash": {
       "*": "ask",
-      "python3 scripts/launch-parallel.py*": "allow",
+      "python3 ~/codebases/dayvidpham/aura-scripts/launch-parallel.py*": "allow",
       "bd": "allow",
       "bd *": "allow",
       "npm test*": "allow",
