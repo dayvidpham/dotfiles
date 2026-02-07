@@ -21,11 +21,14 @@
       "Bash(npm run build:*)",
       "Bash(nix flake check --no-build:*)",
       "Bash(nix eval --impure:*)",
+      "Bash(nix eval --impure*)",
       "Bash(nix build --no-link:*)",
       "Bash(systemctl status:*)",
       "Bash(systemctl --user status:*)",
       "Bash(systemctl cat:*)",
       "Bash(systemctl --user cat:*)",
+      "Bash(systemctl show:*)",
+      "Bash(systemctl --user show:*)",
       "Bash(journalctl --no-pager -l -xeu:*)",
       "Bash(journalctl --user --no-pager -l -xeu:*)",
       "Bash(npx vitest:*)",
@@ -52,7 +55,11 @@
       "Bash(python -m pytest:*)",
       "WebSearch",
       "Bash(uv run python:*)",
-      "Bash(.venv/bin/pytest tests/ -v --tb=short -q)"
+      "Bash(.venv/bin/pytest tests/ -v --tb=short -q)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(journalctl:*)",
+      "Bash(echo:*)",
+      "WebFetch(domain:github.com)"
     ],
     "deny": [
       "Edit(.beads/**)",
@@ -67,6 +74,6 @@
       "Write(~/dotfiles/scripts/launch-parallel.py)"
     ]
   },
-  "prefersReducedMotion": false,
-  "outputStyle": "Explanatory"
+  "outputStyle": "Explanatory",
+  "prefersReducedMotion": false
 }
