@@ -336,6 +336,10 @@ Examples:
         help="Show commands without executing",
     )
     parser.add_argument(
+        "--session-name",
+        help="Override tmux session name (with n>1, each instance gets --{n} suffix)",
+    )
+    parser.add_argument(
         "--attach",
         action="store_true",
         help="Attach to first session after launching",
@@ -418,9 +422,15 @@ Examples:
             job_task_ids = [task_ids[i]] if i < len(task_ids) else None
             session_task_id = task_ids[i] if i < len(task_ids) else None
 
-        # Generate session name (uses first task ID for naming)
+        # Generate session name (uses first task ID for naming, or explicit override)
         try:
-            session_name = generate_session_name(args.role, i + 1, session_task_id)
+            if args.session_name:
+                if args.njobs == 1:
+                    session_name = args.session_name
+                else:
+                    session_name = f"{args.session_name}--{i + 1}"
+            else:
+                session_name = generate_session_name(args.role, i + 1, session_task_id)
         except RuntimeError as e:
             results.append(SessionResult(f"{args.role}--{i + 1}--???", success=False, error=str(e)))
             continue
