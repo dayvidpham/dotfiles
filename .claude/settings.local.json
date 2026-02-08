@@ -68,7 +68,9 @@
       "Bash(wc:*)",
       "Bash(gh repo list:*)",
       "Bash(git -C /home/minttea/dotfiles log --oneline --follow -- scripts/aura-swarm)",
-      "Bash(~/codebases/dayvidpham/aura-scripts/aura-swarm:*)"
+      "Bash(~/codebases/dayvidpham/aura-scripts/aura-swarm:*)",
+      "Bash(uv run pytest:*)",
+      "Bash(uv run:*)"
     ],
     "deny": [
       "Edit(.beads/**)",

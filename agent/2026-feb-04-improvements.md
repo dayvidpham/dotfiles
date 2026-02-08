@@ -12,3 +12,9 @@
   possible software engineering design space. These questions should be multiSelect, because the user can choose multiple tradeoffs/design choices. For example, "Should this be statically-allocated, allocated at runtime, ...?"
    Or which of these variants we chose are appropriate, and why
 
+Create an implementation plan to resolve the issues for UAT-2. These should be topologically sorted and planned in a horizontal layer-cake style. However, when performing task allocation, this should cut the cake into
+end-to-end vertical slices one agent (or a subteam of agents) can be responsible for. Agents are allowed to modify the same file, but this must occur in a way where they are not modifying the same file during the same
+phase. Workers MUST validate their own changes and have it independently reviewed by a Haiku worker before declaring their phase done. Haiku worker would focus on alignment to user requirements and the correcet wiring of
+components and integration. Once this implementation plan is complete, launch a team of parallel agents to implement the plan. Do not create one teammate for each phase: create two teammates for each slice. One worker, and
+ one reviewer. Worker should be Sonnet model, reviewer should be Haiku model.
+
