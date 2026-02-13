@@ -172,6 +172,9 @@ rec {
       global = {
         hide_env_diff = true;
       };
+      whitelist = {
+        prefix = [ "${home.homeDirectory}/dev/david-agent-data-leverage" ];
+      };
     };
   };
 
