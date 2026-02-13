@@ -25,8 +25,7 @@ lib.mkIf (config.CUSTOM.shared.enable) {
     ripgrep # modern grep
     ripgrep-all # fast search on cli; rg and rga
     ast-grep # structured search
-    ethtool # NIC config
-    dig # DNS lookups
+    dust # du but rusty
     git
     git-lfs
 
@@ -43,6 +42,8 @@ lib.mkIf (config.CUSTOM.shared.enable) {
     lsof
     net-tools
     socat # bidirectional socket relay (for VM console access, port forwarding, etc.)
+    ethtool # NIC config
+    dig # DNS lookups
 
     # compression stuff
     zip
