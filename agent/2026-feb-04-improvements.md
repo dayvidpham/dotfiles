@@ -36,6 +36,8 @@ The user should NOT be prompted with all questions at once, about all components
 
 ---
 
+## How to design better error and warning messages
+
 WARN message is uninformative. Need to know: what failed, WHY it failed, what it MEANS for the end-user, and what they can DO about it. also, the issue is that there is no difference between `watch --verbose` and `watch` with no verbose flag. I thought we were also going to show the daemon events and state changes on verbose.
 
 ---
@@ -45,7 +47,7 @@ Launch a new team of agents to fix the remaining issues with test fixtures and c
 
 --- 
 
-Common failure mode: end of line commands require semi-colon
+## Common failure mode: end of line commands require semi-colon
 
 ● Bash(bd show aura-ksy3 2>&1 | head -10
       echo "==="
@@ -67,3 +69,35 @@ Common failure mode: end of line commands require semi-colon
      head: cannot open 'bd' for reading: No such file or directory
      head: cannot open 'show' for reading: No such file or directory
      head: cannot open 'aura-qjc0' for reading: No such file or directory
+
+---
+
+## Decent launch of aura-swarm, with process diagram of tickets and epics
+
+● Swarm is live. Here's the summary:
+
+  Launched: epic-irg2--8749 (tmux session)
+
+  Beads structure:
+  aura-00cu (v1 client) ✓ CLOSED
+      ↓
+  aura-ksy3 (URD)  ──→  aura-irg2 (daemon pipeline epic)
+                             ↓
+                         aura-5rq3 (REQUEST_PLAN)
+                             ↓ blocks
+                         aura-erwo (v2: ACP + Temporal)
+                             ↓ blocks
+                         aura-qn59 (v3: QUIC + Langfuse)
+
+  What the architect will do:
+  1. Read URD (aura-ksy3) and REQUEST_PLAN (aura-5rq3)
+  2. Merge main into epic/aura-irg2 (resolving watch.ts conflict thoughtfully)
+  3. Follow PROCESS.md: PROPOSE_PLAN → 3 parallel reviewers → RATIFIED_PLAN → implementation
+  4. Wire the daemon pipeline (watcher, backup, sync, state) into daemon-entry.ts
+  5. Make aura watch format daemon events richly
+
+  To monitor:
+  aura-swarm attach aura-irg2    # or: tmux attach -t epic-irg2--8749
+  aura-swarm status              # check session health
+  bd show aura-irg2              # check epic progress
+
