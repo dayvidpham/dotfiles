@@ -101,3 +101,7 @@ Launch a new team of agents to fix the remaining issues with test fixtures and c
   aura-swarm status              # check session health
   bd show aura-irg2              # check epic progress
 
+---
+
+
+❯ We should also be using centralized test fixtures, or defining new fixtures when we have to repeatedly test many repetitive values. We should also make sure that we are respecting the centralized file path structure, ideally through use of enums instead of stringly-typed APIs.
