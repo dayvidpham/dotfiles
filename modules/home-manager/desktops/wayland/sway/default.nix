@@ -58,7 +58,18 @@ in
           config = {
             terminal = terminal;
             bars = [ ];
+            startup = [
+              { command = "systemctl --user restart kanshi"; always = true; }
+            ];
             input = {
+              "14096:21506:Pulsar_1K_Dongle_Consumer_Control" = {
+                accel_profile = "flat";
+                pointer_accel = "-0.25";
+              };
+              "14096:21506:Pulsar_1K_Dongle" = {
+                accel_profile = "flat";
+                pointer_accel = "-0.25";
+              };
               "Logitech G Pro" = {
                 accel_profile = "flat";
                 pointer_accel = "0.05";
@@ -73,6 +84,7 @@ in
                 accel_profile = "flat";
                 tap = "enabled";
                 natural_scroll = "false";
+                pointer_accel = "0.025";
               };
             };
             modifier = modifier;
