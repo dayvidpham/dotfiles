@@ -20,6 +20,7 @@ let
   # XDG_SESSION_TYPE, and DISPLAY internally; these are the login-session
   # variables that systemd user services need to inherit.
   sessionVars = [
+    # Login/session infrastructure
     "PATH"
     "HOME"
     "LANG"
@@ -30,15 +31,26 @@ let
     "XDG_CONFIG_DIRS"
     "DBUS_SESSION_BUS_ADDRESS"
     "SSH_AUTH_SOCK"
+    # Appearance
     "XCURSOR_THEME"
     "XCURSOR_SIZE"
+    # App toolkit hints (from wayland/default.nix environment.sessionVariables)
     "NIXOS_OZONE_WL"
     "MOZ_ENABLE_WAYLAND"
+    "QT_QPA_PLATFORM"
+    "SDL_VIDEODRIVER"
+    "CLUTTER_BACKEND"
+    "ELECTRON_OZONE_PLATFORM_HINT"
+    "BEMENU_BACKEND"
   ];
 
   sessionVarsStr = builtins.concatStringsSep " " sessionVars;
 
   # Patch only the niri-session shell script without rebuilding the compositor.
+  # We only restrict `systemctl --user import-environment` to an explicit list.
+  # We do NOT patch `dbus-update-activation-environment --all` because dbus-broker
+  # (services.dbus.implementation = "broker") automatically reuses the systemd
+  # user activation environment, making that call a harmless no-op.
   niri-patched = pkgs.symlinkJoin {
     name = "niri-${niri-pkg.version}";
     paths = [ niri-pkg ];
@@ -54,10 +66,7 @@ let
       substituteInPlace "$out/bin/niri-session" \
         --replace-fail \
           'systemctl --user import-environment' \
-          'systemctl --user import-environment ${sessionVarsStr}' \
-        --replace-fail \
-          'dbus-update-activation-environment --all' \
-          'dbus-update-activation-environment --systemd ${sessionVarsStr}'
+          'systemctl --user import-environment ${sessionVarsStr}'
     '';
   };
 in
