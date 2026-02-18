@@ -62,8 +62,9 @@
     };
 
     openclaw-modules = {
-      url = "github:dayvidpham/nix-openclaw-vm";
+      url = "github:dayvidpham/nix-openclaw-vm/develop";
       inputs.nixpkgs.follows = "nixpkgs";
+      inputs.opencode.follows = "opencode";
     };
 
     # Secrets management
@@ -117,8 +118,14 @@
           (final: prev: {
             openclaw = prev.openclaw.override {
               extendedTools = with final; [
-                git curl jq python3 ffmpeg ripgrep
-                go uv
+                git
+                curl
+                jq
+                python3
+                ffmpeg
+                ripgrep
+                go
+                uv
               ];
             };
           })
