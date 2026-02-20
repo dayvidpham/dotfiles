@@ -67,6 +67,13 @@
       inputs.opencode.follows = "opencode";
     };
 
+    aura-plugins = {
+      url = "github:dayvidpham/aura-plugins";
+      inputs.nixpkgs.follows = "nixpkgs-stable";
+      inputs.nixpkgs-stable.follows = "nixpkgs-stable";
+      inputs.nixpkgs-unstable.follows = "nixpkgs-unstable";
+    };
+
     # Secrets management
     sops-nix = {
       url = "github:Mic92/sops-nix";
@@ -95,6 +102,7 @@
     , nix-openclaw
     , opencode
     , openclaw-modules
+    , aura-plugins
     , sops-nix
     , ...
     }:
@@ -109,7 +117,9 @@
         };
 
         overlays = [
-          determinate-nix.overlays.default
+          # NOTE: determinate-nix.overlays.default removed — wasmtime.nix requires
+          # rust_1_89 which was dropped from nixpkgs 25.11 (only rust_1_91 remains).
+          # Re-enable when DeterminateSystems ships a compatible release.
           llm-agents.overlays.default
           nix-openclaw.overlays.default
 
@@ -336,6 +346,7 @@
           inherit pkgs;
           modules = [
             niri.homeModules.niri
+            aura-plugins.homeManagerModules.aura-config-sync
             ./modules/home-manager
             ./programs/neovim
             ./users/minttea/home.nix
@@ -354,6 +365,7 @@
           inherit pkgs;
           modules = [
             niri.homeModules.niri
+            aura-plugins.homeManagerModules.aura-config-sync
             ./modules/home-manager
             ./programs/neovim
             ./users/minttea/home.nix
@@ -376,6 +388,7 @@
           inherit pkgs;
           modules = [
             niri.homeModules.niri
+            aura-plugins.homeManagerModules.aura-config-sync
             ./modules/home-manager
             ./programs/neovim
             ./users/minttea/wsl.nix
@@ -392,6 +405,7 @@
           inherit pkgs;
           modules = [
             niri.homeModules.niri
+            aura-plugins.homeManagerModules.aura-config-sync
             ./modules/home-manager
             ./programs/neovim
             ./users/minttea/wsl.nix
