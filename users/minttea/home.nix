@@ -4,6 +4,7 @@
 , pkgs-unstable
 , lib
 , osConfig
+, beads
 , ...
 }:
 let
@@ -114,6 +115,9 @@ rec {
     # Desktop
     kdePackages.dolphin
     kdePackages.qtsvg
+
+    # Agents
+    dolt
 
     # Utils
     mprocs # multi-processor manager TUI
