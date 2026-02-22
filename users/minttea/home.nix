@@ -4,7 +4,6 @@
 , pkgs-unstable
 , lib
 , osConfig
-, beads
 , ...
 }:
 let
@@ -117,6 +116,7 @@ rec {
     kdePackages.qtsvg
 
     # Agents
+    beads
     dolt
 
     # Utils
