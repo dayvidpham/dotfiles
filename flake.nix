@@ -22,7 +22,6 @@
     # Nix package management
     determinate-nix.url = "https://flakehub.com/f/DeterminateSystems/nix-src/*";
     determinate-nixd.url = "https://flakehub.com/f/DeterminateSystems/determinate/*";
-    determinate-nixd.inputs.nix.follows = "determinate-nix";
 
     home-manager = {
       url = "github:nix-community/home-manager/release-25.11";
@@ -67,6 +66,11 @@
       inputs.opencode.follows = "opencode";
     };
 
+    beads = {
+      url = "path:/home/minttea/codebases/beads";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     aura-plugins = {
       url = "github:dayvidpham/aura-plugins";
       inputs.nixpkgs.follows = "nixpkgs-stable";
@@ -103,6 +107,7 @@
     , opencode
     , openclaw-modules
     , aura-plugins
+    , beads
     , sops-nix
     , ...
     }:
@@ -120,6 +125,7 @@
           # NOTE: determinate-nix.overlays.default removed — wasmtime.nix requires
           # rust_1_89 which was dropped from nixpkgs 25.11 (only rust_1_91 remains).
           # Re-enable when DeterminateSystems ships a compatible release.
+          #determinate-nix.overlays.default
           llm-agents.overlays.default
           nix-openclaw.overlays.default
 
@@ -138,6 +144,20 @@
                 uv
               ];
             };
+          })
+
+          # Beads issue tracker — wrap with dolt runtime dependency
+          (final: prev: {
+            beads = let
+              base = beads.packages.${final.system}.default;
+            in final.runCommand "beads-wrapped" {
+              nativeBuildInputs = [ final.makeWrapper ];
+            } ''
+              mkdir -p $out/bin
+              cp -r ${base}/* $out/
+              wrapProgram $out/bin/bd --prefix PATH : ${final.lib.makeBinPath [ final.dolt ]}
+              ln -sf bd $out/bin/beads
+            '';
           })
 
           # NOTE: My own packages and programs
@@ -240,6 +260,7 @@
           microvm
           nix-openclaw
           opencode
+          beads
           sops-nix
           ;
       };
@@ -250,6 +271,7 @@
           pkgs-stable
           niri
           nix-openclaw
+          beads
           sops-nix
           ;
       };
