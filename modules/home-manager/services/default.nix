@@ -10,6 +10,7 @@
     ./podman
     ./xwayland-satellite
     ./syncthing
+    ./dolt-server
     ./openclaw
   ];
 }

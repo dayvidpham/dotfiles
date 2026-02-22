@@ -16,6 +16,7 @@
     ./vscode
     ./opencode
     ./claude-code
+    ./beads
     ./unity
   ];
 }
