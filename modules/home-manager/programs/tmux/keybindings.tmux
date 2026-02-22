@@ -42,6 +42,19 @@ bind f display-popup -E "tmux-sessionizer"
 # Move current window to another session
 bind M display-popup -E "tmux-move-window"
 
+# Move current pane to a target window number (prompts for number)
+bind S command-prompt -p "Send pane to window:" "join-pane -t '%%'"
+
+# Rename session
+bind R command-prompt -I "#S" "rename-session '%%'"
+
+# Name current pane
+bind T command-prompt -p "Pane title:" "select-pane -T '%%'"
+
+# Pane border labels: show session, window, and pane title
+set -g pane-border-status top
+set -g pane-border-format " #{session_name}:#{window_index}.#{pane_index}#{?pane_title, - #{pane_title},} "
+
 # True color support
 set -ag terminal-overrides ",xterm-256color:RGB"
 set -ag terminal-overrides ",ghostty:RGB"

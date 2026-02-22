@@ -96,7 +96,7 @@ let
     echo "
     ┌───────────────────────────────────────────────────────────────┐
     │                    tmux Cheatsheet                            │
-    │                    Prefix: Ctrl+Space                         │
+    │                    Prefix: Alt+Space                          │
     └───────────────────────────────────────────────────────────────┘
 
     ┌─────────────────────────┬─────────────────────────────────────┐
@@ -161,6 +161,9 @@ let
     ├─────────────────────────┼─────────────────────────────────────┤
     │ Prefix f                │ Sessionizer (fzf + zoxide)          │
     │ Prefix r                │ Reload config                       │
+    │ Prefix S                │ Send pane to window # (prompt)      │
+    │ Prefix R                │ Rename session (prompt)             │
+    │ Prefix T                │ Name current pane (prompt)          │
     │ tmux-sessionizer        │ Run from shell                      │
     └─────────────────────────┴─────────────────────────────────────┘
     "
@@ -176,7 +179,7 @@ in
     programs.zsh.shellAliases.tmux-help = cheatsheet;
     programs.tmux = {
       enable = true;
-      prefix = "C-Space";
+      prefix = "M-Space";
       keyMode = "vi";
       mouse = true;
       baseIndex = 1;
