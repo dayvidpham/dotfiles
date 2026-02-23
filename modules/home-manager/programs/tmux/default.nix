@@ -27,6 +27,89 @@ let
     fi
   '';
 
+  repoTheme = pkgs.writeShellScriptBin "tmux-repo-theme" ''
+    # tmux-repo-theme: Set per-pane tmux styling based on git repo
+    [[ -z "$TMUX" ]] && exit 0
+
+    CONFIG="''${XDG_CONFIG_HOME:-$HOME/.config}/tmux/repo-colors.conf"
+
+    # ── Create default config on first run ──
+    if [[ ! -f "$CONFIG" ]]; then
+      mkdir -p "$(dirname "$CONFIG")"
+      cat > "$CONFIG" <<'CONF'
+# tmux repo-colors: map git remotes to pane background colors
+# Format: key=#rrggbb
+# Key is the full git remote URL, or basename for local-only repos
+#
+# Examples:
+# git@github.com:user/dotfiles.git=#1a1a2e
+# git@github.com:user/my-project.git=#2e1a2e
+# local-project=#1a2e1a
+CONF
+    fi
+
+    # ── Parse config ──
+    declare -A REPO_COLORS
+    while IFS='=' read -r name color; do
+      name="''${name## }"; name="''${name%% }"
+      color="''${color## }"; color="''${color%% }"
+      [[ -z "$name" || "$name" == \#* ]] && continue
+      [[ "$color" =~ ^#[0-9a-fA-F]{6}$ ]] || continue
+      REPO_COLORS["$name"]="$color"
+    done < "$CONFIG"
+
+    # ── Determine target directory ──
+    target_dir="''${1:-$(tmux display-message -p '#{pane_current_path}' 2>/dev/null)}"
+    [[ -z "$target_dir" ]] && exit 0
+
+    # ── Helper: lighten a hex color ──
+    lighten_color() {
+      local hex="''${1#\#}" amount="$2"
+      local r=$((16#''${hex:0:2})) g=$((16#''${hex:2:2})) b=$((16#''${hex:4:2}))
+      r=$(( r + amount > 255 ? 255 : r + amount ))
+      g=$(( g + amount > 255 ? 255 : g + amount ))
+      b=$(( b + amount > 255 ? 255 : b + amount ))
+      printf "#%02x%02x%02x" "$r" "$g" "$b"
+    }
+
+    # ── Reset helper ──
+    reset_pane() {
+      tmux set -p window-style "default"
+      tmux set -p @repo-worktree "0"
+      tmux select-pane -T ""
+    }
+
+    # ── Detect git repo ──
+    repo_root=$(${getExe pkgs.git} -C "$target_dir" rev-parse --show-toplevel 2>/dev/null) || {
+      reset_pane; exit 0
+    }
+
+    # ── Resolve registry key: full remote URL, fallback to basename ──
+    remote_url=$(${getExe pkgs.git} -C "$target_dir" remote get-url origin 2>/dev/null)
+    repo_key="''${remote_url:-$(basename "$repo_root")}"
+    color="''${REPO_COLORS[$repo_key]}"
+
+    # Not in registry → reset
+    [[ -z "$color" ]] && { reset_pane; exit 0; }
+
+    # ── Get branch name ──
+    branch=$(${getExe pkgs.git} -C "$target_dir" branch --show-current 2>/dev/null)
+    branch="''${branch:-detached}"
+
+    # ── Worktree detection ──
+    if [[ -f "$repo_root/.git" ]]; then
+      worktree_name=$(basename "$(${getExe pkgs.git} -C "$target_dir" rev-parse --git-dir)")
+      tinted=$(lighten_color "$color" 20)
+      tmux set -p window-style "bg=$tinted"
+      tmux set -p @repo-worktree "1"
+      tmux select-pane -T "🌿 $worktree_name ($branch)"
+    else
+      tmux set -p window-style "bg=$color"
+      tmux set -p @repo-worktree "0"
+      tmux select-pane -T "$branch"
+    fi
+  '';
+
   sessionizer = pkgs.writeShellScriptBin "tmux-sessionizer" ''
     if [[ $# -eq 1 ]]; then
       selected="$1"
@@ -176,7 +259,7 @@ in
   };
 
   config = mkIf cfg.enable {
-    home.packages = [ sessionizer moveWindow ];
+    home.packages = [ sessionizer moveWindow repoTheme ];
     programs.zsh.shellAliases.tmux-help = cheatsheet;
     programs.tmux = {
       enable = true;

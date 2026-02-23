@@ -63,9 +63,17 @@ bind R command-prompt -I "#S" "rename-session '%%'"
 # Name current pane
 bind T command-prompt -p "Pane title:" "select-pane -T '%%'"
 
-# Pane border labels: show session, window, and pane title
+# ── Repo-based pane coloring ─────────────────────────────────────────
+# Focus events (tmux-sensible already sets this; explicit for documentation)
+set -g focus-events on
+
+# Re-apply repo theme when switching panes (pass path directly to avoid tmux#3506)
+set-hook -g pane-focus-in 'run-shell "tmux-repo-theme \"#{pane_current_path}\""'
+
+# Pane border labels: title first, then session:window.pane
+# Bold title text for worktree panes (when @repo-worktree is 1)
 set -g pane-border-status top
-set -g pane-border-format " #{session_name}:#{window_index}.#{pane_index}#{?pane_title, - #{pane_title},} "
+set -g pane-border-format "#{?pane_title,#{?#{==:#{@repo-worktree},1}, #[bold]#{pane_title}#[nobold], #{pane_title}} - ,}#{session_name}:#{window_index}.#{pane_index} "
 
 # True color support
 set -ag terminal-overrides ",xterm-256color:RGB"

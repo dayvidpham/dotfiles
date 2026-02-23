@@ -186,6 +186,14 @@ in
             zstyle ':fzf-tab:*' use-fzf-default-opts yes
             # switch group using `<` and `>`
             zstyle ':fzf-tab:*' switch-group '<' '>'
+
+            # +-----------------------------+
+            # | Tmux repo-based pane theming |
+            # +-----------------------------+
+            if [[ -n "$TMUX" ]]; then
+              _tmux_repo_theme() { tmux-repo-theme "$PWD"; }
+              chpwd_functions+=(_tmux_repo_theme)
+            fi
           '';
         };
 
