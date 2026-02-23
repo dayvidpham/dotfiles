@@ -25,6 +25,10 @@ in
     virtualisation.podman.dockerSocket.enable = true;
     virtualisation.podman.extraPackages = [
       pkgs.su
+      pkgs.podman-compose
+    ];
+    home.packages = [
+      pkgs.podman-compose
     ];
 
     virtualisation.docker.enable = false; # conflicts with podmanSocket
