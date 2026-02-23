@@ -159,6 +159,7 @@ let
     ┌─────────────────────────┬─────────────────────────────────────┐
     │ Custom                  │                                     │
     ├─────────────────────────┼─────────────────────────────────────┤
+    │ Alt+Shift+Tab           │ Toggle prefix (Alt/Ctrl+Space)      │
     │ Prefix f                │ Sessionizer (fzf + zoxide)          │
     │ Prefix r                │ Reload config                       │
     │ Prefix S                │ Send pane to window # (prompt)      │

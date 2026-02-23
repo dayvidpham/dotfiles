@@ -1,5 +1,17 @@
 # tmux keybindings - edit this file directly, then Prefix+r to reload
 
+# ── Prefix mode toggle (Alt+Shift+Tab) ──────────────────────────────
+# Tracks which prefix is active: "alt" (M-Space) or "ctrl" (C-Space)
+# Root-table binding so it works regardless of current prefix
+set -g @prefix-mode "alt"
+
+bind -T root M-BTab if-shell -F '#{==:#{@prefix-mode},alt}' \
+  'set -g prefix C-Space ; unbind M-Space ; bind C-Space send-prefix ; set -g @prefix-mode "ctrl" ; display "Prefix: Ctrl+Space"' \
+  'set -g prefix M-Space ; unbind C-Space ; bind M-Space send-prefix ; set -g @prefix-mode "alt" ; display "Prefix: Alt+Space"'
+
+# Status-left: colored prefix mode indicator
+set -g status-left '#{?#{==:#{@prefix-mode},alt},#[bg=blue fg=black bold] ALT ,#[bg=green fg=black bold] CTRL }#[default] '
+
 # Vi-style copy mode
 bind-key -T copy-mode-vi v send-keys -X begin-selection
 bind-key -T copy-mode-vi y send-keys -X copy-selection-and-cancel
