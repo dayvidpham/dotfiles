@@ -99,7 +99,7 @@ CONF
     # ── Worktree detection ──
     if [[ -f "$repo_root/.git" ]]; then
       worktree_name=$(basename "$(${getExe pkgs.git} -C "$target_dir" rev-parse --git-dir)")
-      tinted=$(lighten_color "$color" 20)
+      tinted=$(lighten_color "$color" 45)
       tmux set -p window-style "bg=$tinted"
       tmux set -p @repo-worktree "1"
       tmux select-pane -T "🌿 $worktree_name ($branch)"
