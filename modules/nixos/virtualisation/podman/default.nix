@@ -27,7 +27,7 @@ in
       pkgs.su
       pkgs.podman-compose
     ];
-    home.packages = [
+    environment.systemPackages = [
       pkgs.podman-compose
     ];
 
