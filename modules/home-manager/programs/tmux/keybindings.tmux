@@ -54,8 +54,10 @@ bind f display-popup -E "tmux-sessionizer"
 # Move current window to another session
 bind M display-popup -E "tmux-move-window"
 
-# Move current pane to a target window number (prompts for number)
-bind S command-prompt -p "Send pane to window:" "join-pane -t '%%'"
+# Send pane: break into new window or join an existing one
+bind S display-menu -T "Send pane" \
+  "New window"           n "break-pane" \
+  "Existing window..."   e "command-prompt -p 'Join window:' 'join-pane -s \"#{pane_id}\" -t \"%%\"'"
 
 # Rename session
 bind R command-prompt -I "#S" "rename-session '%%'"
