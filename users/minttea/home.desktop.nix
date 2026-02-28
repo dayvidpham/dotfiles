@@ -104,5 +104,10 @@ in
   # Disabled: openclaw now runs via VM (CUSTOM.virtualisation.openclaw-vm in host config)
   CUSTOM.services.openclaw.enable = false;
 
+  # aura-plugins
+
+  CUSTOM.programs.aura-config-sync.enable = true;
+  services.aurad.enable = true;
+  services.temporal-dev-server.enable = true;
 
 }

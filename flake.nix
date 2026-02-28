@@ -148,16 +148,19 @@
 
           # Beads issue tracker — wrap with dolt runtime dependency
           (final: prev: {
-            beads = let
-              base = beads.packages.${final.system}.default;
-            in final.runCommand "beads-wrapped" {
-              nativeBuildInputs = [ final.makeWrapper ];
-            } ''
-              mkdir -p $out/bin
-              cp -r ${base}/* $out/
-              wrapProgram $out/bin/bd --prefix PATH : ${final.lib.makeBinPath [ final.dolt ]}
-              ln -sf bd $out/bin/beads
-            '';
+            beads =
+              let
+                base = beads.packages.${final.system}.default;
+              in
+              final.runCommand "beads-wrapped"
+                {
+                  nativeBuildInputs = [ final.makeWrapper ];
+                } ''
+                mkdir -p $out/bin
+                cp -r ${base}/* $out/
+                wrapProgram $out/bin/bd --prefix PATH : ${final.lib.makeBinPath [ final.dolt ]}
+                ln -sf bd $out/bin/beads
+              '';
           })
 
           # NOTE: My own packages and programs
@@ -388,6 +391,8 @@
           modules = [
             niri.homeModules.niri
             aura-plugins.homeManagerModules.aura-config-sync
+            aura-plugins.homeManagerModules.temporal-service
+            aura-plugins.homeManagerModules.aurad-service
             ./modules/home-manager
             ./programs/neovim
             ./users/minttea/home.nix
