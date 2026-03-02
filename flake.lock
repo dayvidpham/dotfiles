@@ -14,7 +14,7 @@
         ]
       },
       "locked": {
-        "narHash": "sha256-8yTlBgz6IJdB1Qw/k8voryx3ZJfsi2J84DuikBftcaY=",
+        "narHash": "sha256-Ap/+oO+0jaYX7OKCC3ocYyr7WEj6KHkqF982wRRqu5E=",
         "path": "/home/minttea/codebases/dayvidpham/aura-plugins",
         "type": "path"
       },
@@ -31,7 +31,7 @@
         ]
       },
       "locked": {
-        "narHash": "sha256-GUd1VLL8lUIg4i7m+ZfyyruzCAPKpjZoMbckS6bB24w=",
+        "narHash": "sha256-45IgftYlJJ24pMvVnV3ECv0LD2XT2MVhI1EKaQiLE94=",
         "path": "/home/minttea/codebases/beads",
         "type": "path"
       },
