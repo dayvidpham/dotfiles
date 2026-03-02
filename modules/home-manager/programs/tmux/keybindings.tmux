@@ -48,8 +48,11 @@ bind -r p previous-window
 # Reload config
 bind r source-file ~/.config/tmux/tmux.conf \; display "Config reloaded"
 
-# Sessionizer (fzf + zoxide)
-bind f display-popup -E "tmux-sessionizer"
+# Last session toggle
+bind \\ switch-client -l
+
+# Session picker (sesh + fzf)
+bind f display-popup -E "sesh connect $(sesh list | fzf --reverse --border --height=100% --prompt='session> ')"
 
 # Move current window to another session
 bind M display-popup -E "tmux-move-window"
