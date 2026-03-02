@@ -66,7 +66,7 @@
     };
 
     aura-plugins = {
-      url = "path:/home/minttea/codebases/dayvidpham/aura-plugins";
+      url = "github:dayvidpham/aura-plugins";
       inputs.nixpkgs.follows = "nixpkgs-stable";
       inputs.nixpkgs-stable.follows = "nixpkgs-stable";
       inputs.nixpkgs-unstable.follows = "nixpkgs-unstable";
