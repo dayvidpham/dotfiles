@@ -2,6 +2,7 @@
 dolt/*/.dolt/noms
 dolt/*/.dolt/stats
 dolt/.dolt/sql-server.info
+dolt/**
 dolt-access.lock
 dolt-config.log
 dolt-monitor.pid
