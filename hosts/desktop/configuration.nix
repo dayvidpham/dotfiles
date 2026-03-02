@@ -322,6 +322,13 @@
     owner = "minttea";
   };
 
+  # Dolt federation password (decrypted by NixOS sops-nix, read by user shell via remotePasswordFile)
+  sops.secrets."dolt/remote-password" = {
+    sopsFile = ../../secrets/dolt/secrets.yaml;
+    key = "dolt_remote_password";
+    owner = "minttea";
+  };
+
   # Try getting AMD iGPU to work @_@
   # hardware.amdgpu = {
   #   amdvlk.enable = true;

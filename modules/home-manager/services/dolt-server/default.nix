@@ -54,12 +54,6 @@ in
       description = "Port for the Dolt SQL server";
     };
 
-    user = mkOption {
-      type = types.str;
-      default = "root";
-      description = "MySQL user for the Dolt SQL server";
-    };
-
     noAutoCommit = mkOption {
       type = types.bool;
       default = true;
@@ -91,7 +85,6 @@ in
           "${cfg.package}/bin/dolt" "sql-server"
           "--host" cfg.host
           "--port" (toString cfg.port)
-          "--user" cfg.user
         ] ++ lib.optionals cfg.noAutoCommit [ "--no-auto-commit" ]);
         Restart = "on-failure";
         RestartSec = 5;

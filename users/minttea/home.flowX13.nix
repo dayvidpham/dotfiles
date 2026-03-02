@@ -20,7 +20,6 @@ in
     enable = false;
   };
 
-  programs.opencode.enable = true;
   CUSTOM.services.syncthing.enable = true;
   CUSTOM.services.syncthing.secrets = {
     enable = true;

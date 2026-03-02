@@ -1,6 +1,7 @@
 # Dolt database (managed by Dolt, not git)
 dolt/*/.dolt/noms
 dolt/*/.dolt/stats
+dolt/.dolt/sql-server.info
 dolt-access.lock
 dolt-config.log
 dolt-monitor.pid

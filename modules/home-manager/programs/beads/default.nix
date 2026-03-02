@@ -113,14 +113,14 @@ in
 
     # Federation secrets via sops-nix
     (mkIf secretsCfg.enable {
-      sops.secrets."beads/remote-password" = {
+      sops.secrets."dolt/dolt_remote_password" = {
         sopsFile = secretsCfg.sopsFile;
         key = secretsCfg.remotePasswordKey;
       };
 
       programs.zsh.initExtra = ''
-        if [[ -r "${config.sops.secrets."beads/remote-password".path}" ]]; then
-          export DOLT_REMOTE_PASSWORD="$(< "${config.sops.secrets."beads/remote-password".path}")"
+        if [[ -r "${config.sops.secrets."dolt/dolt_remote_password".path}" ]]; then
+          export DOLT_REMOTE_PASSWORD="$(< "${config.sops.secrets."dolt/dolt_remote_password".path}")"
         fi
       '';
     })

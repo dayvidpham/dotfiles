@@ -106,6 +106,8 @@ in
 
   # aura-plugins
 
+  CUSTOM.programs.beads.enable = true;
+  CUSTOM.programs.beads.federation.remotePasswordFile = "/run/secrets/dolt/remote-password";
   CUSTOM.programs.aura-config-sync.enable = true;
   services.aurad.enable = true;
   services.temporal-dev-server.enable = true;

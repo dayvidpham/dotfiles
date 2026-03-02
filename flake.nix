@@ -42,7 +42,7 @@
 
     llm-agents = {
       url = "github:numtide/llm-agents.nix";
-      inputs.nixpkgs.follows = "nixpkgs-unstable";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
 
     microvm = {
@@ -55,15 +55,9 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    opencode = {
-      url = "github:anomalyco/opencode";
-      inputs.nixpkgs.follows = "nixpkgs-unstable";
-    };
-
     openclaw-modules = {
       url = "github:dayvidpham/nix-openclaw-vm/develop";
       inputs.nixpkgs.follows = "nixpkgs";
-      inputs.opencode.follows = "opencode";
     };
 
     beads = {
@@ -72,7 +66,7 @@
     };
 
     aura-plugins = {
-      url = "github:dayvidpham/aura-plugins";
+      url = "path:/home/minttea/codebases/dayvidpham/aura-plugins";
       inputs.nixpkgs.follows = "nixpkgs-stable";
       inputs.nixpkgs-stable.follows = "nixpkgs-stable";
       inputs.nixpkgs-unstable.follows = "nixpkgs-unstable";
@@ -104,7 +98,6 @@
     , llm-agents
     , microvm
     , nix-openclaw
-    , opencode
     , openclaw-modules
     , aura-plugins
     , beads
@@ -262,10 +255,12 @@
           niri
           microvm
           nix-openclaw
-          opencode
           beads
           sops-nix
           ;
+        # Shim: openclaw-vm module expects opencode flake output shape
+        # but we consume opencode from llm-agents overlay instead
+        opencode = { packages.${system}.opencode = pkgs-unstable.llm-agents.opencode; };
       };
 
       extraSpecialArgs = {
@@ -358,7 +353,12 @@
         # OpenClaw microVM - runs openclaw gateway with network access to safemolt
         openclaw-vm = mkMinimalHost {
           name = "openclaw-vm";
-          hostSpecialArgs = { inherit pkgs pkgs-unstable nix-openclaw opencode; };
+          hostSpecialArgs = {
+            inherit pkgs pkgs-unstable nix-openclaw;
+            # Shim: openclaw-vm module expects opencode flake output shape
+            # but we consume opencode from llm-agents overlay instead
+            opencode = { packages.${system}.opencode = pkgs-unstable.llm-agents.opencode; };
+          };
           modules = [
             microvm.nixosModules.microvm
             openclaw-modules.nixosModules.openclaw-vm-guest
