@@ -6,6 +6,11 @@
 #
 # Default: --no-auto-commit (required for beads — MySQL COMMIT is transaction
 # durability, Dolt COMMIT is version control; the beads Go code handles both).
+#
+# beadsIntegration: When enabled, sets BEADS_DOLT_DATA_DIR and
+# BEADS_DOLT_SERVER_PORT so beads auto-discovers this server instead of
+# spawning its own. Also writes PID/port state files for the IsRunning
+# fast path. Only takes effect when CUSTOM.programs.beads is also enabled.
 { config
 , pkgs
 , lib
@@ -13,11 +18,17 @@
 }:
 let
   cfg = config.CUSTOM.services.dolt-server;
+  beadsCfg = config.CUSTOM.programs.beads;
+
+  # Parent of dataDir — where beads state files (PID, port) live.
+  # e.g. dataDir = ~/.beads/dolt → stateDir = ~/.beads
+  stateDir = builtins.dirOf cfg.dataDir;
 
   inherit (lib)
     concatStringsSep
     escapeShellArg
     mkIf
+    mkMerge
     mkOption
     mkEnableOption
     types
@@ -64,35 +75,84 @@ in
         calls DOLT_COMMIT at logical boundaries.
       '';
     };
-  };
 
-  config = mkIf cfg.enable {
-    systemd.user.services.dolt-server = {
-      Unit = {
-        Description = "Dolt SQL Server for beads";
-        After = [ "default.target" ];
-      };
+    beadsIntegration = {
+      enable = mkEnableOption ''
+        beads auto-discovery integration.
 
-      Service = {
-        Type = "simple";
-        # Leading "-" tolerates missing dir on first start (ExecStartPre creates it)
-        WorkingDirectory = "-${cfg.dataDir}";
-        ExecStartPre = toString (pkgs.writeShellScript "dolt-server-mkdatadir" ''
-          set -euo pipefail
-          mkdir -p ${escapeShellArg cfg.dataDir}
-        '');
-        ExecStart = concatStringsSep " " ([
-          "${cfg.package}/bin/dolt" "sql-server"
-          "--host" cfg.host
-          "--port" (toString cfg.port)
-        ] ++ lib.optionals cfg.noAutoCommit [ "--no-auto-commit" ]);
-        Restart = "on-failure";
-        RestartSec = 5;
-      };
+        Sets BEADS_DOLT_DATA_DIR and BEADS_DOLT_SERVER_PORT so all beads
+        projects discover this systemd-managed server instead of spawning
+        their own. Writes PID/port state files to stateDir (parent of
+        dataDir) after server start for the IsRunning fast path.
 
-      Install = {
-        WantedBy = [ "default.target" ];
-      };
+        Only takes effect when CUSTOM.programs.beads is also enabled.
+      '';
     };
   };
+
+  config = mkIf cfg.enable (mkMerge [
+    # Base service
+    {
+      systemd.user.services.dolt-server = {
+        Unit = {
+          Description = "Dolt SQL Server for beads";
+          After = [ "default.target" ];
+        };
+
+        Service = {
+          Type = "simple";
+          # Leading "-" tolerates missing dir on first start (ExecStartPre creates it)
+          WorkingDirectory = "-${cfg.dataDir}";
+          ExecStartPre = toString (pkgs.writeShellScript "dolt-server-mkdatadir" ''
+            set -euo pipefail
+            mkdir -p ${escapeShellArg cfg.dataDir}
+          '');
+          ExecStart = concatStringsSep " " ([
+            "${cfg.package}/bin/dolt" "sql-server"
+            "--host" cfg.host
+            "--port" (toString cfg.port)
+          ] ++ lib.optionals cfg.noAutoCommit [ "--no-auto-commit" ]);
+          Restart = "on-failure";
+          RestartSec = 5;
+        };
+
+        Install = {
+          WantedBy = [ "default.target" ];
+        };
+      };
+    }
+
+    # Beads integration: env vars + PID/port state files
+    (mkIf (cfg.beadsIntegration.enable && beadsCfg.enable) {
+      # BEADS_DOLT_SERVER_PORT: beads' DefaultConfig() checks this first,
+      # ensuring all projects connect to the systemd-managed server.
+      #
+      # BEADS_DOLT_AUTO_START=0: prevents beads from auto-starting its own
+      # dolt server. The systemd service handles lifecycle (Restart=on-failure,
+      # WantedBy=default.target). Without this, beads' EnsureRunning() →
+      # Start() → forkIdleMonitor() chain spawns rogue servers that displace
+      # the systemd-managed one.
+      #
+      # NOTE: Do NOT set BEADS_DOLT_DATA_DIR here. It overrides DatabasePath()
+      # in configfile.go, causing main.go to derive beadsDir from the global
+      # data dir (filepath.Dir(dbPath)) instead of the project-local .beads/.
+      # This breaks per-project database resolution — all projects would read
+      # ~/.beads/metadata.json and connect to the default "beads" database.
+      home.sessionVariables = {
+        BEADS_DOLT_SERVER_PORT = toString cfg.port;
+        BEADS_DOLT_AUTO_START = "0";
+      };
+
+      # Write PID/port state files so beads' IsRunning() detects the
+      # server on the fast path (without going through reclaimPort).
+      systemd.user.services.dolt-server.Service.ExecStartPost =
+        toString (pkgs.writeShellScript "dolt-server-beads-state" ''
+          set -euo pipefail
+          state_dir=${escapeShellArg stateDir}
+          mkdir -p "$state_dir"
+          echo "$MAINPID" > "$state_dir/dolt-server.pid"
+          echo ${escapeShellArg (toString cfg.port)} > "$state_dir/dolt-server.port"
+        '');
+    })
+  ]);
 }
