@@ -1,4 +1,4 @@
 {
   "database": "beads.db",
-  "jsonl_export": "issues.jsonl"
+  "dolt_server_port": 14078
 }
