@@ -14,11 +14,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1772436889,
-        "narHash": "sha256-uwV8UvZVmYzWyxLrxX7M1oiEnmGdVZM1gK2AWeAGOzs=",
+        "lastModified": 1772555378,
+        "narHash": "sha256-/ke941q9n3nIEnSXImKAsDGBk87I/pqaTe4i6jqP5z4=",
         "owner": "dayvidpham",
         "repo": "aura-plugins",
-        "rev": "c8b7a409506a3eae130ecb8c6c0746a7be3b8589",
+        "rev": "3565c2a275f3fba363dc9144ac4b21ef84689b1d",
         "type": "github"
       },
       "original": {
