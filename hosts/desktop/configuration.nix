@@ -204,88 +204,12 @@
   # Virtualisation
   CUSTOM.virtualisation.podman.enable = true;
   CUSTOM.virtualisation.libvirtd.enable = true;
-  CUSTOM.virtualisation.llm-sandbox.enable = true;
+  CUSTOM.virtualisation.llm-sandbox.enable = false;
 
   # OpenClaw AI Assistant (secure containerized setup)
-  # NOTE: Disabled - using microVM instead (openclaw-vm)
-  CUSTOM.virtualisation.openclaw = {
-    enable = false;
-
-    # Container configuration
-    container.gatewayPackage = nix-openclaw.packages.${pkgs.system}.openclaw-gateway;
-
-    # sops-nix secrets configuration
-    secrets = {
-      enable = true;
-      sopsFile = ../../secrets/openclaw/secrets.yaml;
-      ageKeyFile = "/var/lib/sops-nix/keys.txt";
-    };
-
-    # Network security (strict allowlist)
-    network = {
-      enable = true;
-      strictFirewall = true;
-      allowlist = {
-        domains = [ "api.anthropic.com" ];
-        allowDns = true;
-      };
-    };
-
-    # Inter-instance communication bridge
-    bridge = {
-      enable = true;
-      port = 18800;
-      rateLimit = 60;
-      maxDelegationDepth = 5;
-    };
-
-    # Instance configurations
-    instances = {
-      alpha = {
-        enable = false;
-        ports = {
-          webchat = 3000;
-          gateway = 18789;
-        };
-        workspace = {
-          path = "/var/lib/openclaw/alpha/workspace";
-          configPath = "/var/lib/openclaw/alpha/config";
-        };
-        resources = {
-          memoryLimit = "4g";
-          cpuLimit = "2.0";
-        };
-        openclaw = {
-          agentName = "Alpha";
-          sandboxMode = "all";
-        };
-      };
-
-      beta = {
-        enable = false;
-        ports = {
-          webchat = 3001;
-          gateway = 18790;
-        };
-        workspace = {
-          path = "/var/lib/openclaw/beta/workspace";
-          configPath = "/var/lib/openclaw/beta/config";
-        };
-        resources = {
-          memoryLimit = "4g";
-          cpuLimit = "2.0";
-        };
-        openclaw = {
-          agentName = "Beta";
-          sandboxMode = "all";
-        };
-      };
-    };
-  };
-
   # OpenClaw VM - microVM-based isolation for gateway
   CUSTOM.virtualisation.openclaw-vm = {
-    enable = true;
+    enable = false;
     dangerousDevMode.enable = false; # Disabled: no auto-login, no guest agent
     useVirtiofs = true; # Fast rebuilds via host /nix/store
     gatewayPort = 18789;
