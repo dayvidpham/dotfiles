@@ -138,10 +138,14 @@ in
       # data dir (filepath.Dir(dbPath)) instead of the project-local .beads/.
       # This breaks per-project database resolution — all projects would read
       # ~/.beads/metadata.json and connect to the default "beads" database.
-      home.sessionVariables = {
-        BEADS_DOLT_SERVER_PORT = toString cfg.port;
-        BEADS_DOLT_AUTO_START = "0";
-      };
+      # home.sessionVariables only reaches login shells; non-login contexts
+      # (tmux panes, Claude Code hooks, subagents) miss them. Write to
+      # ~/.zshenv via programs.zsh.envExtra so ALL zsh invocations get
+      # the vars, preventing beads from spawning rogue dolt servers.
+      programs.zsh.envExtra = ''
+        export BEADS_DOLT_SERVER_PORT=${escapeShellArg (toString cfg.port)}
+        export BEADS_DOLT_AUTO_START=0
+      '';
 
       # Write PID/port state files so beads' IsRunning() detects the
       # server on the fast path (without going through reclaimPort).
