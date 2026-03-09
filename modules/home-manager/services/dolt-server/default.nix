@@ -105,7 +105,7 @@ in
           WorkingDirectory = "-${cfg.dataDir}";
           ExecStartPre = toString (pkgs.writeShellScript "dolt-server-mkdatadir" ''
             set -euo pipefail
-            mkdir -p ${escapeShellArg cfg.dataDir}
+            ${pkgs.coreutils}/bin/mkdir -p ${escapeShellArg cfg.dataDir}
           '');
           ExecStart = concatStringsSep " " ([
             "${cfg.package}/bin/dolt" "sql-server"
@@ -149,9 +149,9 @@ in
         toString (pkgs.writeShellScript "dolt-server-beads-state" ''
           set -euo pipefail
           state_dir=${escapeShellArg stateDir}
-          mkdir -p "$state_dir"
-          echo "$MAINPID" > "$state_dir/dolt-server.pid"
-          echo ${escapeShellArg (toString cfg.port)} > "$state_dir/dolt-server.port"
+          ${pkgs.coreutils}/bin/mkdir -p "$state_dir"
+          ${pkgs.coreutils}/bin/echo "$MAINPID" > "$state_dir/dolt-server.pid"
+          ${pkgs.coreutils}/bin/echo ${escapeShellArg (toString cfg.port)} > "$state_dir/dolt-server.port"
         '');
     })
   ]);
