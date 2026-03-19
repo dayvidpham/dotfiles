@@ -45,6 +45,7 @@ in
             globalAnnounceEnabled = false;
             localAnnounceEnabled = false; # Won't work over VPN anyway (no broadcast)
             relaysEnabled = false; # Force direct connection
+            natEnabled = false; # Unnecessary over Headscale VPN
             urAccepted = -1; # Disable usage reporting
           };
 
@@ -56,15 +57,15 @@ in
           };
 
           # 3. Device Configuration (Static IPs are CRITICAL here)
+          # Use tcp:// over Headscale — QUIC (UDP-in-UDP) causes MTU/timeout issues inside WireGuard tunnels
           devices = {
             "desktop" = {
               id = "PBNVVR2-AC7HNJ2-ZNSWJOH-N33ZXDL-4PLSE2K-3KF2TUT-36AVMYK-6PTXRQZ";
-              # Hardcode the Headscale IP. Port 22000 is standard.
-              addresses = [ "quic://${desktopIp}:22000" ];
+              addresses = [ "tcp://${desktopIp}:22000" ];
             };
             "flowX13" = {
               id = "RS4XGM6-YFBMSFV-MWJJVZP-QXYM7UN-SOT7PKK-4PPDR4L-XMIE6EJ-5JEZOAR";
-              addresses = [ "quic://${flowx13Ip}:22000" ];
+              addresses = [ "tcp://${flowx13Ip}:22000" ];
             };
           };
 
