@@ -136,6 +136,7 @@ rec {
     steam-run-free # run things in steam's FHS env
     kdePackages.dolphin # file explorer
     scythe # self-rolled screenshotter
+    qbittorrent # torrenting client
 
     # For SFU
     openfortivpn
@@ -145,6 +146,7 @@ rec {
     google-chrome
     spotify
     discord
+    zoom-us
 
     # Cloud
     oci-cli
