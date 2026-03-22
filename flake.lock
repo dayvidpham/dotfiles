@@ -35,13 +35,18 @@
         ]
       },
       "locked": {
-        "narHash": "sha256-45IgftYlJJ24pMvVnV3ECv0LD2XT2MVhI1EKaQiLE94=",
-        "path": "/home/minttea/codebases/beads",
-        "type": "path"
+        "lastModified": 1772435986,
+        "narHash": "sha256-4mZr4fTTq1lWtu3uXsFwFlBqavUz7y/6sc6+Y+mPH9A=",
+        "owner": "dayvidpham",
+        "repo": "beads",
+        "rev": "552b7903e4561fee730b0e53c3bbee9308ff5a29",
+        "type": "github"
       },
       "original": {
-        "path": "/home/minttea/codebases/beads",
-        "type": "path"
+        "owner": "dayvidpham",
+        "ref": "main-fork",
+        "repo": "beads",
+        "type": "github"
       }
     },
     "blueprint": {

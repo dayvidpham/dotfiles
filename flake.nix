@@ -61,7 +61,7 @@
     };
 
     beads = {
-      url = "path:/home/minttea/codebases/beads";
+      url = "github:dayvidpham/beads/main-fork";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
