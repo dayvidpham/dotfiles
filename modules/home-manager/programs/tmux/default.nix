@@ -13,6 +13,59 @@ let
     getExe
     ;
 
+  # Hook: capture Claude Code session IDs for tmux-resurrect restore.
+  # Maps each Claude pane to its session UUID via ~/.claude/sessions/<PID>.json,
+  # and captures whether --dangerously-skip-permissions was active.
+  claudeSave = pkgs.writeShellScript "tmux-claude-save" ''
+    CLAUDE_FILE="$HOME/.tmux/resurrect/claude_panes.txt"
+    : > "$CLAUDE_FILE"
+
+    for sf in "$HOME"/.claude/sessions/*.json; do
+      pid=$(basename "$sf" .json)
+      session_id=$(${getExe pkgs.gnugrep} -o '"sessionId":"[^"]*"' "$sf" | cut -d'"' -f4)
+      [ -z "$session_id" ] && continue
+
+      # Walk up the process tree to find which tmux pane owns this process
+      check_pid=$pid
+      pane_target=""
+      while [ "$check_pid" -gt 1 ]; do
+        pane_target=$(tmux list-panes -a -F '#{pane_pid} #{session_name}:#{window_index}.#{pane_index}' 2>/dev/null \
+          | ${getExe pkgs.gawk} -v p="$check_pid" '$1 == p {print $2; exit}')
+        [ -n "$pane_target" ] && break
+        check_pid=$(${getExe pkgs.gawk} '{print $4}' /proc/"$check_pid"/stat 2>/dev/null)
+        [ -z "$check_pid" ] && break
+      done
+      [ -z "$pane_target" ] && continue
+
+      bypass=""
+      if tr '\0' ' ' < /proc/"$pid"/cmdline 2>/dev/null \
+          | ${getExe pkgs.gnugrep} -q -- '--dangerously-skip-permissions'; then
+        bypass="--dangerously-skip-permissions"
+      fi
+
+      printf '%s\t%s\t%s\n' "$pane_target" "$session_id" "$bypass" >> "$CLAUDE_FILE"
+    done
+  '';
+
+  # Hook: restore Claude Code sessions with exact session IDs
+  claudeRestore = pkgs.writeShellScript "tmux-claude-restore" ''
+    CLAUDE_FILE="$HOME/.tmux/resurrect/claude_panes.txt"
+    [ -f "$CLAUDE_FILE" ] || exit 0
+
+    while IFS="$(printf '\t')" read -r target session_id bypass; do
+      [ -z "$target" ] || [ -z "$session_id" ] && continue
+
+      session_name="''${target%%:*}"
+      tmux has-session -t "$session_name" 2>/dev/null || continue
+
+      cmd="claude"
+      [ -n "$bypass" ] && cmd="$cmd $bypass"
+      cmd="$cmd --resume $session_id"
+
+      tmux send-keys -t "$target" "$cmd" Enter
+    done < "$CLAUDE_FILE"
+  '';
+
   moveWindow = pkgs.writeShellScriptBin "tmux-move-window" ''
     current_session=$(tmux display-message -p '#S')
 
@@ -274,10 +327,22 @@ in
 
       plugins = with pkgs.tmuxPlugins; [
         {
-          plugin = resurrect;
+          plugin = resurrect.overrideAttrs (old: {
+            postPatch = (old.postPatch or "") + ''
+              # Fix: bash 'read' with IFS=$'\t' collapses consecutive tabs,
+              # so an empty #{pane_title} shifts all columns in the save file.
+              # Restore then parses the dir as "0"/"1" -> empty -> $HOME.
+              # Fix: fall back to last two CWD segments when pane_title is empty.
+              substituteInPlace scripts/save.sh \
+                --replace-fail 'format+="#{pane_title}"' \
+                'format+="#{?pane_title,#{pane_title},#{s|^.*/([^/]+/[^/]+)$|\1|:pane_current_path}}"'
+            '';
+          });
           extraConfig = ''
             set -g @resurrect-strategy-nvim 'session'
             set -g @resurrect-capture-pane-contents 'on'
+            set -g @resurrect-hook-post-save-all '${claudeSave}'
+            set -g @resurrect-hook-post-restore-all '${claudeRestore}'
           '';
         }
         {
