@@ -13,10 +13,9 @@ let
     mkIf
     ;
 
-  # electron_38 is EOL; override with the nearest supported version
-  f-rstudio-env = (_pkgs: (_pkgs.rstudioWrapper.override {
-    rstudio = _pkgs.rstudio.override { electron_38 = pkgs-unstable.electron_39; };
-  }).override {
+  # TODO: RStudio pins electron_38 (EOL/insecure on unstable).
+  # Tracked in https://github.com/dayvidpham/rstudio-nix/issues/1
+  f-rstudio-env = (_pkgs: _pkgs.rstudioWrapper.override {
     packages = with _pkgs.rPackages; [
       tidyverse
       knitr
@@ -51,7 +50,7 @@ in
     home.packages = [
       pkgs.texliveTeTeX
       pkgs.pandoc
-    ] ++ (f-renv pkgs-unstable);
+    ] ++ (f-renv pkgs-stable);
 
     #xdg.configFile."rstudio/desktop.info".text = ''
     #  [General]

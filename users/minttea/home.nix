@@ -168,7 +168,7 @@ rec {
   #########################
   # Programming Envs
 
-  CUSTOM.programs.rEnv.enable = true;
+  CUSTOM.programs.rEnv.enable = false; # disabled: electron_38 is EOL, see dayvidpham/rstudio-nix#1
 
   programs.direnv = {
     enable = true;
