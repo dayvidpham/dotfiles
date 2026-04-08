@@ -13,7 +13,10 @@ let
     mkIf
     ;
 
-  f-rstudio-env = (_pkgs: _pkgs.rstudioWrapper.override {
+  # electron_38 is EOL; override with the nearest supported version
+  f-rstudio-env = (_pkgs: (_pkgs.rstudioWrapper.override {
+    rstudio = _pkgs.rstudio.override { electron_38 = pkgs-unstable.electron_39; };
+  }).override {
     packages = with _pkgs.rPackages; [
       tidyverse
       knitr
@@ -48,7 +51,7 @@ in
     home.packages = [
       pkgs.texliveTeTeX
       pkgs.pandoc
-    ] ++ (f-renv pkgs-stable);
+    ] ++ (f-renv pkgs-unstable);
 
     #xdg.configFile."rstudio/desktop.info".text = ''
     #  [General]
