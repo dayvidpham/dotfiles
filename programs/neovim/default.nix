@@ -29,7 +29,6 @@ let
     p.jq
     p.json5
     p.json
-    p.jsonc
     p.lua
     p.luadoc
     p.make

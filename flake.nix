@@ -24,8 +24,8 @@
     determinate-nixd.url = "https://flakehub.com/f/DeterminateSystems/determinate/*";
 
     home-manager = {
-      url = "github:nix-community/home-manager/release-25.11";
-      inputs.nixpkgs.follows = "nixpkgs";
+      url = "github:nix-community/home-manager/master";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
     home-manager-wsl = {
       url = "github:nix-community/home-manager/release-24.11";
@@ -42,7 +42,7 @@
 
     llm-agents = {
       url = "github:numtide/llm-agents.nix";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
 
     microvm = {
@@ -368,7 +368,7 @@
 
       homeConfigurations = {
         "minttea@flowX13" = home-manager.lib.homeManagerConfiguration {
-          inherit pkgs;
+          pkgs = pkgs-unstable;
           modules = [
             niri.homeModules.niri
             aura-plugins.homeManagerModules.aura-config-sync
@@ -387,7 +387,7 @@
         };
 
         "minttea@desktop" = home-manager.lib.homeManagerConfiguration {
-          inherit pkgs;
+          pkgs = pkgs-unstable;
           modules = [
             niri.homeModules.niri
             aura-plugins.homeManagerModules.aura-config-sync
@@ -412,7 +412,7 @@
         };
 
         "minttea@wsl" = home-manager.lib.homeManagerConfiguration {
-          inherit pkgs;
+          pkgs = pkgs-unstable;
           modules = [
             niri.homeModules.niri
             aura-plugins.homeManagerModules.aura-config-sync
@@ -429,7 +429,7 @@
           };
         };
         "minttea@flowX13-wsl" = home-manager.lib.homeManagerConfiguration {
-          inherit pkgs;
+          pkgs = pkgs-unstable;
           modules = [
             niri.homeModules.niri
             aura-plugins.homeManagerModules.aura-config-sync

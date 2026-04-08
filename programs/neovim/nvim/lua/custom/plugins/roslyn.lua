@@ -9,7 +9,7 @@ return {
         -- <roslyn-ls-path> is a placeholder for the path to the Roslyn LS directory
         vim.g.roslyn_dll_path,
         '--logLevel=Error', -- Critical|Debug|Error|Information|None|Trace|Warning
-        '--extensionLogDirectory=' .. vim.fs.dirname(vim.lsp.get_log_path()),
+        '--extensionLogDirectory=' .. vim.fs.dirname(vim.lsp.log.get_filename()),
         '--stdio',
       },
       capabilities = vim.tbl_deep_extend('force', require('cmp_nvim_lsp').default_capabilities(), {

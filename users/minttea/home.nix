@@ -114,6 +114,7 @@ rec {
     # Desktop
     kdePackages.dolphin
     kdePackages.qtsvg
+    libreoffice
 
     # Agents
     beads

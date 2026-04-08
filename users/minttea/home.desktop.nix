@@ -73,15 +73,15 @@ in
     #blender
   ])
   ++ [
-    rider
+    # rider
   ]
   ;
 
   programs.obs-studio.enable = true;
 
-  CUSTOM.programs.nodejs.enable = true;
+  CUSTOM.programs.nodejs.enable = false;
   CUSTOM.programs.vscode.enable = true;
-  CUSTOM.programs.unity.enable = true;
+  CUSTOM.programs.unity.enable = false;
   CUSTOM.games.minecraft.enable = false;
   programs.lutris.enable = true;
 

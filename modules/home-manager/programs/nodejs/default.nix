@@ -14,7 +14,7 @@ let
     mkEnableOption
     ;
 
-  nodejs = pkgs-unstable.nodejs_22;
+  nodejs = pkgs-unstable.nodejs;
   nodePkgs = pkgs-unstable.nodePackages;
   npmHomePkgs = "pkgs/npm-global";
   npmConfigFile = "npm/.npmrc";

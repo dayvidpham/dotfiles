@@ -1127,20 +1127,14 @@ require('lazy').setup({
         enable = true,
       },
     },
-    config = function(_, opts)
+    config = function()
       -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
+      -- New API: configure via vim.treesitter directly
+      vim.treesitter.language.register('markdown', 'mdx')
 
-      -- Prefer git instead of curl in order to improve connectivity in some environments
-      require('nvim-treesitter.install').prefer_git = true
-      ---@diagnostic disable-next-line: missing-fields
-      require('nvim-treesitter.configs').setup(opts)
+      -- Highlight, indent, and incremental selection are now default or opt-in
+      -- Parsers are managed by Nix (no ensure_installed / auto_install needed)
 
-      -- TODO: There are additional nvim-treesitter modules that you can use to interact
-      -- with nvim-treesitter. You should go explore a few and see what interests you:
-      --
-      --    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
-      --
-      --    - Show your current context: https://github.com/nvim-treesitter/nvim-treesitter-context
       require 'treesitter-context'
     end,
   },
