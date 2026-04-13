@@ -255,7 +255,7 @@ in
   users.users.minttea = {
     isNormalUser = true;
     description = "the guy";
-    extraGroups = [ "networkmanager" "wheel" "libvirtd" "video" "gamemode" ];
+    extraGroups = [ "networkmanager" "wheel" "libvirtd" "video" "gamemode" "dialout" ];
   };
 
 
