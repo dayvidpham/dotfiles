@@ -104,10 +104,10 @@ in
       pkgs.llvmPackages.clang
       pkgs.llvmPackages.clang-tools
       # C# / Unity
-      pkgs.dotnet-sdk_9
-      pkgs.mono
-      pkgs.roslyn-ls
-      pkgs.msbuild
+      #pkgs.dotnet-sdk_9
+      #pkgs.mono
+      #pkgs.roslyn-ls
+      #pkgs.msbuild
     ]) ++ [
       pkgs.nixd
       pkgs.tree-sitter
@@ -122,7 +122,6 @@ in
       ''
         vim.opt.runtimepath:append("${treesitter-parsers}")
         --vim.g.clangd = "${pkgs.llvmPackages.clang-tools}/bin/clangd"
-        vim.g.roslyn_dll_path = "${pkgs.roslyn-ls}/lib/roslyn-ls/Microsoft.CodeAnalysis.LanguageServer.dll"
 
         package.path = '${nvimConfig}/?.lua;' ..
           '${nvimConfig}/?/init.lua;' .. 
@@ -130,7 +129,9 @@ in
           '${nvimConfig}/minttea/lua/?.lua;' .. 
           package.path
         require('minttea')
-      '';
+      ''
+      # + ''vim.g.roslyn_dll_path = "${pkgs.roslyn-ls}/lib/roslyn-ls/Microsoft.CodeAnalysis.LanguageServer.dll"''
+    ;
   };
 
   #xdg.configFile."nvim/minttea" = {

@@ -495,9 +495,9 @@ require('lazy').setup({
         clangd = {
           mason = false,
         },
-        roslyn_ls = {
-          mason = false,
-        },
+        --roslyn_ls = {
+        --  mason = false,
+        --},
       },
     },
     config = function(_, opts)
