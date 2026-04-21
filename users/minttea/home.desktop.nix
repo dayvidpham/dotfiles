@@ -64,6 +64,10 @@ in
     # Game Dev
     #godot
 
+    # Audio Production
+    ardour
+    zrythm
+
     # utilities
     gimp # photo editing/markup
     nvtopPackages.full # htop but for GPUs
