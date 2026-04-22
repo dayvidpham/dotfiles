@@ -353,7 +353,7 @@ require('lazy').setup({
   { -- Fuzzy Finder (files, lsp, etc)
     'nvim-telescope/telescope.nvim',
     event = 'VimEnter',
-    branch = '0.1.x',
+    -- branch = '0.1.x',
     dependencies = {
       'nvim-lua/plenary.nvim',
       { -- If encountering errors, see telescope-fzf-native README for installation instructions
@@ -1088,52 +1088,38 @@ require('lazy').setup({
       require('mini.animate').setup {}
     end,
   },
-  { -- Highlight, edit, and navigate code
+  { -- Highlight via treesitter (parsers + queries provided by Nix)
     name = 'nvim-treesitter/nvim-treesitter',
     dependencies = {
       'nvim-treesitter/nvim-treesitter-context',
     },
     dir = vim.g.NIX_DATA_HOME .. '/nvim-treesitter',
-    build = ':TSUpdate',
-    opts = {
-      ensure_installed = {
-        'bash',
-        'c',
-        'cpp',
-        'cmake',
-        'html',
-        'lua',
-        'luadoc',
-        'markdown',
-        'nix',
-        'python',
-        'typescript',
-        'vim',
-        'vimdoc',
-      },
-      -- Autoinstall languages that are not installed
-      auto_install = true,
-      highlight = {
-        enable = true,
-        -- Some languages depend on vim's regex highlighting system (such as Ruby) for indent rules.
-        --  If you are experiencing weird indenting issues, add the language to
-        --  the list of additional_vim_regex_highlighting and disabled languages for indent.
-        additional_vim_regex_highlighting = { 'ruby' },
-      },
-      indent = { enable = true, disable = { 'ruby' } },
-
-      -- Incremental selection: Included, see `:help nvim-treesitter-incremental-selection-mod`
-      incremental_selection = {
-        enable = true,
-      },
-    },
     config = function()
-      -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
-      -- New API: configure via vim.treesitter directly
+      -- Main-branch rewrite ships queries at <plugin>/runtime/queries and
+      -- does NOT add that path to rtp. Without this, lua falls back to
+      -- Nvim's bundled query which mismatches the plugin's grammar (the
+      -- `(binary_expression operator: _ @operator)` field-not-found crash),
+      -- and nix has no visible queries at all.
+      vim.opt.rtp:prepend(vim.g.NIX_DATA_HOME .. '/nvim-treesitter/runtime')
+
+      -- The plugin ships an older tree-sitter-lua (no `operator` field on
+      -- binary_expression) while the highlight query references it. Prefer
+      -- Nvim's bundled lua parser, which matches the query.
+      for _, p in ipairs(vim.api.nvim_get_runtime_file('parser/lua.so', true)) do
+        if not p:find('nvim-treesitter', 1, true) then
+          vim.treesitter.language.add('lua', { path = p })
+          break
+        end
+      end
+
       vim.treesitter.language.register('markdown', 'mdx')
 
-      -- Highlight, indent, and incremental selection are now default or opt-in
-      -- Parsers are managed by Nix (no ensure_installed / auto_install needed)
+      -- Main-branch does not auto-start highlighting; do it per filetype.
+      vim.api.nvim_create_autocmd('FileType', {
+        callback = function(args)
+          pcall(vim.treesitter.start, args.buf)
+        end,
+      })
 
       require 'treesitter-context'
     end,
