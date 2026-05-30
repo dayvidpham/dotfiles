@@ -415,3 +415,4 @@
 {"actor":"David Huu Pham","comment":"Added label: aura:p2-user:s2_2-urd","created_at":"2026-03-01T03:18:02Z","event_type":"label_added","id":422,"issue_id":"dotfiles-emiw","new_value":null,"old_value":null}
 {"actor":"David Huu Pham","comment":null,"created_at":"2026-03-09T00:19:24Z","event_type":"created","id":423,"issue_id":"dotfiles-j7r9","new_value":"","old_value":""}
 {"actor":"David Huu Pham","comment":"Added label: aura:p1-user:s1_1-classify","created_at":"2026-03-09T00:19:24Z","event_type":"label_added","id":424,"issue_id":"dotfiles-j7r9","new_value":null,"old_value":null}
+{"actor":"David Huu Pham","comment":null,"created_at":"2026-03-09T00:20:58Z","event_type":"closed","id":425,"issue_id":"dotfiles-j7r9","new_value":"Both VMs already disabled: llm-sandbox.enable = false (line 207) and openclaw-vm.enable = false (line 212) in hosts/desktop/configuration.nix","old_value":""}
