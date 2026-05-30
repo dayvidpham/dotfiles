@@ -416,3 +416,16 @@
 {"actor":"David Huu Pham","comment":null,"created_at":"2026-03-09T00:19:24Z","event_type":"created","id":423,"issue_id":"dotfiles-j7r9","new_value":"","old_value":""}
 {"actor":"David Huu Pham","comment":"Added label: aura:p1-user:s1_1-classify","created_at":"2026-03-09T00:19:24Z","event_type":"label_added","id":424,"issue_id":"dotfiles-j7r9","new_value":null,"old_value":null}
 {"actor":"David Huu Pham","comment":null,"created_at":"2026-03-09T00:20:58Z","event_type":"closed","id":425,"issue_id":"dotfiles-j7r9","new_value":"Both VMs already disabled: llm-sandbox.enable = false (line 207) and openclaw-vm.enable = false (line 212) in hosts/desktop/configuration.nix","old_value":""}
+{"actor":"David Huu Pham","comment":null,"created_at":"2026-05-29T17:40:33Z","event_type":"created","id":426,"issue_id":"dotfiles-x1ot","new_value":"","old_value":""}
+{"actor":"David Huu Pham","comment":"Added label: nix-2605-warnings","created_at":"2026-05-29T17:40:33Z","event_type":"label_added","id":427,"issue_id":"dotfiles-x1ot","new_value":null,"old_value":null}
+{"actor":"David Huu Pham","comment":null,"created_at":"2026-05-29T17:40:41Z","event_type":"created","id":428,"issue_id":"dotfiles-muwr","new_value":"","old_value":""}
+{"actor":"David Huu Pham","comment":"Added label: nix-2605-warnings","created_at":"2026-05-29T17:40:42Z","event_type":"label_added","id":429,"issue_id":"dotfiles-muwr","new_value":null,"old_value":null}
+{"actor":"David Huu Pham","comment":null,"created_at":"2026-05-29T17:40:46Z","event_type":"created","id":430,"issue_id":"dotfiles-ur8j","new_value":"","old_value":""}
+{"actor":"David Huu Pham","comment":"Added label: nix-2605-warnings","created_at":"2026-05-29T17:40:46Z","event_type":"label_added","id":431,"issue_id":"dotfiles-ur8j","new_value":null,"old_value":null}
+{"actor":"David Huu Pham","comment":null,"created_at":"2026-05-29T17:40:50Z","event_type":"created","id":432,"issue_id":"dotfiles-z9g4","new_value":"","old_value":""}
+{"actor":"David Huu Pham","comment":"Added label: nix-2605-warnings","created_at":"2026-05-29T17:40:50Z","event_type":"label_added","id":433,"issue_id":"dotfiles-z9g4","new_value":null,"old_value":null}
+{"actor":"David Huu Pham","comment":null,"created_at":"2026-05-29T17:41:11Z","event_type":"created","id":434,"issue_id":"dotfiles-9kbf","new_value":"","old_value":""}
+{"actor":"David Huu Pham","comment":"Added label: nix-2605-warnings","created_at":"2026-05-29T17:41:11Z","event_type":"label_added","id":435,"issue_id":"dotfiles-9kbf","new_value":null,"old_value":null}
+{"actor":"David Huu Pham","comment":null,"created_at":"2026-05-29T17:44:02Z","event_type":"created","id":436,"issue_id":"dotfiles-rdli","new_value":"","old_value":""}
+{"actor":"David Huu Pham","comment":"Added label: nix-2605-warnings","created_at":"2026-05-29T17:44:02Z","event_type":"label_added","id":437,"issue_id":"dotfiles-rdli","new_value":null,"old_value":null}
+{"actor":"David Huu Pham","comment":"Added label: aura:p1-user:s1_1-classify","created_at":"2026-05-29T17:44:02Z","event_type":"label_added","id":438,"issue_id":"dotfiles-rdli","new_value":null,"old_value":null}
