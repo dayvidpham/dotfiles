@@ -59,7 +59,7 @@ let
   };
 
   # NOTE: my own config
-  system = pkgs.system;
+  system = pkgs.stdenv.hostPlatform.system;
 
   nvimConfig = "${config.xdg.configHome}/nvim";
 in
@@ -118,7 +118,7 @@ in
       pkgs.rust-analyzer-unwrapped
     ];
 
-    extraLuaConfig =
+    initLua =
       ''
         vim.opt.runtimepath:append("${treesitter-parsers}")
         --vim.g.clangd = "${pkgs.llvmPackages.clang-tools}/bin/clangd"

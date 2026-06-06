@@ -62,8 +62,8 @@ in
     enable = mkEnableOption ''
       Enable swww Wayland wallpaper daemon, use systemd by default
     '';
-    package = mkPackageOption pkgs "swww" {
-      default = "swww";
+    package = mkPackageOption pkgs "awww" {
+      default = "awww";
     };
     systemd.enable = (mkEnableOption ''
       systemd unit that runs swww-daemon
@@ -72,7 +72,7 @@ in
 
   config = mkIf cfg.enable {
     home.packages = with pkgs; [
-      swww
+      awww
     ];
 
     systemd.user.services.swww-daemon = {
@@ -86,7 +86,7 @@ in
       };
 
       Service = {
-        ExecStart = "${getExe' cfg.package "swww-daemon"}";
+        ExecStart = "${getExe' cfg.package "awww-daemon"}";
         #ExecStartPost = "${getExe swww-restore-cache}";
         Restart = "always";
         RestartSec = "10";

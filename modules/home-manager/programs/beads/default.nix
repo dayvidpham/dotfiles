@@ -118,7 +118,7 @@ in
         key = secretsCfg.remotePasswordKey;
       };
 
-      programs.zsh.initExtra = ''
+      programs.zsh.initContent = ''
         if [[ -r "${config.sops.secrets."dolt/dolt_remote_password".path}" ]]; then
           export DOLT_REMOTE_PASSWORD="$(< "${config.sops.secrets."dolt/dolt_remote_password".path}")"
         fi
@@ -127,7 +127,7 @@ in
 
     # Manual password file (non-sops fallback)
     (mkIf (fedCfg.remotePasswordFile != null && !secretsCfg.enable) {
-      programs.zsh.initExtra = ''
+      programs.zsh.initContent = ''
         if [[ -r "${toString fedCfg.remotePasswordFile}" ]]; then
           export DOLT_REMOTE_PASSWORD="$(< "${toString fedCfg.remotePasswordFile}")"
         fi

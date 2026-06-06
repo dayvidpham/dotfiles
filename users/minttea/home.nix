@@ -43,7 +43,7 @@ rec {
   ];
 
   # PATH entries for interactive shells
-  programs.zsh.initExtra = ''
+  programs.zsh.initContent = ''
     path+=("$HOME/.bun/bin")
   '';
 
@@ -189,9 +189,9 @@ rec {
   CUSTOM.programs.aura-config-sync.enable = true;
   CUSTOM.programs.aura-config-sync.commands.enable = false; # skills loaded via Claude Code plugin
   CUSTOM.programs.aura-config-sync.agents.enable = false; # agents loaded via Claude Code plugin
-  programs.gemini-cli.enable = true;
-  programs.gemini-cli.package = pkgs-unstable.gemini-cli;
-  programs.gemini-cli.defaultModel = "gemini-3-pro-preview";
+  programs.antigravity-cli.enable = true;
+  programs.antigravity-cli.package = pkgs-unstable.antigravity-cli;
+  programs.antigravity-cli.defaultModel = "gemini-3-pro-preview";
 
   #########################
   # General CLI tools

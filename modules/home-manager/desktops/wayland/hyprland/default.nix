@@ -55,7 +55,7 @@ in
       extraConfig = ''
         ${builtins.readFile ./hyprland.conf}
         exec-once = ${pkgs.polkit_gnome.outPath}/libexec/polkit-gnome-authentication-agent-1
-        exec-once = ${getExe pkgs.swww} img $HOME/Pictures/wallpapers/david_1997-2021.jpg --resize fit --transition-type center
+        exec-once = ${getExe pkgs.awww} img $HOME/Pictures/wallpapers/david_1997-2021.jpg --resize fit --transition-type center
       '';
     };
 
