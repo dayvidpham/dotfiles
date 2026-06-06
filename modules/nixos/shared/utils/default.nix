@@ -68,9 +68,14 @@ lib.mkIf (config.CUSTOM.shared.enable) {
   programs.bat.enable = true;
   programs.bat.extraPackages =
     let
-      isPackage = lib.types.package.check;
-      batPkgAttrs = lib.filterAttrs (key: val: isPackage val) pkgs.bat-extras;
-      batPkgs = lib.mapAttrsToList (key: val: val) batPkgAttrs;
+      # NixOS 26.05's programs.bat module calls `pkg.shellInit <shell>` on every
+      # member of extraPackages. nixpkgs now splits bat-extras into plugin
+      # derivations that carry a `shellInit` passthru (batman, batpipe, batgrep,
+      # batdiff, batwatch, prettybat) plus a `core` derivation that does not.
+      # Selecting only members with `shellInit` keeps the plugins and drops
+      # `core` (and the recurse marker), which would otherwise break evaluation.
+      hasShellInit = key: val: lib.types.package.check val && val ? shellInit;
+      batPkgs = lib.attrValues (lib.filterAttrs hasShellInit pkgs.bat-extras);
     in
     batPkgs;
 }

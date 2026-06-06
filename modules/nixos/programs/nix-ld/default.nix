@@ -34,7 +34,11 @@
     libxkbcommon
     libxml2
     libva
-    libva1
+    # libva1 (legacy libva.so.1 ABI shim, pinned to 1.8.3) removed for 26.05:
+    # its 2017-era va_nvctrl.c fails to compile under GCC's now-default
+    # -Werror=incompatible-pointer-types. Modern VAAPI / nvidia-vaapi-driver
+    # link libva.so.2 (kept via `libva` above); only ancient prebuilt binaries
+    # hardcoded against libva.so.1 would need this back.
     nvidia-vaapi-driver
     mesa
     libgbm
