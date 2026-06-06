@@ -140,11 +140,15 @@ in
           sessionVariables = {
             # Disable insecure directory checks
             ZSH_DISABLE_COMPFIX = "true";
-            # Override default plugin behaviour
-            ZSH_AUTOSUGGEST_STRATEGY = [ "history" "completion" ];
           };
 
           localVariables = {
+            # zsh-autosuggestions reads this as a zsh array, so it belongs in
+            # localVariables (rendered as `ZSH_AUTOSUGGEST_STRATEGY=(history completion)`).
+            # home-manager 26.05 enforces scalar-only types on sessionVariables
+            # (which become `export` statements), so a list there is rejected.
+            ZSH_AUTOSUGGEST_STRATEGY = [ "history" "completion" ];
+
             HISTTIMEFORMAT = "%d/%m/%y %T ";
 
             CLICOLOR = 1;
