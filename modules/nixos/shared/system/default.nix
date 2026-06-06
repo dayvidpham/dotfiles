@@ -56,7 +56,7 @@ in
     };
 
     documentation.enable = true;
-    documentation.man.generateCaches = config.documentation.man.enable;
+    documentation.man.cache.enable = config.documentation.man.enable;
 
     ######################################
     # Allow firmware with unfree licenses
@@ -211,9 +211,9 @@ in
 
     # man resolved.conf
     services.resolved.enable = lib.mkDefault false;
-    services.resolved.dnssec = lib.mkDefault "allow-downgrade";
-    services.resolved.dnsovertls = lib.mkDefault "opportunistic";
-    services.resolved.domains = [
+    services.resolved.settings.Resolve.DNSSEC = lib.mkDefault "allow-downgrade";
+    services.resolved.settings.Resolve.DNSOverTLS = lib.mkDefault "opportunistic";
+    services.resolved.settings.Resolve.Domains = [
       "~."
     ];
 
@@ -224,7 +224,7 @@ in
       "2620:fe::fe#dns.quad9.net."
     ];
 
-    services.resolved.fallbackDns = [
+    services.resolved.settings.Resolve.FallbackDNS = [
       "1.1.1.1#one.one.one.one."
     ]
     ++

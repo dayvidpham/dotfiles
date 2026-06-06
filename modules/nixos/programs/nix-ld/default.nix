@@ -50,23 +50,23 @@
     stdenv.cc.cc
     systemd
     vulkan-loader
-    xorg.libX11
-    xorg.libXScrnSaver
-    xorg.libXcomposite
-    xorg.libXcursor
-    xorg.libXdamage
-    xorg.libXext
-    xorg.libXfixes
-    xorg.libXi
-    xorg.libXinerama
-    xorg.libXmu
-    xorg.libXrandr
-    xorg.libXrender
-    xorg.libXtst
-    xorg.libXv
-    xorg.libxcb
-    xorg.libxkbfile
-    xorg.libxshmfence
+    libx11
+    libxscrnsaver
+    libxcomposite
+    libxcursor
+    libxdamage
+    libxext
+    libxfixes
+    libxi
+    libxinerama
+    libxmu
+    libxrandr
+    libxrender
+    libxtst
+    libxv
+    libxcb
+    libxkbfile
+    libxshmfence
     zlib
     wayland
   ]

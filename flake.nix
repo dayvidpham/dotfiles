@@ -143,7 +143,7 @@
           (final: prev: {
             beads =
               let
-                base = beads.packages.${final.system}.default;
+                base = beads.packages.${final.stdenv.hostPlatform.system}.default;
               in
               final.runCommand "beads-wrapped"
                 {

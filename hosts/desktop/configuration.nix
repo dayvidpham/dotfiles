@@ -112,7 +112,7 @@
   networking.nftables.enable = true;
 
   environment.systemPackages = [
-    pkgs.wireshark-qt
+    pkgs.wireshark
   ];
   programs.wireshark.enable = true;
   programs.wireshark.dumpcap.enable = true;

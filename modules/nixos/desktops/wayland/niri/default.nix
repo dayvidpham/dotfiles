@@ -13,7 +13,7 @@ let
 
   cfg = config.CUSTOM.programs.niri;
 
-  niri-pkg = niri.packages.${pkgs.system}.niri-stable;
+  niri-pkg = niri.packages.${pkgs.stdenv.hostPlatform.system}.niri-stable;
 
   # Variables to import into the systemd user environment at session start.
   # niri --session handles WAYLAND_DISPLAY, NIRI_SOCKET, XDG_CURRENT_DESKTOP,
