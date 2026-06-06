@@ -44,6 +44,8 @@
 {"issue_id":"dotfiles-pncm","label":"aura:p10-impl:s10-review"}
 {"issue_id":"dotfiles-pncm","label":"aura:severity:blocker"}
 {"issue_id":"dotfiles-px2y","label":"aura:p2-user:s2_1-elicit"}
+{"issue_id":"dotfiles-pxpb","label":"home-manager"}
+{"issue_id":"dotfiles-pxpb","label":"nix-2605-warnings"}
 {"issue_id":"dotfiles-qs7h","label":"aura:p5-user:s5-uat"}
 {"issue_id":"dotfiles-r3zx","label":"aura:p3-plan:s3-propose"}
 {"issue_id":"dotfiles-r3zx","label":"aura:superseded"}
