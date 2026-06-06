@@ -52,6 +52,7 @@ in
 
     wayland.windowManager.hyprland = {
       enable = true;
+      configType = "hyprlang";
       extraConfig = ''
         ${builtins.readFile ./hyprland.conf}
         exec-once = ${pkgs.polkit_gnome.outPath}/libexec/polkit-gnome-authentication-agent-1

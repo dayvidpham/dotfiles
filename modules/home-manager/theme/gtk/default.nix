@@ -90,6 +90,8 @@
         };
       };
 
+      gtk.gtk4.theme = config.gtk.theme;
+
       dconf.enable = true;
       dconf.settings = {
         "org/gnome/desktop/interface" = {

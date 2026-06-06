@@ -70,6 +70,8 @@ in
     vimAlias = true;
     coc.enable = false;
     withNodeJs = true;
+    withRuby = false;
+    withPython3 = false;
     defaultEditor = true;
     package = pkgs.neovim-unwrapped;
 
