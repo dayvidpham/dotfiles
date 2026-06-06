@@ -289,6 +289,7 @@ rec {
 
   programs.firefox.enable = true;
   programs.firefox.package = pkgs-stable.firefox-bin;
+  programs.firefox.configPath = "${config.xdg.configHome}/mozilla/firefox";
 
   programs.lazygit.enable = true;
 
