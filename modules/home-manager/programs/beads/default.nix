@@ -104,6 +104,11 @@ in
     {
       home.packages = [ pkgs.beads ];
       CUSTOM.services.dolt-server.enable = true;
+
+      # Disable beads' auto-backup git commit+push. It otherwise auto-enables
+      # whenever a repo has a git remote, committing `bd: backup` to the
+      # checked-out branch and pushing it. Maps to config key backup.git-push.
+      home.sessionVariables.BD_BACKUP_GIT_PUSH = "false";
     }
 
     # Federation remote user (plain env var — not a secret)
