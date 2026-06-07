@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+# git-prmerge — reshape the CURRENT feature branch for a clean PR merge:
+# rebase onto <remote>/<target>, then squash all its commits into ONE signed
+# commit (message = the open PR's title+body, if any, with the squashed commit
+# headlines appended).
+#
+# It does NOT push and does NOT touch the target branch. After it runs, review,
+# then force-push MANUALLY:
+#     git push --force-with-lease <remote> <feature>
+# then merge the PR with GitHub's "Create a merge commit" button — you get a
+# --no-ff bubble over the single squashed commit, and the PR shows "Merged".
+#
+#   Usage:  git prmerge [--dry-run|-n] [target]      (target defaults to develop)
+#   Env:    PRMERGE_REMOTE   remote (default: github)
+#           PRMERGE_NO_EDIT  non-empty -> don't open the squash-message editor
+#
+# Safety: the pre-change HEAD is captured up front and printed on BOTH success and
+# failure (it's also always in `git reflog`), so you can roll back at any point:
+#     git reset --hard <sha>        (or `git rebase --abort` if a rebase is live)
+# Run from the feature branch's worktree, with the GPG signing key unlocked.
+set -euo pipefail
+
+dry=
+positional=()
+for a in "$@"; do
+  case "$a" in
+    --dry-run|-n) dry=1 ;;
+    -h|--help) sed -n '2,20p' "$0"; exit 0 ;;
+    -*) echo "git-prmerge: unknown flag: $a" >&2; exit 2 ;;
+    *) positional+=("$a") ;;
+  esac
+done
+target="${positional[0]:-develop}"
+remote="${PRMERGE_REMOTE:-github}"
+
+feature="$(git symbolic-ref --short HEAD 2>/dev/null || true)"
+[ -n "$feature" ] || { echo "git-prmerge: detached HEAD — check out the feature branch first." >&2; exit 1; }
+[ "$feature" != "$target" ] || { echo "git-prmerge: you're on '$target', not a feature branch." >&2; exit 1; }
+
+# Capture the pre-change state BEFORE anything mutates the branch.
+orig="$(git rev-parse HEAD)"
+print_restore() {
+  echo "  pre-change state: '$feature' was at ${orig:0:9}  (also in: git reflog show $feature)"
+  if [ -d "$(git rev-parse --git-path rebase-merge 2>/dev/null)" ] || \
+     [ -d "$(git rev-parse --git-path rebase-apply 2>/dev/null)" ]; then
+    echo "  a rebase is IN PROGRESS — roll back with:  git rebase --abort"
+  else
+    echo "  roll back with:  git reset --hard ${orig}"
+  fi
+}
+
+git fetch --quiet "$remote" "$target"
+rt="$remote/$target"
+n="$(git rev-list --count "$rt..$feature")"
+[ "$n" -gt 0 ] || { echo "git-prmerge: '$feature' has no commits over $rt — nothing to do." >&2; exit 1; }
+
+if [ -n "$dry" ]; then
+  echo "DRY RUN — no changes will be made (a read-only fetch of $rt was done)."
+  echo "  feature:  $feature @ ${orig:0:9}"
+  echo "  target:   $rt @ $(git rev-parse --short "$rt")"
+  echo "  plan:     rebase '$feature' onto $rt, squash $n commit(s) into one signed commit"
+  echo "  squashed commit headlines:"
+  git log --reverse --format='    - %s' "$rt..$feature"
+  echo "  then (manual):  git push --force-with-lease $remote $feature"
+  echo "  then merge the PR via GitHub's \"Create a merge commit\" button."
+  exit 0
+fi
+
+msg=""
+cleanup() { [ -n "$msg" ] && rm -f "$msg" || true; }
+on_err() { echo; echo "git-prmerge: FAILED — nothing was pushed."; print_restore; }
+trap cleanup EXIT
+trap on_err ERR
+
+# 1) rebase onto target — intermediate commits are squashed away in step 3, so
+#    don't sign them (and avoid a gpg-agent timeout mid-rebase).
+git -c commit.gpgsign=false rebase "$rt"
+
+# 2) compose the squash message: the open PR's title+body if there is one, else
+#    the branch name; then append the squashed commit headlines.
+msg="$(mktemp)"
+if command -v gh >/dev/null 2>&1 && gh pr view "$feature" --json title >/dev/null 2>&1; then
+  gh pr view "$feature" --json title,body --jq '.title + "\n\n" + (.body // "")' > "$msg"
+else
+  printf '%s\n' "$feature" > "$msg"
+fi
+{ printf '\n---\nSquashed commits:\n'; git log --reverse --format='- %s' "$rt..$feature"; } >> "$msg"
+[ -n "${PRMERGE_NO_EDIT:-}" ] || "${GIT_EDITOR:-${EDITOR:-vi}}" "$msg"
+
+# 3) collapse the rebased feature into ONE signed commit on top of target.
+git reset --soft "$rt"
+git commit --gpg-sign --file "$msg"
+
+trap - ERR
+new="$(git rev-parse --short HEAD)"
+printf '\n\xe2\x9c\x93 %s reshaped: rebased onto %s + squashed %s commit(s) into one signed commit (%s).\n' \
+  "$feature" "$target" "$n" "$new"
+echo "  review:        git show --stat HEAD   |   git log --oneline $rt..HEAD"
+echo "  push (manual): git push --force-with-lease $remote $feature"
+echo "  then merge the PR via GitHub's \"Create a merge commit\" button (→ shows \"Merged\")."
+echo
+echo "  rollback if needed:"
+print_restore
