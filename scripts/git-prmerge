@@ -4,38 +4,69 @@
 # commit (message = the open PR's title+body, if any, with the squashed commit
 # headlines appended).
 #
-# It does NOT push and does NOT touch the target branch. After it runs, review,
-# then force-push MANUALLY:
-#     git push --force-with-lease <remote> <feature>
-# then merge the PR with GitHub's "Create a merge commit" button — you get a
-# --no-ff bubble over the single squashed commit, and the PR shows "Merged".
-#
-#   Usage:  git prmerge [--dry-run|-n] [target]      (target defaults to develop)
-#   Env:    PRMERGE_REMOTE   remote (default: github)
-#           PRMERGE_NO_EDIT  non-empty -> don't open the squash-message editor
-#
-# Safety: the pre-change HEAD is captured up front and printed on BOTH success and
-# failure (it's also always in `git reflog`), so you can roll back at any point:
-#     git reset --hard <sha>        (or `git rebase --abort` if a rebase is live)
-# Run from the feature branch's worktree, with the GPG signing key unlocked.
+# It does NOT push and does NOT touch the target branch. See `git prmerge --help`.
 set -euo pipefail
 
+usage() {
+  cat <<'EOF'
+git-prmerge — reshape the current feature branch for a clean PR merge.
+
+Rebases the current branch onto <remote>/<target>, squashes all its commits into
+ONE signed commit (message = the open PR's title+body with the squashed commit
+headlines appended), then STOPS. It does not push and does not touch <target>.
+
+Usage:
+  git prmerge [options] [target]
+
+Arguments:
+  target                 Branch to merge into (default: develop)
+
+Options:
+  -r, --remote <name>    Remote to fetch/push against (default: origin,
+                         or $PRMERGE_REMOTE)
+  -n, --dry-run          Show the plan and make no changes
+  -h, --help             Show this help
+
+Environment:
+  PRMERGE_REMOTE         Default remote if -r/--remote not given (default: origin)
+  PRMERGE_NO_EDIT        If non-empty, don't open the squash-message editor
+
+After it runs, review, then push manually:
+  git push --force-with-lease <remote> <feature>
+then merge the PR with GitHub's "Create a merge commit" button -> the PR shows
+"Merged" with a --no-ff bubble over the single squashed commit.
+
+Safety: the pre-change HEAD is captured up front and printed on both success and
+failure (also in `git reflog`) so you can roll back:
+  git reset --hard <sha>          (or `git rebase --abort` if a rebase is live)
+
+Run from the feature branch's worktree, with the GPG signing key unlocked.
+EOF
+}
+
 dry=
+remote=
 positional=()
-for a in "$@"; do
-  case "$a" in
-    --dry-run|-n) dry=1 ;;
-    -h|--help) sed -n '2,20p' "$0"; exit 0 ;;
-    -*) echo "git-prmerge: unknown flag: $a" >&2; exit 2 ;;
-    *) positional+=("$a") ;;
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -n|--dry-run)  dry=1 ;;
+    -r|--remote)   shift; [ $# -gt 0 ] || { echo "git-prmerge: -r/--remote needs a value" >&2; exit 2; }; remote="$1" ;;
+    --remote=*)    remote="${1#--remote=}" ;;
+    -h|--help)     usage; exit 0 ;;
+    --)            shift; while [ $# -gt 0 ]; do positional+=("$1"); shift; done; break ;;
+    -*)            echo "git-prmerge: unknown flag: $1" >&2; usage >&2; exit 2 ;;
+    *)             positional+=("$1") ;;
   esac
+  shift
 done
+
+remote="${remote:-${PRMERGE_REMOTE:-origin}}"
 target="${positional[0]:-develop}"
-remote="${PRMERGE_REMOTE:-github}"
 
 feature="$(git symbolic-ref --short HEAD 2>/dev/null || true)"
 [ -n "$feature" ] || { echo "git-prmerge: detached HEAD — check out the feature branch first." >&2; exit 1; }
 [ "$feature" != "$target" ] || { echo "git-prmerge: you're on '$target', not a feature branch." >&2; exit 1; }
+git remote get-url "$remote" >/dev/null 2>&1 || { echo "git-prmerge: no such remote '$remote' (use -r/--remote or set PRMERGE_REMOTE)." >&2; exit 1; }
 
 # Capture the pre-change state BEFORE anything mutates the branch.
 orig="$(git rev-parse HEAD)"

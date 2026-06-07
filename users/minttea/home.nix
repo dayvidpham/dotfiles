@@ -99,7 +99,7 @@ rec {
   # NOTE: Custom scripts
   home.file."${config.xdg.binHome}/git-prmerge".source =
     config.lib.file.mkOutOfStoreSymlink
-      "../../scripts/git-prmerge";
+      /home/minttea/dotfiles/scripts/git-prmerge;
 
   # NOTE: General programs and packages
   home.packages = (with pkgs; [
