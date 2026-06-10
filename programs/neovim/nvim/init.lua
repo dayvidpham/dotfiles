@@ -783,6 +783,13 @@ require('lazy').setup({
         },
 
         ---------------
+        -- Zig
+        zls = {
+          cmd = { 'zls' },
+          autostart = true,
+        },
+
+        ---------------
         -- md, txt, rst
         -- vale_ls = {},
 

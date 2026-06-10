@@ -72,6 +72,19 @@
       inputs.nixpkgs-unstable.follows = "nixpkgs-unstable";
     };
 
+    #----------------------------------------
+    # Zig
+    zig-flake = {
+      url = "github:silversquirl/zig-flake/compat";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    zls = {
+      url = "github:zigtools/zls";
+      inputs.zig-flake.follows = "zig-flake";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    #----------------------------------------
     # Secrets management
     sops-nix = {
       url = "github:Mic92/sops-nix";
@@ -102,6 +115,8 @@
     , aura-plugins
     , beads
     , sops-nix
+    , zig-flake
+    , zls
     , ...
     }:
     let
@@ -115,6 +130,13 @@
         };
 
         overlays = [
+          # zig tools
+          (final: prev: {
+            zig_nightly = zig-flake.packages.${system}.nightly;
+            zls_nightly = zls.packages.${system}.zls;
+          })
+
+
           # NOTE: determinate-nix.overlays.default removed — wasmtime.nix requires
           # rust_1_89 which was dropped from nixpkgs 25.11 (only rust_1_91 remains).
           # Re-enable when DeterminateSystems ships a compatible release.

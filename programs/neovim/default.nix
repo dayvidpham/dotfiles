@@ -118,7 +118,13 @@ in
       # Rust / Nix
       pkgs.cargo
       pkgs.rust-analyzer-unwrapped
-    ];
+    ]
+    ++ [
+      # Zig, from my overlay in /flake.nix
+      pkgs.zig_nightly
+      pkgs.zls_nightly
+    ]
+    ;
 
     initLua =
       ''
