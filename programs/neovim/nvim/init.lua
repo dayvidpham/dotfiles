@@ -844,7 +844,7 @@ require('lazy').setup({
       ---- You can add other tools here that you want Mason to install
       ---- for you, so that they are available from within Neovim.
       local ensure_installed = {}
-      local dont_install = '|lua_ls|roslyn_ls|nixd|nil_ls|clangd|ruff|pylsp|'
+      local dont_install = '|lua_ls|roslyn_ls|nixd|nil_ls|clangd|ruff|pylsp|zls|'
 
       for k in pairs(servers) do
         local should_install_server = string.find(dont_install, '|' .. k .. '|') == nil

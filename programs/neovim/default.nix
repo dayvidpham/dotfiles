@@ -121,8 +121,8 @@ in
     ]
     ++ [
       # Zig, from my overlay in /flake.nix
-      pkgs.zig_nightly
-      pkgs.zls_nightly
+      #pkgs.zig_nightly
+      #pkgs.zls_nightly
     ]
     ;
 
