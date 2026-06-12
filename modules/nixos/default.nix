@@ -21,16 +21,17 @@
     environment.variables = {
       HOST = config.networking.hostName;
     };
-
     nix.settings.trusted-substituters = [
       "https://cache.nixos.org?priority=1"
       "https://nix-community.cachix.org?priority=2"
       "https://cuda-maintainers.cachix.org?priority=3"
+      "https://cache.numtide.com"
     ];
     nix.settings.trusted-public-keys = [
       "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
       "cuda-maintainers.cachix.org-1:0dq3bujKpuEPMCX6U4WylrUDZ9JyUG0VpVZa7CNfq5E="
+      "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
     ];
     nix.settings.builders-use-substitutes = lib.mkDefault true;
     nix.settings.always-allow-substitutes = lib.mkDefault false;
