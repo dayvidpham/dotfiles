@@ -5,7 +5,7 @@
 , lib
 , osConfig
 , ...
-}:
+}@inputs:
 let
   inherit (lib)
     mkDefault
@@ -124,6 +124,9 @@ rec {
     # Agents
     beads
     dolt
+    llm-agents.codex
+    llm-agents.cursor-agent
+    code-cursor-fhs
 
     # Utils
     mprocs # multi-processor manager TUI
