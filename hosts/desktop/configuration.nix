@@ -195,8 +195,8 @@
   #  "-H 1440"
   #  "-r 170"
   #];
-  #programs.gamescope.enable = true;
-  #programs.gamescope.capSysNice = true;
+  programs.gamescope.enable = true;
+  programs.gamescope.capSysNice = false;
 
   # /Steam
   ############################
