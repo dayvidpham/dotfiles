@@ -313,6 +313,15 @@ window-rule {
     open-floating true
 }
 
+// Prevent Steam toast notifications from stealing focus
+window-rule {
+    match app-id="steam" title="^notificationtoasts_.*_desktop$"
+    open-focused false
+    open-floating true
+    default-floating-position x=24 y=24 relative-to="bottom-right"
+}
+
+
 // Example: block out two password managers from screen capture.
 // (This example rule is commented out with a "/-" in front.)
 /-window-rule {
