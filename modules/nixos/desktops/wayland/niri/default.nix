@@ -102,6 +102,10 @@ in
     xdg.portal.config = {
       niri = {
         default = [ "gnome" "gtk" ];
+        # GNOME's portal only *delegates* FileChooser to GTK over D-Bus
+        # activation, which fails ("name is not activatable") on a niri
+        # session. Route the file dialog straight to GTK instead.
+        "org.freedesktop.impl.portal.FileChooser" = [ "gtk" ];
         "org.freedesktop.impl.portal.ScreenCast" = [ "gnome" ];
         "org.freedesktop.impl.portal.Screenshot" = [ "gnome" ];
       };
