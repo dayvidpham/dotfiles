@@ -74,14 +74,14 @@
     CPU_SCALING_MIN_FREQ_ON_BAT = 0;
     CPU_SCALING_MAX_FREQ_ON_BAT = 2000000; # limit to 2 GHz on battery
 
-    # Eco on AC: guided opmode + schedutil + low-EPP hint + quiet platform profile.
-    # Guided lets the kernel scheduler drive a min_perf hint per tick (wake-up-aware),
-    # while CPPC autonomy picks the operating point inside [min,max] biased by EPP.
+    # Eco on AC: guided opmode + schedutil + quiet platform profile.
+    # Guided lets the kernel scheduler drive a min_perf hint per tick (wake-up-aware);
+    # CPPC autonomy picks the operating point inside [min,max] with no EPP bias
+    # (the amd-pstate driver only exposes EPP in active mode — so no policy is set here).
     # Frequency / perf headroom stays uncapped — Precision Boost 2 is allowed to
     # sprint above base clock under bursts and race back to idle.
     CPU_DRIVER_OPMODE_ON_AC = "guided";
     CPU_SCALING_GOVERNOR_ON_AC = "schedutil";
-    CPU_ENERGY_PERF_POLICY_ON_AC = "power";
     PLATFORM_PROFILE_ON_AC = "quiet";
     CPU_BOOST_ON_AC = 1;
     CPU_MIN_PERF_ON_AC = 0;
