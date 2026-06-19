@@ -28,6 +28,7 @@
     "network"
     "backlight"
     "battery"
+    "custom/powermode"
     "wireplumber"
     "custom/weather"
     "clock"
@@ -153,6 +154,20 @@
   "custom/power-menu" = {
     "format" = "⏻";
     "on-click" = "${scriptsDir}/power-menu/powermenu.sh &";
+  };
+  # Manual power-mode override. Default state is "auto" (TLP managed);
+  # left-click cycles auto -> eco -> balanced -> performance. The script
+  # signals waybar (SIGRTMIN+8) after each change so the label updates instantly;
+  # the 30s poll catches silent TLP transitions (AC unplugged elsewhere).
+  "custom/powermode" = {
+    "exec" = "powermode --json";
+    "interval" = 30;
+    "signal" = 8;
+    "return-type" = "json";
+    "format" = "{}";
+    "tooltip" = true;
+    "on-click" = "powermode cycle";
+    "on-click-right" = "powermode auto";
   };
   "custom/launcher" = {
     "format" = "";

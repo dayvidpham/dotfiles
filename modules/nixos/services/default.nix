@@ -5,5 +5,6 @@
     ./openssh
     ./gitlab-runner
     ./tailscale
+    ./powermode
   ];
 }

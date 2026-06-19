@@ -233,6 +233,12 @@ in
   # enables switching between dGPU and iGPU
   services.supergfxd.enable = true;
 
+  # `powermode` CLI + waybar override: TLP auto-switching remains default; manual
+  # eco/balanced/performance is layered on top via sysfs writes and naturally
+  # expires on the next AC/BAT transition.
+  CUSTOM.services.powermode.enable = true;
+  CUSTOM.services.powermode.user = "minttea";
+
   # Persistent tmux server (survives DE/WM/session closures)
   CUSTOM.programs.tmux.server = {
     enable = true;
