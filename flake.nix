@@ -141,7 +141,10 @@
           # rust_1_89 which was dropped from nixpkgs 25.11 (only rust_1_91 remains).
           # Re-enable when DeterminateSystems ships a compatible release.
           #determinate-nix.overlays.default
-          llm-agents.overlays.default
+          (prev: final: {
+            llm-agents = llm-agents.packages.${system};
+          })
+
           nix-openclaw.overlays.default
 
           # Override openclaw to disable extended tools (whisper/torch/triton)
