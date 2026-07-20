@@ -24,7 +24,7 @@ rec {
   home.homeDirectory = "/home/minttea";
   home.stateVersion = "23.11"; # Please read the comment before changing.
 
-  # cursorTheme, GTK theme, ...
+  # cursorTheme, GTK theme, ... (pointerCursor.enable lives in the theme module)
   CUSTOM.theme.enable = true;
 
   # Env vars
@@ -124,7 +124,6 @@ rec {
     # Agents
     beads
     dolt
-    llm-agents.codex
     llm-agents.cursor-agent
     code-cursor-fhs
 
@@ -169,6 +168,7 @@ rec {
     # Notes
     #anytype # proj management/knowledge base
     zotero # ref/citation/bib manager
+    llm-agents.codex
     #lorien # infinite canvas notes
   ]);
 

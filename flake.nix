@@ -416,8 +416,8 @@
           modules = [
             niri.homeModules.niri
             aura-plugins.homeManagerModules.aura-config-sync
-            aura-plugins.homeManagerModules.temporal-service
-            aura-plugins.homeManagerModules.aurad-service
+            #aura-plugins.homeManagerModules.temporal-service
+            #aura-plugins.homeManagerModules.aurad-service
             ./modules/home-manager
             ./programs/neovim
             ./users/minttea/home.nix
