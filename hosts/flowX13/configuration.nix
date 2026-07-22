@@ -13,6 +13,14 @@ let
     mkAfter
     mkDefault
     ;
+
+  enabledNiriConfig = pkgs.writeText "niri-flowX13-nvidia-enabled.kdl" ''
+    ${builtins.readFile ../../modules/home-manager/desktops/wayland/niri/config.kdl}
+
+    debug {
+        render-drm-device "/dev/dri/by-path/pci-0000:01:00.0-render"
+    }
+  '';
 in
 {
   imports =
@@ -191,12 +199,16 @@ in
   # Select internationalisation properties.
   i18n.defaultLocale = "en_CA.UTF-8";
 
-  services.xserver = {
-    enable = true;
-    xkb.variant = "";
-    xkb.layout = "us";
-    videoDrivers = [ "modesetting" ];
-  };
+  services.xserver = lib.mkMerge [
+    {
+      enable = true;
+      xkb.variant = "";
+      xkb.layout = "us";
+    }
+    (lib.mkIf (!config.isSpecialisation) {
+      videoDrivers = [ "modesetting" ];
+    })
+  ];
 
   # Amdgpu
   # hardware.amdgpu.opencl.enable = true;
@@ -205,33 +217,14 @@ in
   CUSTOM.hardware.nvidia.enable = false;
   CUSTOM.hardware.nvidia.hostName = "flowX13";
   CUSTOM.hardware.nvidia.proprietaryDrivers.enable = false;
-  # specialisation.nvidia-gpu.configuration = {
-  #   system.nixos.tags = [ "nvidia-gpu" ];
-  #   CUSTOM.hardware.nvidia.enable = lib.mkForce true;
-  #   CUSTOM.hardware.nvidia.proprietaryDrivers.enable = lib.mkForce true;
-  # };
+  specialisation.nvidia-enabled.configuration = {
+    system.nixos.tags = [ "nvidia-enabled" ];
+    CUSTOM.hardware.nvidia.enable = lib.mkForce true;
+    CUSTOM.hardware.nvidia.proprietaryDrivers.enable = lib.mkForce true;
+    environment.sessionVariables.NIRI_CONFIG = enabledNiriConfig;
+  };
 
-  services.udev.extraRules = ''
-    # Remove NVIDIA USB xHCI Host Controller devices
-    ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x0c0330", ATTR{remove}="1"
-    
-    # Remove NVIDIA USB Type-C UCSI devices  
-    ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x0c8000", ATTR{remove}="1"
-    
-    # Remove NVIDIA Audio devices
-    ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x040300", ATTR{remove}="1"
-    
-    # Enable runtime PM on driver bind for VGA/3D controllers
-    ACTION=="bind", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x030000", TEST=="power/control", ATTR{power/control}="auto"
-    ACTION=="bind", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x030200", TEST=="power/control", ATTR{power/control}="auto"
-    
-    # Disable runtime PM on driver unbind
-    ACTION=="unbind", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x030000", TEST=="power/control", ATTR{power/control}="on"
-    ACTION=="unbind", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x030200", TEST=="power/control", ATTR{power/control}="on"
-  '';
-
-  # enables switching between dGPU and iGPU
-  services.supergfxd.enable = true;
+  services.supergfxd.enable = false;
 
   # `powermode` CLI + waybar override: TLP auto-switching remains default; manual
   # eco/balanced/performance is layered on top via sysfs writes and naturally

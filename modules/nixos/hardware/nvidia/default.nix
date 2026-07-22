@@ -17,12 +17,7 @@ let
     mkEnableOption
     mkPackageOption
     mkOption
-    mkDefault
     mkBefore
-    mkAfter
-    mkForce
-    mkMerge
-    optionals
     ;
 
   inherit (libmint)
@@ -42,7 +37,7 @@ let
 
       flowX13 = {
         enable = true;
-        finegrained = true;
+        finegrained = false;
       };
       desktop = {
         enable = true;
@@ -65,12 +60,12 @@ let
       };
 
       flowX13 = default // {
-        sync.enable = false;
+        sync.enable = true;
         reverseSync.enable = false;
         reverseSync.setupCommands.enable = false;
 
-        offload.enable = true;
-        offload.enableOffloadCmd = true;
+        offload.enable = false;
+        offload.enableOffloadCmd = false;
         nvidiaBusId = "PCI:1:0:0";
         amdgpuBusId = "PCI:8:0:0";
       };
@@ -132,6 +127,8 @@ let
     flowX13 = {
       card-igpu = "/dev/dri/by-path/pci-0000:08:00.0-card";
       card-dgpu = "/dev/dri/by-path/pci-0000:01:00.0-card";
+      render-igpu = "/dev/dri/by-path/pci-0000:08:00.0-render";
+      render-dgpu = "/dev/dri/by-path/pci-0000:01:00.0-render";
     };
     flowX13-wsl = {
       card-dgpu = "/dev/dri/by-path/platform-vgem-card";
@@ -164,17 +161,6 @@ in
   };
 
   config = lib.mkMerge [
-    # not enabled
-    (mkIf (!cfg.enable)
-      {
-        services.xserver = {
-          enable = true;
-          videoDrivers = [ "modesetting" ];
-        };
-        boot.blacklistedKernelModules = [ "nvidia" "nouveau" "radeon" ];
-      }
-    )
-    # enabled
     (mkIf cfg.enable {
       hardware.nvidia = {
         package = nvidiaDriver;
@@ -187,8 +173,8 @@ in
         # NOTE: If not set, will use nouveau drivers
         videoDrivers =
           if cfg.proprietaryDrivers.enable
-          then [ "nvidia" "modesetting" ]
-          else [ "nouveau" "modesetting" ];
+          then [ "nvidia" "amdgpu" "modesetting" ]
+          else [ "nouveau" "amdgpu" "modesetting" ];
       };
 
       environment.etc = (mkIf (hasAttr cfg.hostName gpu-paths) (
@@ -198,70 +184,16 @@ in
         )
       ));
 
-      specialisation = mkIf
-        (cfg.hostName == "flowX13")
-        {
-          nvidia-gpu.configuration = {
-            system.nixos.tags = [ "nvidia-gpu" ];
-
-            hardware.nvidia.prime.sync.enable = mkForce true;
-            hardware.nvidia.prime.reverseSync.enable = mkForce false;
-            hardware.nvidia.prime.reverseSync.setupCommands.enable = mkForce false;
-
-            hardware.nvidia.prime.offload.enable = mkForce false;
-            hardware.nvidia.prime.offload.enableOffloadCmd = mkForce false;
-            hardware.nvidia.powerManagement.finegrained = mkForce false;
-
-            hardware.nvidia.videoAcceleration = mkForce true;
-
-            environment.variables = mkMerge [{
-              # Use dGPU for everything
-              WLR_DRM_DEVICES = mkForce "/etc/card-dgpu:/etc/card-igpu";
-
-              # https://wiki.hyprland.org/Nvidia/#environment-variables
-              LIBVA_DRIVER_NAME = "nvidia";
-              GBM_BACKEND = "nvidia-drm";
-              __GLX_VENDOR_LIBRARY_NAME = "nvidia";
-              __GL_GSYNC_ALLOWED = "1";
-
-              # https://wiki.hyprland.org/Nvidia/#va-api-hardware-video-acceleration
-              NVD_BACKEND = "direct";
-            }];
-          };
-        };
-
       environment.variables =
-        let
-          drmRenderer = mkMerge
-            [
-              (mkIf (cfg.hostName == "desktop")
-                {
-                  # Fuck it: use dGPU for everything
-                  WLR_DRM_DEVICES = "/etc/card-dgpu:/etc/card-igpu";
-                  LD_LIBRARY_PATH = "${nvidiaDriver}/lib:$LD_LIBRARY_PATH";
-                  EXTRA_LDFLAGS = "-L${nvidiaDriver}/lib $EXTRA_LDFLAGS";
-                  CUDA_PATH = "${pkgs.cudatoolkit}";
-                }
-              )
-              (mkIf (cfg.hostName == "flowX13" && config.specialisation != { })
-                {
-                  # Use iGPU for everything
-                  WLR_DRM_DEVICES = "/etc/card-igpu:/etc/card-dgpu";
-                }
-              )
-            ];
-        in
         {
-          # https://wiki.hyprland.org/Nvidia/#environment-variables
-          #LIBVA_DRIVER_NAME = "nvidia";
-          #GBM_BACKEND = "nvidia-drm";
-          #__GLX_VENDOR_LIBRARY_NAME = "nvidia";
           __GL_GSYNC_ALLOWED = "1";
-
-          # https://wiki.hyprland.org/Nvidia/#va-api-hardware-video-acceleration
           NVD_BACKEND = "direct";
         }
-        // drmRenderer;
+        // lib.optionalAttrs (cfg.hostName == "desktop") {
+          LD_LIBRARY_PATH = "${nvidiaDriver}/lib:$LD_LIBRARY_PATH";
+          EXTRA_LDFLAGS = "-L${nvidiaDriver}/lib $EXTRA_LDFLAGS";
+          CUDA_PATH = "${pkgs.cudatoolkit}";
+        };
 
       environment.systemPackages = [
         nvidiaDriver

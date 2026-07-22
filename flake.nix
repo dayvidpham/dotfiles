@@ -9,6 +9,10 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-26.05";
+    nixos-hardware = {
+      url = "github:NixOS/nixos-hardware";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     nixpkgs-wsl.url = "github:NixOS/nixpkgs/nixos-24.11";
     nixos-wsl.url = "github:nix-community/NixOS-WSL/main";
@@ -98,6 +102,7 @@
     , nixpkgs
     , nixpkgs-unstable
     , nixpkgs-stable
+    , nixos-hardware
     , nixpkgs-wsl
     , nixos-wsl
     , flake-registry
@@ -350,7 +355,14 @@
       # nixosConfigurations."<hostname>".config.system.build.toplevel must be a derivation
       nixosConfigurations = {
         # Standard workstation hosts - all base modules included automatically
-        flowX13 = mkHost { name = "flowX13"; };
+        flowX13 = mkHost {
+          name = "flowX13";
+          extraModules = [
+            ({ config, lib, ... }@args:
+              lib.mkIf (!config.isSpecialisation)
+                (import nixos-hardware.nixosModules.common-gpu-nvidia-disable args))
+          ];
+        };
         desktop = mkHost { name = "desktop"; };
 
         # WSL hosts - need the wsl feature module
@@ -390,6 +402,85 @@
           ];
         };
       };
+
+      checks.${system}.flowX13-gpu-profiles =
+        let
+          base = self.nixosConfigurations.flowX13.config;
+          enabled = base.specialisation.nvidia-enabled.configuration;
+          baseToplevel = base.system.build.toplevel;
+          enabledToplevel = enabled.system.build.toplevel;
+          baseUdev = base.services.udev.extraRules;
+          enabledUdev = enabled.services.udev.extraRules;
+          baseModprobe = base.boot.extraModprobeConfig;
+          enabledModprobe = enabled.boot.extraModprobeConfig;
+          upstreamClasses = [ "0x0c0330" "0x0c8000" "0x040300" "0x03[0-9]*" ];
+          upstreamModules = [ "nouveau" "nvidia" "nvidia_drm" "nvidia_modeset" ];
+          disabledOnlyModules = [ "nvidia" "nvidia_drm" "nvidia_modeset" ];
+          enabledVideoDrivers = [ "nvidia" "amdgpu" "modesetting" ];
+          hasAll = values: collection: builtins.all (value: builtins.elem value collection) values;
+          hasNo = values: collection: builtins.all (value: !(builtins.elem value collection)) values;
+          containsAll = values: text: builtins.all (value: lib.hasInfix value text) values;
+          containsNo = values: text: builtins.all (value: !(lib.hasInfix value text)) values;
+          cudaPackages = [ pkgs.cudatoolkit pkgs.cudaPackages.cudnn pkgs.cudaPackages.cuda_cudart ];
+          drmLinks = {
+            card-igpu = "/dev/dri/by-path/pci-0000:08:00.0-card";
+            card-dgpu = "/dev/dri/by-path/pci-0000:01:00.0-card";
+            render-igpu = "/dev/dri/by-path/pci-0000:08:00.0-render";
+            render-dgpu = "/dev/dri/by-path/pci-0000:01:00.0-render";
+          };
+          enabledNiriConfig = enabled.environment.sessionVariables.NIRI_CONFIG;
+          loaderConfig = base.boot.loader.systemd-boot.extraFiles."loader/loader.conf";
+        in
+        assert lib.assertMsg (!base.isSpecialisation) "Flow X13 base must not evaluate as a specialization";
+        assert lib.assertMsg (!base.CUSTOM.hardware.nvidia.enable) "Flow X13 base must keep custom NVIDIA policy disabled";
+        assert lib.assertMsg (!base.CUSTOM.hardware.nvidia.proprietaryDrivers.enable) "Flow X13 base must keep proprietary NVIDIA policy disabled";
+        assert lib.assertMsg (base.services.xserver.videoDrivers == [ "modesetting" ]) "Flow X13 base must select only the modesetting X server driver";
+        assert lib.assertMsg (!base.services.supergfxd.enable) "Flow X13 base must keep supergfxd disabled";
+        assert lib.assertMsg (!base.hardware.nvidia.prime.sync.enable) "Flow X13 base must not enable PRIME sync";
+        assert lib.assertMsg (!base.hardware.nvidia.prime.reverseSync.enable) "Flow X13 base must not enable reverse PRIME sync";
+        assert lib.assertMsg (!base.hardware.nvidia.prime.offload.enable) "Flow X13 base must not enable PRIME offload";
+        assert lib.assertMsg (hasNo cudaPackages base.environment.systemPackages) "Flow X13 base must not include enabled-only CUDA packages";
+        assert lib.assertMsg (!(base.environment.variables ? WLR_DRM_DEVICES)) "Flow X13 base must not set WLR_DRM_DEVICES";
+        assert lib.assertMsg (containsAll upstreamClasses baseUdev) "Flow X13 base is missing an upstream NVIDIA PCI removal rule";
+        assert lib.assertMsg (hasAll upstreamModules base.boot.blacklistedKernelModules) "Flow X13 base is missing an upstream NVIDIA kernel-module blacklist entry";
+        assert lib.assertMsg (containsAll [ "blacklist nouveau" "options nouveau modeset=0" ] baseModprobe) "Flow X13 base is missing the upstream nouveau modprobe policy";
+        assert lib.assertMsg enabled.isSpecialisation "Flow X13 nvidia-enabled must evaluate as a specialization";
+        assert lib.assertMsg enabled.CUSTOM.hardware.nvidia.enable "Flow X13 nvidia-enabled must enable custom NVIDIA policy";
+        assert lib.assertMsg enabled.CUSTOM.hardware.nvidia.proprietaryDrivers.enable "Flow X13 nvidia-enabled must select proprietary NVIDIA policy";
+        assert lib.assertMsg (enabled.services.xserver.videoDrivers == enabledVideoDrivers) "Flow X13 nvidia-enabled must select the exact NVIDIA, AMDGPU, and modesetting driver list";
+        assert lib.assertMsg enabled.hardware.nvidia.modesetting.enable "Flow X13 nvidia-enabled must enable NVIDIA DRM modesetting";
+        assert lib.assertMsg enabled.hardware.nvidia.prime.sync.enable "Flow X13 nvidia-enabled must use PRIME sync";
+        assert lib.assertMsg (!enabled.hardware.nvidia.prime.reverseSync.enable) "Flow X13 nvidia-enabled must not use reverse PRIME sync";
+        assert lib.assertMsg (!enabled.hardware.nvidia.prime.offload.enable) "Flow X13 nvidia-enabled must not use PRIME offload";
+        assert lib.assertMsg (!enabled.hardware.nvidia.prime.offload.enableOffloadCmd) "Flow X13 nvidia-enabled must not install the PRIME offload command";
+        assert lib.assertMsg (!enabled.hardware.nvidia.powerManagement.finegrained) "Flow X13 nvidia-enabled must not use fine-grained offload power management";
+        assert lib.assertMsg (enabled.hardware.nvidia.prime.nvidiaBusId == "PCI:1:0:0") "Flow X13 nvidia-enabled has the wrong NVIDIA PRIME bus ID";
+        assert lib.assertMsg (enabled.hardware.nvidia.prime.amdgpuBusId == "PCI:8:0:0") "Flow X13 nvidia-enabled has the wrong AMD PRIME bus ID";
+        assert lib.assertMsg (!enabled.services.supergfxd.enable) "Flow X13 nvidia-enabled must keep supergfxd disabled";
+        assert lib.assertMsg (hasAll cudaPackages enabled.environment.systemPackages) "Flow X13 nvidia-enabled must include the CUDA runtime closure";
+        assert lib.assertMsg (hasAll (builtins.attrNames drmLinks) (builtins.attrNames enabled.environment.etc)) "Flow X13 nvidia-enabled must expose all card and render device links";
+        assert lib.assertMsg (!(enabled.environment.variables ? WLR_DRM_DEVICES)) "Flow X13 nvidia-enabled must not set WLR_DRM_DEVICES";
+        assert lib.assertMsg (enabledNiriConfig != null) "Flow X13 nvidia-enabled must select its generated Niri config";
+        assert lib.assertMsg (containsNo upstreamClasses enabledUdev) "Flow X13 nvidia-enabled inherited an upstream NVIDIA PCI removal rule";
+        assert lib.assertMsg (hasNo disabledOnlyModules enabled.boot.blacklistedKernelModules) "Flow X13 nvidia-enabled inherited a disable-only NVIDIA kernel-module blacklist entry";
+        assert lib.assertMsg (containsNo [ "blacklist nouveau" "options nouveau modeset=0" ] enabledModprobe) "Flow X13 nvidia-enabled inherited the upstream nouveau modprobe policy";
+        assert lib.assertMsg (builtins.attrNames base.specialisation == [ "nvidia-enabled" ]) "Flow X13 must expose only the nvidia-enabled specialization";
+        pkgs.runCommand "flowX13-gpu-profiles"
+          {
+            nativeBuildInputs = [ niri.packages.${system}.niri-stable ];
+          }
+          ''
+            grep -F 'render-drm-device "/dev/dri/by-path/pci-0000:01:00.0-render"' ${enabledNiriConfig}
+            niri validate --config ${enabledNiriConfig}
+            grep -F 'default @saved' ${loaderConfig}
+            test "$(readlink ${enabled.environment.etc.card-igpu.source})" = ${lib.escapeShellArg drmLinks.card-igpu}
+            test "$(readlink ${enabled.environment.etc.card-dgpu.source})" = ${lib.escapeShellArg drmLinks.card-dgpu}
+            test "$(readlink ${enabled.environment.etc.render-igpu.source})" = ${lib.escapeShellArg drmLinks.render-igpu}
+            test "$(readlink ${enabled.environment.etc.render-dgpu.source})" = ${lib.escapeShellArg drmLinks.render-dgpu}
+            test -e ${baseToplevel}
+            test -e ${enabledToplevel}
+            touch $out
+          '';
 
       homeConfigurations = {
         "minttea@flowX13" = home-manager.lib.homeManagerConfiguration {
