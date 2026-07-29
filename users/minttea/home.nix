@@ -2,6 +2,7 @@
 , pkgs
 , pkgs-stable
 , pkgs-unstable
+, strike
 , lib
 , osConfig
 , ...
@@ -124,6 +125,7 @@ rec {
     # Agents
     beads
     dolt
+    strike.packages.${pkgs.stdenv.hostPlatform.system}.default
     llm-agents.cursor-agent
     code-cursor-fhs
 
@@ -197,6 +199,8 @@ rec {
   CUSTOM.programs.aura-config-sync.enable = true;
   CUSTOM.programs.aura-config-sync.commands.enable = false; # skills loaded via Claude Code plugin
   CUSTOM.programs.aura-config-sync.agents.enable = false; # agents loaded via Claude Code plugin
+  CUSTOM.programs.aura-config-sync.opencode.agents.enable = false;
+  CUSTOM.programs.aura-config-sync.opencode.skills.enable = false;
   programs.antigravity-cli.enable = true;
   programs.antigravity-cli.package = pkgs-unstable.antigravity-cli;
   programs.antigravity-cli.defaultModel = "gemini-3-pro-preview";

@@ -28,5 +28,14 @@ in
       enable = true;
       package = pkgs-unstable.bun;
     };
+    home.sessionVariables = {
+      OPENCODE_EXPERIMENTAL_BACKGROUND_SUBAGENTS = true;
+    };
+    programs.zsh.localVariables = {
+      OPENCODE_EXPERIMENTAL_BACKGROUND_SUBAGENTS = true;
+    };
+    programs.bash.sessionVariables = {
+      OPENCODE_EXPERIMENTAL_BACKGROUND_SUBAGENTS = true;
+    };
   };
 }

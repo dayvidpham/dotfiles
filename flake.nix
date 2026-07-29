@@ -69,6 +69,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    strike = {
+      url = "github:dayvidpham/strike/feat/nix-installable-flake";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     aura-plugins = {
       url = "github:dayvidpham/aura-plugins";
       inputs.nixpkgs.follows = "nixpkgs-stable";
@@ -119,6 +124,7 @@
     , openclaw-modules
     , aura-plugins
     , beads
+    , strike
     , sops-nix
     , zig-flake
     , zls
@@ -300,6 +306,7 @@
           niri
           nix-openclaw
           beads
+          strike
           sops-nix
           ;
       };
