@@ -147,6 +147,7 @@ rec {
     kdePackages.dolphin # file explorer
     scythe # self-rolled screenshotter
     qbittorrent # torrenting client
+    glow # charmbracelet markdown reader
 
     # For SFU
     openfortivpn
