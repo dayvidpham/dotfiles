@@ -43,6 +43,7 @@ let
     p.rasi
     p.regex
     p.rust
+    p.sql
     p.latex
     p.toml
     p.typescript
@@ -128,7 +129,6 @@ in
 
     initLua =
       ''
-        vim.opt.runtimepath:append("${treesitter-parsers}")
         --vim.g.clangd = "${pkgs.llvmPackages.clang-tools}/bin/clangd"
 
         package.path = '${nvimConfig}/?.lua;' ..
@@ -159,5 +159,9 @@ in
     recursive = true;
     source = treesitterWithGrammars;
   };
+
+  # Expose the Nix-managed parsers at a stable path that can be restored after
+  # lazy.nvim resets runtimepath during setup.
+  xdg.dataFile."nvim/nix/treesitter-parsers".source = treesitter-parsers;
 
 }

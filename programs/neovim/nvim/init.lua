@@ -1102,18 +1102,17 @@ require('lazy').setup({
     },
     dir = vim.g.NIX_DATA_HOME .. '/nvim-treesitter',
     config = function()
-      -- Main-branch rewrite ships queries at <plugin>/runtime/queries and
-      -- does NOT add that path to rtp. Without this, lua falls back to
-      -- Nvim's bundled query which mismatches the plugin's grammar (the
-      -- `(binary_expression operator: _ @operator)` field-not-found crash),
-      -- and nix has no visible queries at all.
+      -- lazy.nvim resets runtimepath during setup, so restore both halves of
+      -- the Nix-managed treesitter installation here. Put parsers ahead of the
+      -- plugin directory so stale parsers there cannot shadow the Nix versions.
+      vim.opt.rtp:prepend(vim.g.NIX_DATA_HOME .. '/treesitter-parsers')
       vim.opt.rtp:prepend(vim.g.NIX_DATA_HOME .. '/nvim-treesitter/runtime')
 
       -- The plugin ships an older tree-sitter-lua (no `operator` field on
       -- binary_expression) while the highlight query references it. Prefer
       -- Nvim's bundled lua parser, which matches the query.
       for _, p in ipairs(vim.api.nvim_get_runtime_file('parser/lua.so', true)) do
-        if not p:find('nvim-treesitter', 1, true) then
+        if p:find('/lib/nvim/parser/lua.so', 1, true) then
           vim.treesitter.language.add('lua', { path = p })
           break
         end
