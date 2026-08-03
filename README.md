@@ -42,3 +42,7 @@ NixOS dotfiles directory: my experimental descent into madness
   - neovim plugins:
     - [ ] mini indent
     - [ ] neo-tree
+
+
+
+
