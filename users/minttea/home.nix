@@ -3,6 +3,7 @@
 , pkgs-stable
 , pkgs-unstable
 , strike
+, pasture
 , lib
 , osConfig
 , ...
@@ -126,6 +127,7 @@ rec {
     beads
     dolt
     strike.packages.${pkgs.stdenv.hostPlatform.system}.default
+    pasture.packages.${pkgs.stdenv.hostPlatform.system}.pasture
     llm-agents.cursor-agent
     code-cursor-fhs
 
