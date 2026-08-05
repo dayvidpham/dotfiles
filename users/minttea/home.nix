@@ -174,6 +174,8 @@ rec {
     #anytype # proj management/knowledge base
     zotero # ref/citation/bib manager
     llm-agents.codex
+    llm-agents.grok
+    llm-agents.crush
     #lorien # infinite canvas notes
   ]);
 
