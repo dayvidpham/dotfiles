@@ -25,7 +25,7 @@ let
     mkOutOfStoreSymlink
     ;
 
-  nvidiaDriver = config.boot.kernelPackages.nvidia_x11;
+  nvidiaDriver = cfg.proprietaryDrivers.package;
 
   # NOTE: Config
   nvidia = {
@@ -162,6 +162,27 @@ in
 
   config = lib.mkMerge [
     (mkIf cfg.enable {
+      # The NVIDIA kernel module must be built against the *exact* kernel
+      # derivation in boot.kernelPackages (not merely the same version string):
+      # pulling the kernel from one nixpkgs and the driver from another yields a
+      # module that fails to load. The driver derivation records the kernel it
+      # was built for as SYSSRC=<kernel.dev> in makeFlags; check it here so the
+      # mismatch fails at eval time instead of at modprobe.
+      assertions = [{
+        assertion =
+          let
+            kernelDev = toString config.boot.kernelPackages.kernel.dev;
+            kmod = nvidiaDriver.open or nvidiaDriver;
+          in
+          builtins.any (f: lib.hasPrefix "SYSSRC=${kernelDev}" (toString f)) (kmod.makeFlags or [ ]);
+        message = ''
+          CUSTOM.hardware.nvidia: driver ${nvidiaDriver.name} is not built against
+          boot.kernelPackages.kernel (${config.boot.kernelPackages.kernel.name}).
+          Kernel and NVIDIA driver must come from the same linuxPackages set
+          (e.g. set proprietaryDrivers.package from config.boot.kernelPackages.*).
+        '';
+      }];
+
       hardware.nvidia = {
         package = nvidiaDriver;
         modesetting.enable = true; # NOTE: Wayland requires this to be true

@@ -25,7 +25,14 @@
 
   #########################
   # Boot loader
-  boot.kernelPackages = pkgs.linuxPackages_latest;
+  # NOTE: kernel + NVIDIA driver are taken together from nixpkgs-unstable.
+  # nixos-26.05's linuxPackages_latest (7.2) outran its newest nvidia_x11
+  # (595.71.05, fails to compile against 7.2), while unstable pairs 7.2 with
+  # 595.91.07 and Hydra has both in cache.nixos.org. The NVIDIA module defaults
+  # to config.boot.kernelPackages.nvidia_x11, so the driver follows the kernel.
+  # Never split kernel and driver across channels: the module must be built
+  # against the exact kernel derivation it loads into.
+  boot.kernelPackages = pkgs-unstable.linuxPackages_latest;
 
   #########################
   # General system-config
