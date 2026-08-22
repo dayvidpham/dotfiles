@@ -1,5 +1,6 @@
 { config
 , pkgs
+, pkgs-unstable
 , lib ? pkgs.lib
 , ...
 }:
@@ -24,7 +25,13 @@ in
   };
 
   config = mkIf cfg.enable {
-    users.defaultUserShell = pkgs.zsh;
+    # NOTE: Use the *same* zsh as home-manager (which builds from
+    # nixpkgs-unstable and points terminals at programs.zsh.package). The login
+    # shell (greetd/tmux/ssh) and terminal shells share ~/.config/zsh and the
+    # antidote zwc cache in /tmp; two different zsh versions ping-pong
+    # recompiling it ("zwc file has wrong version") on every shell start.
+    users.defaultUserShell = pkgs-unstable.zsh;
+    environment.shells = [ pkgs-unstable.zsh ];
     programs.zsh = {
       enable = true;
 
