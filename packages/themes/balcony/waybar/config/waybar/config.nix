@@ -69,6 +69,9 @@
     "spacing" = 10;
   };
   "clock" = {
+    # GCC bug 124851: libstdc++ <16.2 misparses tzdata 2026 constant-SAVE for America/Vancouver.
+    # Etc/GMT+7 (POSIX sign: fixed UTC-7) is correct under BC permanent time.
+    "timezone" = "Etc/GMT+7";
     "format" = "{:%H:%M}";
     "format-alt" = "{:%b %d %Y}";
     "tooltip-format" = "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>";
