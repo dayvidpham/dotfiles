@@ -59,20 +59,13 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    openclaw-modules = {
-      url = "github:dayvidpham/nix-openclaw-vm/develop";
+    tuicr = {
+      url = "github:agavra/tuicr";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    beads = {
-      url = "github:dayvidpham/beads/main-fork";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    strike = {
-      url = "github:dayvidpham/strike/feat/nix-installable-flake";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    #----------------------------------------
+    # My stuff
 
     pasture = {
       url = "github:dayvidpham/pasture";
@@ -85,6 +78,22 @@
       inputs.nixpkgs-stable.follows = "nixpkgs-stable";
       inputs.nixpkgs-unstable.follows = "nixpkgs-unstable";
     };
+
+    openclaw-modules = {
+      url = "github:dayvidpham/nix-openclaw-vm/develop";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    beads = {
+      url = "github:dayvidpham/beads/main-fork";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    strike = {
+      url = "github:jonathanung/strike";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
 
     #----------------------------------------
     # Zig
@@ -126,14 +135,16 @@
     , llm-agents
     , microvm
     , nix-openclaw
-    , openclaw-modules
-    , aura-plugins
-    , beads
-    , strike
-    , pasture
     , sops-nix
     , zig-flake
     , zls
+    , tuicr
+      # My stuff
+    , openclaw-modules
+    , aura-plugins
+    , beads
+    , pasture
+    , strike
     , ...
     }:
     let
@@ -147,6 +158,11 @@
         };
 
         overlays = [
+          # tuicr
+          (final: prev: {
+            tuicr = tuicr.packages.${system}.default;
+          })
+
           # zig tools
           (final: prev: {
             zig_nightly = zig-flake.packages.${system}.nightly;

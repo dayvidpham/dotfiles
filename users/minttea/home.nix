@@ -150,6 +150,7 @@ rec {
     scythe # self-rolled screenshotter
     qbittorrent # torrenting client
     glow # charmbracelet markdown reader
+    tuicr # pr cli tool
 
     # For SFU
     openfortivpn
