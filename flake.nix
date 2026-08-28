@@ -59,11 +59,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    tuicr = {
-      url = "github:agavra/tuicr";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     #----------------------------------------
     # My stuff
 
@@ -138,7 +133,6 @@
     , sops-nix
     , zig-flake
     , zls
-    , tuicr
       # My stuff
     , openclaw-modules
     , aura-plugins
@@ -158,11 +152,6 @@
         };
 
         overlays = [
-          # tuicr
-          (final: prev: {
-            tuicr = tuicr.packages.${system}.default;
-          })
-
           # zig tools
           (final: prev: {
             zig_nightly = zig-flake.packages.${system}.nightly;
