@@ -20,8 +20,20 @@ bind-key -T copy-mode-vi y send-keys -X copy-selection-and-cancel
 bind s split-window -v -c "#{pane_current_path}"
 bind v split-window -h -c "#{pane_current_path}"
 
-# Session picker on Tab
-bind Tab choose-tree -Zs
+# Session picker on Tab. Sort order persists in @tree-sort / @tree-rev
+# (choose-tree forgets it on exit; -O is not format-expanded, so expand via run-shell -C).
+# O / r inside the tree are intercepted from the root table (tree mode has no key table of its own),
+# mirrored into the options, then forwarded to the tree. The cycle must match tmux's own
+# sequence index -> name -> activity -> z (window-tree.c window_tree_order_seq) or they drift.
+set -g @tree-sort "activity"
+set -g @tree-rev ""
+bind Tab run-shell -C 'choose-tree -Zs -O "#{@tree-sort}" #{@tree-rev}'
+bind -T root O if-shell -F '#{==:#{pane_mode},tree-mode}' \
+  'run-shell -C "set -g @tree-sort #{?#{==:#{@tree-sort},index},name,#{?#{==:#{@tree-sort},name},activity,#{?#{==:#{@tree-sort},activity},z,index}}}" ; send-keys O' \
+  'send-keys O'
+bind -T root r if-shell -F '#{==:#{pane_mode},tree-mode}' \
+  'run-shell -C "set -g @tree-rev \"#{?#{==:#{@tree-rev},-r},,-r}\"" ; send-keys r' \
+  'send-keys r'
 
 # hjkl pane navigation
 bind h select-pane -L
@@ -60,7 +72,7 @@ bind M display-popup -E "tmux-move-window"
 # Send pane: break into new window or join an existing one
 bind S display-menu -T "Send pane" \
   "New window"           n "break-pane" \
-  "Existing window..."   e "command-prompt -p 'Join window:' 'join-pane -s \"#{pane_id}\" -t \"%%\"'"
+  "Existing window..."   e "command-prompt -p 'Join window (:N or sess:N):' -I ':' 'join-pane -t %%'"
 
 # Rename session
 bind R command-prompt -I "#S" "rename-session '%%'"
@@ -69,7 +81,9 @@ bind R command-prompt -I "#S" "rename-session '%%'"
 bind T command-prompt -p "Pane title:" "select-pane -T '%%'"
 
 # ── Repo-based pane coloring ─────────────────────────────────────────
-# Focus events (tmux-sensible already sets this; explicit for documentation)
+# Focus events: declared via programs.tmux.focusEvents in default.nix (home-manager
+# defaults to off and writes it AFTER tmux-sensible turns it on). Re-set here too so a
+# live reload of this file cannot leave the pane-focus-in hook below dead.
 set -g focus-events on
 
 # Re-apply repo theme when switching panes (pass path directly to avoid tmux#3506)
@@ -82,4 +96,4 @@ set -g pane-border-format "#{?pane_title,#{?#{==:#{@repo-worktree},1}, #[bold]#{
 
 # True color support
 set -ag terminal-overrides ",xterm-256color:RGB"
-set -ag terminal-overrides ",ghostty:RGB"
+set -ag terminal-overrides ",xterm-ghostty:RGB"

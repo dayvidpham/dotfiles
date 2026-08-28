@@ -312,13 +312,14 @@ in
   };
 
   config = mkIf cfg.enable {
-    home.packages = [ sessionizer moveWindow repoTheme ];
+    home.packages = [ sessionizer moveWindow repoTheme pkgs.sesh ]; # sesh: Prefix f picker in keybindings.tmux
     programs.zsh.shellAliases.tmux-help = cheatsheet;
     programs.tmux = {
       enable = true;
       prefix = "M-Space";
       keyMode = "vi";
       mouse = true;
+      focusEvents = true; # required by the pane-focus-in hook (tmux-repo-theme); hm default is off
       baseIndex = 1;
       escapeTime = 0;
       historyLimit = 10000;
