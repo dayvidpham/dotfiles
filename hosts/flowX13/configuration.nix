@@ -217,6 +217,27 @@ in
   CUSTOM.hardware.nvidia.enable = false;
   CUSTOM.hardware.nvidia.hostName = "flowX13";
   CUSTOM.hardware.nvidia.proprietaryDrivers.enable = false;
+  # Linux 7.2 removed strncpy() from <linux/string.h>; nvidia-open < 595.99.02
+  # still calls it and fails to compile. nixos-26.05 ships 595.71.05, so build
+  # NVIDIA's fixed production release ourselves against the pinned kernel
+  # (hashes copied from nixpkgs-unstable). Falls back to the stock package once
+  # the channel catches up; delete this block when it does.
+  CUSTOM.hardware.nvidia.proprietaryDrivers.package =
+    let
+      kp = config.boot.kernelPackages;
+      fixedVersion = "595.99.02";
+    in
+    if lib.versionAtLeast kp.nvidia_x11.version fixedVersion
+    then kp.nvidia_x11
+    else
+      kp.nvidiaPackages.mkDriver {
+        version = fixedVersion;
+        sha256_64bit = "sha256-6HR3lYv3YwcFSTJL1a1slI66btIQ5EAFs+/4SUD24ew=";
+        sha256_aarch64 = "sha256-CCqHZTN2KNOZ4yZp2rDcuRJp9pHfRw47k4m4dWnS/2w=";
+        openSha256 = "sha256-T36x/jx8yQ8l3LFp1rZIrTfcSwbGy8YSAvXOUSptpb4=";
+        settingsSha256 = "sha256-GYCcnxfKPrTCrsmd25sMyzfC5cqJQJx0c31haooyTYM=";
+        persistencedSha256 = "sha256-VyKtF/HdHPQrHHK6opSO69M72LmnGZtauuchj9uuje8=";
+      };
   specialisation.nvidia-enabled.configuration = {
     system.nixos.tags = [ "nvidia-enabled" ];
     CUSTOM.hardware.nvidia.enable = lib.mkForce true;
