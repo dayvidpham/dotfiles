@@ -356,7 +356,7 @@ in
         {
           plugin = logging;
           extraConfig = ''
-            set -g @logging-path '~/.local/share/tmux/logs'
+            set -g @logging-path '${config.home.homeDirectory}/.local/share/tmux/logs'
           '';
         }
         yank
