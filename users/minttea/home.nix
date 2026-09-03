@@ -40,6 +40,7 @@ rec {
 
   # Additional PATH entries (login shell)
   home.sessionPath = [
+    "$HOME/.local/share/pnpm/bin" # pnpm global binaries
     "$HOME/.bun/bin" # Bun global binaries (beads, etc.)
     "$HOME/.local/bin"
   ];
@@ -203,10 +204,12 @@ rec {
   CUSTOM.programs.opencode.enable = true;
   CUSTOM.programs.claude-code.enable = true;
   CUSTOM.programs.aura-config-sync.enable = true;
+  CUSTOM.programs.aura-config-sync.packages.enable = false; # no aura-swarm
   CUSTOM.programs.aura-config-sync.commands.enable = false; # skills loaded via Claude Code plugin
   CUSTOM.programs.aura-config-sync.agents.enable = false; # agents loaded via Claude Code plugin
   CUSTOM.programs.aura-config-sync.opencode.agents.enable = false;
   CUSTOM.programs.aura-config-sync.opencode.skills.enable = false;
+
   programs.antigravity-cli.enable = true;
   programs.antigravity-cli.package = pkgs-unstable.antigravity-cli;
   programs.antigravity-cli.defaultModel = "gemini-3-pro-preview";
