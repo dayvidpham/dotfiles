@@ -182,7 +182,7 @@ rec {
     llm-agents.grok
     llm-agents.crush
     llm-agents.pi
-    llm-agents.github-copilot
+    llm-agents.copilot-cli
     llm-agents.antigravity-cli
     llm-agents.zcode
     llm-agents.dsh
@@ -213,10 +213,9 @@ rec {
   CUSTOM.programs.claude-code.enable = true;
   CUSTOM.programs.aura-config-sync.enable = true;
   CUSTOM.programs.aura-config-sync.packages.enable = false; # no aura-swarm
-  CUSTOM.programs.aura-config-sync.commands.enable = false; # skills loaded via Claude Code plugin
-  CUSTOM.programs.aura-config-sync.agents.enable = false; # agents loaded via Claude Code plugin
-  CUSTOM.programs.aura-config-sync.opencode.agents.enable = false;
-  CUSTOM.programs.aura-config-sync.opencode.skills.enable = false;
+  CUSTOM.programs.aura-config-sync.harnesses.claude-code.agents.enable = false; # agents loaded via Claude Code plugin
+  CUSTOM.programs.aura-config-sync.harnesses.opencode.agents.enable = false;
+  CUSTOM.programs.aura-config-sync.harnesses.opencode.skills.enable = false;
 
   programs.antigravity-cli.enable = true;
   programs.antigravity-cli.package = pkgs-unstable.antigravity-cli;
