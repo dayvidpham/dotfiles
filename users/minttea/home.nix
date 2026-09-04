@@ -172,13 +172,21 @@ rec {
     nix-search # Fast, indexed replacement for awful builtin `nix search`
   ])
   ++ (with pkgs-unstable; [
-    # Notes
+    # Notes -----
     #anytype # proj management/knowledge base
     zotero # ref/citation/bib manager
+    #lorien # infinite canvas notes
+
+    # harnesses -------
     llm-agents.codex
     llm-agents.grok
     llm-agents.crush
-    #lorien # infinite canvas notes
+    llm-agents.pi
+    llm-agents.github-copilot
+    llm-agents.antigravity-cli
+    llm-agents.zcode
+    llm-agents.dsh
+
   ]);
 
 
@@ -316,5 +324,6 @@ rec {
 
   # SSH config
 
-  home.file.".ssh/config".source = config.lib.file.mkOutOfStoreSymlink /home/minttea/dotfiles/users/minttea/ssh/config;
+  home.file.".ssh/config".source = config.lib.file.mkOutOfStoreSymlink
+    /home/minttea/dotfiles/users/minttea/ssh/config;
 }
