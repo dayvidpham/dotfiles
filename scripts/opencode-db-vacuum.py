@@ -20,6 +20,13 @@ Usage:
   opencode-db-vacuum.py --dry-run          # report only, writes nothing at all
   opencode-db-vacuum.py                    # full pipeline
   opencode-db-vacuum.py --verify-only F    # verify an existing compact file
+  opencode-db-vacuum.py --swap F           # resume: preflight, verify F, swap, restart
+  opencode-db-vacuum.py --swap F --no-restart   # same, but leave the service down
+
+--swap picks up a run whose compact file already exists (for example after a
+verify failure that turned out to be benign). It re-verifies F against the db
+before touching anything. The swap is rename-only, so F must sit on the same
+filesystem as the db.
 
 Before a full run you MUST have:
   * every opencode / opencode2 session closed (TUIs, `run`, agents — the
@@ -197,8 +204,12 @@ def count_rows(path, table):
 
 # ------------------------------------------------------------------ preflight
 
-def preflight(db):
-    """All read-only. Returns list of (name, passed, detail) plus a report."""
+def preflight(db, check_space=True):
+    """All read-only. Returns list of (name, passed, detail) plus a report.
+
+    check_space=False skips the free-space gate (a rename-only --swap writes
+    no new file); the size figures are still reported.
+    """
     checks = []
 
     def add(name, ok, detail=""):
@@ -221,8 +232,9 @@ def preflight(db):
     free = os.statvfs(str(db.parent)).f_bavail * os.statvfs(str(db.parent)).f_frsize
     needed = int(predicted * SPACE_FACTOR) + SPACE_BUFFER
 
-    add("free space on db filesystem", free >= needed,
-        f"free {human(free)}, needed {human(needed)} (predicted final {human(predicted)})")
+    if check_space:
+        add("free space on db filesystem", free >= needed,
+            f"free {human(free)}, needed {human(needed)} (predicted final {human(predicted)})")
     add("freelist sanity", 0 <= meta["freelist_count"] <= meta["page_count"],
         f"freelist {meta['freelist_count']}/{meta['page_count']} pages")
 
@@ -331,13 +343,23 @@ def do_verify(orig, compact, log):
         ok = False
         log(f"  INTEGRITY FAIL ({elapsed(t0)}): {rows[:10]}")
 
-    log("== verify: schema equality ==")
+    log("== verify: schema equality (user objects only) ==")
 
+    # Compare only user-defined objects, the same filter table_names() uses.
+    # SQLite's own sqlite_* entries are not part of what VACUUM preserves:
+    #   * sqlite_sequence is created the first time any AUTOINCREMENT table
+    #     exists and is never dropped, but VACUUM rebuilds the schema from the
+    #     live CREATE statements and skips it on purpose. So it is absent from
+    #     the copy whenever no current table uses AUTOINCREMENT, and SQLite
+    #     recreates it on demand. Comparing it produced a false verify failure.
+    #   * sqlite_autoindex_* carry no sql of their own; they are implied by the
+    #     UNIQUE / PRIMARY KEY clauses in the table sql compared here.
     def schema(p):
         con = open_ro(p)
         try:
             return con.execute(
-                "SELECT type, name, sql FROM sqlite_master ORDER BY type, name"
+                "SELECT type, name, sql FROM sqlite_master"
+                " WHERE name NOT LIKE 'sqlite_%' ORDER BY type, name"
             ).fetchall()
         finally:
             con.close()
@@ -347,8 +369,10 @@ def do_verify(orig, compact, log):
         log(f"  ok ({len(s1)} entries)")
     else:
         ok = False
-        diff = [x for x in s1 if x not in s2] + [x for x in s2 if x not in s1]
-        log(f"  SCHEMA MISMATCH: {diff[:5]}")
+        only_orig = [x for x in s1 if x not in s2]
+        only_compact = [x for x in s2 if x not in s1]
+        log(f"  SCHEMA MISMATCH: only in original: {only_orig[:5]}"
+            f"  only in compact: {only_compact[:5]}")
 
     log("== verify: per-table row counts (original vs compact) ==")
     for table in table_names(orig):
@@ -368,6 +392,23 @@ def do_swap(db, compact, ts, log):
     if procs:
         log(f"  ABORT: opencode processes appeared: {procs}")
         return None
+    # Every guard runs BEFORE the first rename, so a refusal leaves both files
+    # exactly where they were.
+    if not compact.is_file():
+        log(f"  ABORT: compact file missing: {compact}")
+        return None
+    if compact.resolve() == db.resolve():
+        log("  ABORT: compact path is the database itself")
+        return None
+    if compact.stat().st_dev != db.stat().st_dev:
+        log(f"  ABORT: {compact.name} is on a different filesystem than {db.name}; "
+            "rename cannot cross filesystems, move it next to the db first")
+        return None
+    compact_wal = Path(str(compact) + "-wal")
+    if compact_wal.exists() and compact_wal.stat().st_size > 0:
+        log(f"  ABORT: {compact_wal.name} is non-empty; the compact file was opened "
+            "read-write and holds un-checkpointed changes")
+        return None
 
     wal = Path(str(db) + "-wal")
     shm = Path(str(db) + "-shm")
@@ -385,10 +426,16 @@ def do_swap(db, compact, ts, log):
             shm.rename(bak.with_name(bak.name + "-shm"))
         db.rename(bak)
         compact.rename(db)
+        # Sidecars of the compact file exist only if it was ever opened in WAL
+        # mode, and the guard above proved the -wal is empty. Drop them so
+        # they cannot be mistaken for live state later.
+        for side in (compact_wal, Path(str(compact) + "-shm")):
+            if side.exists():
+                side.unlink()
         os.sync()
     finally:
         signal.pthread_sigmask(signal.SIG_UNBLOCK, blocked)
-    log(f"  swapped: {db.name} <- compact; original kept as {bak.name}")
+    log(f"  swapped: {db.name} <- {compact.name}; original kept as {bak.name}")
     return bak
 
 
@@ -417,6 +464,29 @@ def restart_service(log):
         log(f"  health check failed: {e} (start it manually and check your sessions)")
 
 
+def land(db, compact, ts, before, restart, log, step_swap, step_restart):
+    """Tail shared by the full pipeline and --swap: swap, restart, summary."""
+    log(f"== {step_swap}: swap (rename-only) ==")
+    bak = do_swap(db, compact, ts, log)
+    if bak is None:
+        return EXIT_SWAP
+
+    log(f"== {step_restart}: restart service ==")
+    if restart:
+        restart_service(log)
+    else:
+        log("  skipped (--no-restart); start it yourself: opencode2 service start")
+
+    after = db.stat().st_size
+    log("== summary ==")
+    log(f"  before : {human(before)}")
+    log(f"  after  : {human(after)}")
+    log(f"  backup : {bak}  ({human(bak.stat().st_size)}) — delete it manually once you are happy:")
+    log(f"           rm '{bak}'{'*' if (Path(str(bak) + '-wal').exists() or Path(str(bak) + '-shm').exists()) else ''}")
+    log("  open opencode, confirm your sessions are there, then reclaim the space")
+    return EXIT_OK
+
+
 # ----------------------------------------------------------------------- main
 
 def main():
@@ -425,10 +495,16 @@ def main():
                     help=f"database path (default: $OPENCODE_DB or {DEFAULT_DB})")
     ap.add_argument("--dest", type=Path, default=None,
                     help="directory for the compact file (default: same as db)")
-    ap.add_argument("--dry-run", action="store_true",
-                    help="read-only report; writes nothing at all")
-    ap.add_argument("--verify-only", type=Path, metavar="COMPACT",
-                    help="verify an existing compact file against the db, then exit")
+    mode = ap.add_mutually_exclusive_group()
+    mode.add_argument("--dry-run", action="store_true",
+                      help="read-only report; writes nothing at all")
+    mode.add_argument("--verify-only", type=Path, metavar="COMPACT",
+                      help="verify an existing compact file against the db, then exit")
+    mode.add_argument("--swap", type=Path, metavar="COMPACT",
+                      help="skip checkpoint and vacuum: verify an existing compact file, "
+                           "then swap it in and restart the service")
+    ap.add_argument("--no-restart", action="store_true",
+                    help="after the swap, do not start the opencode2 service")
     args = ap.parse_args()
 
     db = args.db
@@ -440,11 +516,13 @@ def main():
             db = DEFAULT_DB
 
     ts = ts_str()
-    log = Log(None if args.dry_run else DATA_DIR / f"vacuum-{ts}.log")
+    log = Log(None if args.dry_run else db.parent / f"vacuum-{ts}.log")
 
-    log(f"opencode-db-vacuum  db={db}  mode={'dry-run' if args.dry_run else 'full'}")
+    mode_name = ("dry-run" if args.dry_run else "verify-only" if args.verify_only
+                 else "swap" if args.swap else "full")
+    log(f"opencode-db-vacuum  db={db}  mode={mode_name}")
 
-    rep = preflight(db)
+    rep = preflight(db, check_space=args.swap is None)
     print_report(rep, log)
 
     if args.dry_run:
@@ -466,6 +544,21 @@ def main():
     except OSError:
         pass
 
+    if args.swap:
+        compact = args.swap
+        if not compact.is_file():
+            log(f"ABORT: compact file not found: {compact}")
+            return EXIT_PREFLIGHT
+        if compact.resolve() == db.resolve():
+            log("ABORT: --swap must name the compact file, not the database itself")
+            return EXIT_PREFLIGHT
+        log(f"== step 1/3: verify {compact} ==")
+        if not do_verify(db, compact, log):
+            log(f"VERIFY FAILED: original untouched; {compact} was NOT swapped in")
+            return EXIT_VERIFY
+        return land(db, compact, ts, rep["file_size"], not args.no_restart, log,
+                    "step 2/3", "step 3/3")
+
     log("== step 1/5: checkpoint WAL ==")
     checkpoint_wal(db, log)
 
@@ -482,22 +575,8 @@ def main():
         log(f"VERIFY FAILED — original untouched; inspect or delete {compact}")
         return EXIT_VERIFY
 
-    log("== step 4/5: swap (rename-only) ==")
-    bak = do_swap(db, compact, ts, log)
-    if bak is None:
-        return EXIT_SWAP
-
-    log("== step 5/5: restart service ==")
-    restart_service(log)
-
-    after = db.stat().st_size
-    log("== summary ==")
-    log(f"  before : {human(rep['file_size'])}")
-    log(f"  after  : {human(after)}")
-    log(f"  backup : {bak}  ({human(bak.stat().st_size)}) — delete it manually once you are happy:")
-    log(f"           rm '{bak}'{'*' if (Path(str(bak) + '-wal').exists() or Path(str(bak) + '-shm').exists()) else ''}")
-    log("  open opencode, confirm your sessions are there, then reclaim the space")
-    return EXIT_OK
+    return land(db, compact, ts, rep["file_size"], not args.no_restart, log,
+                "step 4/5", "step 5/5")
 
 
 if __name__ == "__main__":
