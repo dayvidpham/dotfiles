@@ -4,6 +4,7 @@
 
 { config
 , pkgs
+, pkgs-unstable
 , lib
 , ...
 }:
@@ -114,7 +115,14 @@ in
     };
     loader.efi.canTouchEfiVariables = true;
     kernelParams = [ "usbcore.autosuspend=-1" ];
-    kernelPackages = pkgs.linuxPackages_latest;
+    # NOTE: kernel + NVIDIA driver are taken together from nixpkgs-unstable, as
+    # on the desktop host. nixos-26.05's linuxPackages_latest (7.2.x) outran its
+    # newest nvidia_x11 (595.71.05, which fails to compile against 7.2 after
+    # strncpy() was removed from <linux/string.h>), while unstable pairs 7.2.x
+    # with 595.99.02. The NVIDIA module defaults to
+    # config.boot.kernelPackages.nvidia_x11, so the driver follows the kernel.
+    # Never split kernel and driver across channels.
+    kernelPackages = pkgs-unstable.linuxPackages_latest;
   };
 
   # ################################
