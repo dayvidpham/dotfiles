@@ -14,7 +14,14 @@ set -g status-left '#{?#{==:#{@prefix-mode},alt},#[bg=blue fg=black bold] ALT ,#
 
 # Vi-style copy mode
 bind-key -T copy-mode-vi v send-keys -X begin-selection
-bind-key -T copy-mode-vi y send-keys -X copy-selection-and-cancel
+# Yank straight to the Wayland clipboard (internal buffer alone never leaves tmux)
+bind-key -T copy-mode-vi y send-keys -X copy-pipe-and-cancel "wl-copy"
+
+# Let TUIs (e.g. opencode) drive the outer terminal clipboard themselves:
+# they wrap OSC52 in a tmux DCS passthrough sequence, which tmux drops unless
+# this is on. Scoped risk: any program in a *visible* pane can then send raw
+# escapes to the terminal (clipboard writes, title changes, queries).
+set -g allow-passthrough on
 
 # Split with current path (vim-style)
 bind s split-window -v -c "#{pane_current_path}"
