@@ -2,31 +2,26 @@
 # waypipe-sway-remote.sh — remote entrypoint for waypipe-hosted sway sessions.
 #
 # Problem: when the laptop side dies (sleep, network drop, closed terminal),
-# the remote `sway --unsupported-gpu` is killed without cleaning up its
-# Wayland + sway-ipc sockets in $XDG_RUNTIME_DIR. The next session then picks
-# a fresh socket name while processes in leftover terminals keep pointing at
-# the dead one ("Failed to create window").
+# the remote nested sway is killed without cleaning up the sockets it owns in
+# $XDG_RUNTIME_DIR. Later terminals pointing at those dead sockets fail with
+# errors like "Failed to create window".
 #
-# This wrapper:
-#   1. Pins the nested sway to one fixed display name (via WAYLAND_DISPLAY,
-#      set by `waypipe --display`; defaults to wayland-waypipe standalone).
-#   2. Before launch, removes that socket (+ .lock) only if nothing listens
-#      on it, plus any dead sway-ipc sockets. Never touches live sockets and
-#      never blanket-deletes wayland-* (the main session lives there too).
-#   3. On EXIT/HUP/INT/TERM removes its own sockets the same gated way.
-#
-# Race note: check-then-remove is inherently racy, but the blast radius is
-# confined to our fixed name and the atomic arbiter is the bind itself — a
-# lost race ends in a loud sway startup failure, never a deleted live
-# compositor socket (the liveness gate skips anything with a listener).
+# Ownership warning (learned the hard way): under `waypipe ssh`, the
+# $WAYLAND_DISPLAY socket belongs to the waypipe *server* — sway connects to
+# it as a nested Wayland client. This wrapper must NEVER create, delete, or
+# gate on that socket: at wrapper startup the server may not have bound it
+# yet, so even a liveness-gated prune can delete it out from under sway
+# ("Could not connect to remote display"). Only *other* dead sockets are
+# pruned here; the current session arbitrates its own display socket.
 set -eu
 
-DISPLAY_NAME="${WAYLAND_DISPLAY:-wayland-waypipe}"
 RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 
-case "$DISPLAY_NAME" in
-  */*) WAYLAND_SOCK="$DISPLAY_NAME" ;;
-  *) WAYLAND_SOCK="$RUNTIME_DIR/$DISPLAY_NAME" ;;
+# The display socket of THIS session. Owned by waypipe server. Hands off.
+case "${WAYLAND_DISPLAY:-}" in
+  */*) CURRENT_SOCK="$WAYLAND_DISPLAY" ;;
+  "" ) CURRENT_SOCK="" ;;
+  *)   CURRENT_SOCK="$RUNTIME_DIR/$WAYLAND_DISPLAY" ;;
 esac
 
 is_live() {
@@ -36,14 +31,20 @@ is_live() {
 
 prune_if_dead() {
   # $1 = socket path. Remove it (and its .lock sidecar) only when dead.
+  # Never touch the current session's display socket (see above).
   sock="${1:?}"
+  if [ -n "$CURRENT_SOCK" ] && [ "$sock" = "$CURRENT_SOCK" ]; then return 0; fi
   if [ -e "$sock" ] && ! is_live "$sock"; then
     rm -f "$sock" "$sock.lock"
   fi
 }
 
 sweep_stale() {
-  prune_if_dead "$WAYLAND_SOCK"
+  for sock in "$RUNTIME_DIR"/wayland-*; do
+    case "$sock" in *.lock) continue ;; esac
+    [ -S "$sock" ] || continue
+    prune_if_dead "$sock"
+  done
   for ipc in "$RUNTIME_DIR"/sway-ipc."$(id -u)".*.sock; do
     [ -e "$ipc" ] || continue
     prune_if_dead "$ipc"
@@ -56,10 +57,5 @@ cleanup() {
 trap 'cleanup' EXIT HUP INT TERM
 
 sweep_stale
-
-if is_live "$WAYLAND_SOCK"; then
-  echo "waypipe-sway-remote: $WAYLAND_SOCK is already live; not starting a second nested sway" >&2
-  exit 1
-fi
 
 exec sway --unsupported-gpu
