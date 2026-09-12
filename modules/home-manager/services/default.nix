@@ -14,5 +14,6 @@
     ./openclaw
     ./clipd
     ./clip-sync
+    ./clipse
   ];
 }

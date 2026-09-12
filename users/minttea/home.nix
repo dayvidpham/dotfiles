@@ -85,6 +85,9 @@ rec {
   # NOTE: Desktop Environment
   CUSTOM.services.kanshi.enable = true;
 
+  # Clipboard history (records only if its listener runs)
+  CUSTOM.services.clipse.enable = true;
+
   # NOTE: Hyprland
   CUSTOM.wayland.windowManager.hyprland = {
     enable = mkDefault false;
@@ -207,8 +210,7 @@ rec {
   CUSTOM.programs.vscode.enable = true;
 
   # LLM Agents
-  programs.bun.enable = true;
-  CUSTOM.programs.opencode.enable = false;
+  programs.bun.enable = true;  CUSTOM.programs.opencode.enable = false;
   CUSTOM.programs.claude-code.enable = true;
   CUSTOM.programs.aura-config-sync.enable = true;
   CUSTOM.programs.aura-config-sync.packages.enable = false; # no aura-swarm
