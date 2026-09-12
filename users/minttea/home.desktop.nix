@@ -85,6 +85,7 @@ in
 
   CUSTOM.programs.nodejs.enable = false;
   CUSTOM.programs.vscode.enable = true;
+  CUSTOM.programs.btop.enable = true;
   CUSTOM.programs.unity.enable = false;
   CUSTOM.games.minecraft.enable = false;
   programs.lutris.enable = true;

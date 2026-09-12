@@ -18,5 +18,6 @@
     ./claude-code
     ./beads
     ./unity
+    ./btop
   ];
 }
