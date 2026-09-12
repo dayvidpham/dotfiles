@@ -72,6 +72,9 @@ in
   programs.ssh.extraConfig = ''
     Host desktop
         Port 8108
+        # Reverse-forward the local clipd unix socket so the desktop can read
+        # this laptop's clipboard while we are connected.
+        RemoteForward /run/user/1000/clipd.sock /run/user/1000/clipd.sock
   '';
 
   /* nix.buildMachines = [
@@ -239,6 +242,12 @@ in
   # expires on the next AC/BAT transition.
   CUSTOM.services.powermode.enable = true;
   CUSTOM.services.powermode.user = "minttea";
+
+  #########################
+  # Clipboard daemon: serves the session clipboard over a unix socket so the
+  # desktop (over an ssh reverse tunnel) can read the laptop's clipboard.
+  # Enabled as a user service in home.flowX13.nix, so it inherits the session's
+  # WAYLAND_DISPLAY rather than hardcoding a socket name.
 
   # Persistent tmux server (survives DE/WM/session closures)
   CUSTOM.programs.tmux.server = {

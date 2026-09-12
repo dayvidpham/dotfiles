@@ -274,6 +274,15 @@
     user = "minttea";
   };
 
+  ############################
+  # Clipboard tunnel: a headless clipboard compositor that exists even when the
+  # interactive session is down, plus a sync that mirrors the laptop clipboard
+  # (reached over an ssh RemoteForward from the laptop) into it.
+  CUSTOM.clipboardTunnel = {
+    enable = true;
+    user = "minttea";
+  };
+
   ######################################
   # Some user setup: Most user-stuff will be in home-manager
   users.users.minttea = {

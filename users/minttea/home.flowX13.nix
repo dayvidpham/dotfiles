@@ -25,4 +25,8 @@ in
     enable = true;
     apiKeyFile = "/run/secrets/syncthing/apikey";
   };
+
+  # Clipboard daemon: a user service, so it inherits WAYLAND_DISPLAY and
+  # XDG_RUNTIME_DIR from niri. The desktop reads it over an ssh RemoteForward.
+  CUSTOM.services.clipd.enable = true;
 }

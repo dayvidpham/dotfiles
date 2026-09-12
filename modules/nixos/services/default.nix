@@ -6,5 +6,6 @@
     ./gitlab-runner
     ./tailscale
     ./powermode
+    ./clipboard-tunnel
   ];
 }

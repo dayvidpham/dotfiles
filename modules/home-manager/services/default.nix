@@ -12,5 +12,6 @@
     ./syncthing
     ./dolt-server
     ./openclaw
+    ./clipd
   ];
 }
