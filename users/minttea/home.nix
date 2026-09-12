@@ -183,7 +183,6 @@ rec {
     llm-agents.crush
     llm-agents.pi
     llm-agents.copilot-cli
-    llm-agents.antigravity-cli
     llm-agents.zcode
     llm-agents.dsh
 
@@ -209,7 +208,7 @@ rec {
 
   # LLM Agents
   programs.bun.enable = true;
-  CUSTOM.programs.opencode.enable = true;
+  CUSTOM.programs.opencode.enable = false;
   CUSTOM.programs.claude-code.enable = true;
   CUSTOM.programs.aura-config-sync.enable = true;
   CUSTOM.programs.aura-config-sync.packages.enable = false; # no aura-swarm
@@ -218,8 +217,7 @@ rec {
   CUSTOM.programs.aura-config-sync.harnesses.opencode.skills.enable = false;
 
   programs.antigravity-cli.enable = true;
-  programs.antigravity-cli.package = pkgs-unstable.antigravity-cli;
-  programs.antigravity-cli.defaultModel = "gemini-3-pro-preview";
+  programs.antigravity-cli.package = pkgs-unstable.llm-agents.antigravity-cli;
 
   #########################
   # General CLI tools
