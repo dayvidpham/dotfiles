@@ -147,3 +147,9 @@
 {"issue_id":"dotfiles-z2tn","label":"aura:p9-impl:s9-slice"}
 {"issue_id":"dotfiles-z9g4","label":"nix-2605-warnings"}
 {"issue_id":"dotfiles-zwvp","label":"aura:p4-plan:s4-review"}
+{"issue_id":"plabs-0h3","label":"pasture:p3-plan:s3-propose"}
+{"issue_id":"plabs-0h3","label":"peasant"}
+{"issue_id":"plabs-0h3","label":"performance"}
+{"issue_id":"plabs-0h3","label":"profiling"}
+{"issue_id":"plabs-0h3","label":"push"}
+{"issue_id":"plabs-0h3","label":"village"}
