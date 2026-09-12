@@ -72,9 +72,6 @@ in
   programs.ssh.extraConfig = ''
     Host desktop
         Port 8108
-        # Reverse-forward the local clipd unix socket so the desktop can read
-        # this laptop's clipboard while we are connected.
-        RemoteForward /run/user/1000/clipd.sock /run/user/1000/clipd.sock
   '';
 
   /* nix.buildMachines = [

@@ -95,6 +95,11 @@ in
     apiKeyFile = "/run/secrets/syncthing/apikey";
   };
 
+  # Mirror the laptop's clipboard into this desktop session's clipboard, so GUI
+  # apps here can paste what was copied on the laptop (peer socket arrives via
+  # the laptop's ssh RemoteForward).
+  CUSTOM.services.clip-sync.enable = true;
+
   ##################
   # Virtualisation
 

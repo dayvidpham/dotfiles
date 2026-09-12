@@ -13,5 +13,6 @@
     ./dolt-server
     ./openclaw
     ./clipd
+    ./clip-sync
   ];
 }

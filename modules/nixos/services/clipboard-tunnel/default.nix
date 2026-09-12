@@ -44,7 +44,7 @@ let
     name = "clip";
     runtimeInputs = [ pkgs.python3 pkgs.wl-clipboard ];
     text = ''
-      exec python3 ${./clip.py} "$@"
+      exec python3 ${./py}/clip.py "$@"
     '';
   };
 
@@ -52,7 +52,7 @@ let
     name = "clip-sync";
     runtimeInputs = [ pkgs.python3 pkgs.wl-clipboard ];
     text = ''
-      exec python3 ${./clip-sync.py} "$@"
+      exec python3 ${./py}/clip-sync.py "$@"
     '';
   };
 in

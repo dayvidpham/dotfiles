@@ -17,6 +17,14 @@ Host *.alliancecan.ca
     User dhpham
     Port 22
 
+# Reverse-forward the laptop's clipd socket so the desktop can read this
+# machine's clipboard while connected. Kept in the user config (not system-wide)
+# so root and other local users on this host do not get the forward.
+# NOTE: only takes effect on the connection that establishes the ControlMaster;
+# a reused master does not add new forwards.
+Host desktop
+    RemoteForward /run/user/1000/clipd.sock /run/user/1000/clipd.sock
+
 Host *
     ControlPath ~/.ssh/socket.%r@%h:%p
     ControlMaster auto

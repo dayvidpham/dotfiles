@@ -49,6 +49,10 @@ in
         ];
 
         X11Forwarding = false;
+
+        # Unlink a stale forwarded unix socket before binding, so an unclean
+        # disconnect (e.g. the clipd RemoteForward) cannot wedge later sessions.
+        StreamLocalBindUnlink = "yes";
       };
     };
   };
