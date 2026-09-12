@@ -207,7 +207,6 @@
           (final: prev: {
             run-cwd = with prev; callPackage ./packages/run-cwd.nix { };
             scythe = with prev; callPackage ./packages/scythe.nix {
-              wl-clipboard = wl-clipboard-rs;
               output-dir = "$HOME/Pictures/scythe";
             };
             waybar-balcony = with prev; callPackage ./packages/themes/balcony/waybar {

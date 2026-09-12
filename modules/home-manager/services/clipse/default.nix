@@ -29,9 +29,9 @@ in
   config = mkIf cfg.enable {
     # On Wayland, clipse records history by having wl-paste watch the selection
     # and pipe each change into `clipse -a`. Two gotchas this encodes:
-    #   - the C wl-clipboard provides `wl-paste --watch`; wl-clipboard-rs does
-    #     NOT, and it is the one that shadows wl-paste on PATH, so use the C
-    #     binary by absolute path.
+    #   - `wl-paste --watch` is a C wl-clipboard feature; wl-clipboard-rs does
+    #     not have it, so pin the C binary by absolute path rather than trusting
+    #     whatever `wl-paste` PATH resolves to.
     #   - it must run inside the session (WAYLAND_DISPLAY); hence a user unit.
     systemd.user.services.clipse = {
       Unit = {
