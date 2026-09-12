@@ -137,11 +137,14 @@ let
           echo "powermode: $(read_state)"
           ;;
         cycle)
-          if [[ $EUID -ne 0 ]]; then exec sudo -n "$0" cycle; fi
+          # Re-exec via the resolved store path: sudo matches command paths
+          # literally, and the NOPASSWD rule names the /nix/store path — the
+          # /run/current-system symlink would miss it and demand a password.
+          if [[ $EUID -ne 0 ]]; then exec sudo -n "$(realpath "$0")" cycle; fi
           cycle_to_next
           ;;
         auto|eco|balanced|performance)
-          if [[ $EUID -ne 0 ]]; then exec sudo -n "$0" "$cmd"; fi
+          if [[ $EUID -ne 0 ]]; then exec sudo -n "$(realpath "$0")" "$cmd"; fi
           set_mode "$cmd"
           ;;
         -h|--help|help)
