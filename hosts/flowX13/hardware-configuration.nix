@@ -78,12 +78,18 @@
     # Guided lets the kernel scheduler drive a min_perf hint per tick (wake-up-aware);
     # CPPC autonomy picks the operating point inside [min,max] with no EPP bias
     # (the amd-pstate driver only exposes EPP in active mode — so no policy is set here).
-    # Frequency / perf headroom stays uncapped — Precision Boost 2 is allowed to
-    # sprint above base clock under bursts and race back to idle.
+    #
+    # Boost is OFF on AC by design: the "quiet" platform profile runs a conservative
+    # EC fan curve + lower sustained power limit. Leaving Precision Boost 2 enabled
+    # let cores sprint to ~4.5 GHz on any burst, generating heat faster than the quiet
+    # fan curve could shed it — idle crept to ~70°C and sustained load hit the thermal
+    # trip (worsened by charger/battery heat while charging), causing shutdowns.
+    # Capping at base clock keeps the quiet fan curve sufficient. Raise PLATFORM_PROFILE
+    # to "balanced"/"performance" if you re-enable boost, so the EC cooling matches.
     CPU_DRIVER_OPMODE_ON_AC = "guided";
     CPU_SCALING_GOVERNOR_ON_AC = "schedutil";
     PLATFORM_PROFILE_ON_AC = "quiet";
-    CPU_BOOST_ON_AC = 1;
+    CPU_BOOST_ON_AC = 0;
     CPU_MIN_PERF_ON_AC = 0;
     CPU_MAX_PERF_ON_AC = 100;
     CPU_SCALING_MIN_FREQ_ON_AC = 0;
