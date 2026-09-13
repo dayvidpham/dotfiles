@@ -58,4 +58,23 @@ trap 'cleanup' EXIT HUP INT TERM
 
 sweep_stale
 
+# Run sway with the user's config minus its session-management bits. The
+# generated config ends with execs that import WAYLAND_DISPLAY/SWAYSOCK into the
+# *host* systemd user manager and start/stop sway-session.target (plus restart
+# kanshi, start polkit). Fine for a real login session; harmful here: this is a
+# nested compositor inside the host, and those execs hijack the host's user
+# session (clobbering WAYLAND_DISPLAY/SWAYSOCK, failing kanshi/waybar, and
+# dragging graphical-session services into a display that dies with the tunnel).
+sway_config() {
+  src="${XDG_CONFIG_HOME:-$HOME/.config}/sway/config"
+  [ -f "$src" ] || return 1
+  out="$RUNTIME_DIR/waypipe-sway.config"
+  grep -vE '^[[:space:]]*(exec|exec_always)[[:space:]].*(dbus-update-activation-environment|systemctl --user|polkit-gnome-authentication-agent)' "$src" > "$out" || true
+  printf '%s\n' "$out"
+}
+
+if cfg="$(sway_config)"; then
+  exec sway --unsupported-gpu -c "$cfg"
+fi
+
 exec sway --unsupported-gpu
