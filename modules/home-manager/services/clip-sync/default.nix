@@ -65,6 +65,8 @@ in
         PartOf = [ cfg.systemdTarget ];
         After = [ cfg.systemdTarget ];
         ConditionEnvironment = "WAYLAND_DISPLAY";
+        # Retry forever: the session's compositor may come up after us.
+        StartLimitIntervalSec = 0;
       };
 
       Service = {

@@ -14,6 +14,9 @@ let
     getExe
     ;
 
+  # UID from the runtime dir basename (e.g. /run/user/1000 -> 1000).
+  uid = builtins.baseNameOf cfg.runtimeDir;
+
   # Sway, headless: a clipboard owner that exists whether or not the
   # interactive session is running. Its socket must be deterministic, but sway
   # 1.12 has no --socket flag and wl_display_add_socket_auto just takes the
@@ -29,7 +32,7 @@ let
 
   compositorWrapper = pkgs.writeShellApplication {
     name = "clip-compositor";
-    runtimeInputs = [ pkgs.iproute2 pkgs.gnugrep ];
+    runtimeInputs = [ pkgs.iproute2 pkgs.gnugrep pkgs.coreutils ];
     text = ''
       set -eu
       sock="''${XDG_RUNTIME_DIR}/''${WAYLAND_DISPLAY}"
@@ -81,6 +84,15 @@ in
       '';
     };
 
+    runtimeDir = mkOption {
+      type = types.str;
+      default = "/run/user/1000";
+      description = ''
+        The user's XDG_RUNTIME_DIR, used to locate the session D-Bus socket.
+        Override only if the user's UID is not 1000.
+      '';
+    };
+
     socketPath = mkOption {
       type = types.str;
       default = "/run/user/1000/clipd.sock";
@@ -105,7 +117,12 @@ in
       documentation = [ "man:sway(1)" ];
 
       wantedBy = [ "multi-user.target" ];
-      after = [ "network.target" ];
+      # The user manager provides the session D-Bus socket; sway's launcher
+      # needs it (otherwise it falls back to dbus-run-session, which fails
+      # under a system service).
+      after = [ "network.target" "user@${uid}.service" ];
+      # Never give up: the compositor must come up whenever the session does.
+      startLimitIntervalSec = 0;
 
       serviceConfig = {
         Type = "simple";
@@ -117,6 +134,7 @@ in
         # sway's wrapper adds --unsupported-gpu; the headless backend needs no GPU.
         Environment = [
           "XDG_RUNTIME_DIR=${cfg.compositorRuntimeDir}"
+          "DBUS_SESSION_BUS_ADDRESS=unix:path=${cfg.runtimeDir}/bus"
           "WLR_BACKENDS=headless"
           "WLR_RENDERER=pixman"
           "WLR_LIBINPUT_NO_DEVICES=1"
@@ -135,6 +153,7 @@ in
       after = [ "clip-compositor.service" ];
       requires = [ "clip-compositor.service" ];
       wantedBy = [ "multi-user.target" ];
+      startLimitIntervalSec = 0;
 
       serviceConfig = {
         Type = "simple";
