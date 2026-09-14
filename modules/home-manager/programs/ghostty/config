@@ -2,3 +2,7 @@ theme = Afterglow
 command = zsh
 font-size = 14
 keybind = shift+enter=text:\x1b\r
+# Never hand a launch off to an already-running instance. Single-instance uses
+# the shared user D-Bus, so with multiple sessions (niri + a remote/waypipe
+# sway) a new terminal would appear in whichever session owns the bus name.
+gtk-single-instance = false
