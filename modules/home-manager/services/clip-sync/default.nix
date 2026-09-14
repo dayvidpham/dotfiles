@@ -16,7 +16,7 @@ let
 
   # Both clip.py and clip-sync.py must land in the same store directory,
   # because clip-sync.py imports clip.py from its own directory.
-  sources = ../../../nixos/services/clipboard-tunnel/py;
+  sources = ../../../../packages/clip;
 
   clipSync = pkgs.writeShellApplication {
     name = "clip-sync";

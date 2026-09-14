@@ -275,15 +275,6 @@
   };
 
   ############################
-  # Clipboard tunnel: a headless clipboard compositor that exists even when the
-  # interactive session is down, plus a sync that mirrors the laptop clipboard
-  # (reached over an ssh RemoteForward from the laptop) into it.
-  CUSTOM.clipboardTunnel = {
-    enable = true;
-    user = "minttea";
-  };
-
-  ############################
   # Persistent remote session: a headless sway that survives viewer
   # disconnects, served over VNC (wayvnc, localhost-only; tunnel over ssh).
   CUSTOM.services.remote-session = {

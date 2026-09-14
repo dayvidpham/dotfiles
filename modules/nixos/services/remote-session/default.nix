@@ -91,6 +91,26 @@ let
     '';
   };
 
+  # clip CLI + peer-sync. Both Python files must share one store directory
+  # because clip-sync.py imports clip.py from its own directory.
+  clipSources = ../../../../packages/clip;
+
+  clip = pkgs.writeShellApplication {
+    name = "clip";
+    runtimeInputs = [ pkgs.python3 pkgs.wl-clipboard ];
+    text = ''
+      exec python3 ${clipSources}/clip.py "$@"
+    '';
+  };
+
+  clipSync = pkgs.writeShellApplication {
+    name = "clip-sync";
+    runtimeInputs = [ pkgs.python3 pkgs.wl-clipboard ];
+    text = ''
+      exec python3 ${clipSources}/clip-sync.py "$@"
+    '';
+  };
+
   # Bind the Tailscale interface IPv4 at runtime so the listener only ever
   # exists on the tailnet. Read the address from the interface (no privileges
   # needed) rather than `tailscale ip` (which requires root/operator). If the
@@ -206,6 +226,32 @@ in
       '';
       example = "/dev/dri/by-path/pci-0000:16:00.0-render";
     };
+
+    clipboard = {
+      enable = mkOption {
+        type = types.bool;
+        default = true;
+        description = ''
+          Install the `clip` CLI and mirror a peer's clipboard into this
+          session's clipboard, so apps in the VNC session can paste what was
+          copied on the client machine (including images, which VNC's own
+          text-only clipboard cannot carry). The peer socket is provided by the
+          client's `remote-desktop` helper over ssh -R.
+        '';
+      };
+
+      peerSocket = mkOption {
+        type = types.str;
+        default = "/run/user/1000/clipd.sock";
+        description = "Peer clipd socket, provided by the client's ssh RemoteForward";
+      };
+
+      interval = mkOption {
+        type = types.float;
+        default = 1.0;
+        description = "Seconds between peer clipboard polls";
+      };
+    };
   };
 
   config = mkIf cfg.enable {
@@ -270,6 +316,30 @@ in
         ];
         ExecStartPre = "${getExe waitForSocket} ${cfg.runtimeDir}/${cfg.display}";
         ExecStart = "${getExe wayvncWrapper}";
+        Restart = "always";
+        RestartSec = 3;
+      };
+    };
+
+    environment.systemPackages = lib.optional cfg.clipboard.enable clip;
+
+    systemd.services.clip-peer-sync = mkIf cfg.clipboard.enable {
+      description = "Mirror the peer clipboard into the remote session";
+      after = [ "remote-session-compositor.service" ];
+      requires = [ "remote-session-compositor.service" ];
+      wantedBy = [ "multi-user.target" ];
+      startLimitIntervalSec = 0;
+
+      serviceConfig = {
+        Type = "simple";
+        User = cfg.user;
+        Group = "users";
+        Environment = [
+          "XDG_RUNTIME_DIR=${cfg.runtimeDir}"
+          "WAYLAND_DISPLAY=${cfg.display}"
+          "HOME=/home/${cfg.user}"
+        ];
+        ExecStart = "${getExe clipSync} ${cfg.clipboard.peerSocket} ${toString cfg.clipboard.interval}";
         Restart = "always";
         RestartSec = 3;
       };
