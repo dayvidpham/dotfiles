@@ -12,7 +12,6 @@ let
     mkOption
     types
     getExe
-    optionalString
     ;
 
   # A long-lived, headless sway session that persists across viewer
@@ -46,10 +45,32 @@ let
   };
 
   wayvncConfig = pkgs.writeText "wayvnc-config" ''
-    address=${cfg.address}
     port=${toString cfg.port}
     enable_auth=false
   '';
+
+  # Bind the Tailscale interface IPv4 at runtime so the listener only ever
+  # exists on the tailnet. Read the address from the interface (no privileges
+  # needed) rather than `tailscale ip` (which requires root/operator). If the
+  # interface has no address we refuse to start rather than fall back to a
+  # loopback or wildcard bind.
+  wayvncWrapper = pkgs.writeShellApplication {
+    name = "remote-session-vnc";
+    runtimeInputs = [ pkgs.iproute2 pkgs.gawk pkgs.coreutils ];
+    text = ''
+      set -eu
+      ${if cfg.tailnetOnly then ''
+      addr="$(ip -4 -o addr show dev "${cfg.interfaceName}" 2>/dev/null | awk '{print $4}' | cut -d/ -f1 | head -n1)"
+      if [ -z "$addr" ]; then
+        echo "remote-session-vnc: no IPv4 on ${cfg.interfaceName}; refusing to bind (tailnet-only)" >&2
+        exit 1
+      fi
+      '' else ''
+      addr="${cfg.address}"
+      ''}
+      exec ${getExe pkgs.wayvnc} -C ${wayvncConfig} -f ${toString cfg.maxFps} "$addr"
+    '';
+  };
 in
 {
   options.CUSTOM.services.remote-session = {
@@ -73,15 +94,29 @@ in
       description = "WAYLAND_DISPLAY of the headless compositor";
     };
 
+    tailnetOnly = mkOption {
+      type = types.bool;
+      default = true;
+      description = ''
+        Bind wayvnc to this node's Tailscale IPv4 (resolved at start), so the
+        listener only exists on the tailnet. If Tailscale is down the service
+        refuses to start. This is the intended mode.
+      '';
+    };
+
     address = mkOption {
       type = types.str;
       default = "127.0.0.1";
       description = ''
-        Address wayvnc listens on. Keep it IPv4 loopback and reach it over an
-        ssh tunnel (or a tailnet) — VNC authentication is not enabled here.
-        Note: "localhost" may resolve to ::1 only, which breaks an
-        ssh -L ...:127.0.0.1:... tunnel.
+        Explicit bind address, used only when tailnetOnly = false. Loopback only;
+        wildcard addresses are rejected so wayvnc is never exposed publicly.
       '';
+    };
+
+    interfaceName = mkOption {
+      type = types.str;
+      default = "tailscale0";
+      description = "Tailscale interface whose IPv4 wayvnc binds to when tailnetOnly = true";
     };
 
     port = mkOption {
@@ -99,8 +134,10 @@ in
 
   config = mkIf cfg.enable {
     assertions = [{
-      assertion = cfg.address == "localhost" || cfg.address == "127.0.0.1";
-      message = "CUSTOM.services.remote-session: only localhost binding is supported (tunnel over ssh/tailscale)";
+      # Never allow a wildcard bind: with tailnetOnly the address is the
+      # Tailscale IP; otherwise only loopback is permitted.
+      assertion = cfg.tailnetOnly || cfg.address == "127.0.0.1" || cfg.address == "::1";
+      message = "CUSTOM.services.remote-session: address must be loopback unless tailnetOnly is enabled";
     }];
 
     systemd.services.remote-session-compositor = {
@@ -139,8 +176,9 @@ in
       documentation = [ "man:wayvnc(1)" ];
 
       wantedBy = [ "multi-user.target" ];
-      after = [ "remote-session-compositor.service" ];
+      after = [ "remote-session-compositor.service" "tailscaled.service" ];
       requires = [ "remote-session-compositor.service" ];
+      wants = [ "tailscaled.service" ];
       startLimitIntervalSec = 0;
 
       serviceConfig = {
@@ -152,7 +190,7 @@ in
           "WAYLAND_DISPLAY=${cfg.display}"
           "HOME=/home/${cfg.user}"
         ];
-        ExecStart = "${getExe pkgs.wayvnc} -C ${wayvncConfig} -f ${toString cfg.maxFps}";
+        ExecStart = "${getExe wayvncWrapper}";
         Restart = "always";
         RestartSec = 3;
       };
