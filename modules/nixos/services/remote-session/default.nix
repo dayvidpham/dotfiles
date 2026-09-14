@@ -69,6 +69,28 @@ let
     enable_auth=false
   '';
 
+  # Wait for the compositor's socket to actually be listening. systemd's After=
+  # only orders the units; it does not guarantee the socket exists yet, so
+  # wayvnc otherwise races the compositor at startup.
+  waitForSocket = pkgs.writeShellApplication {
+    name = "remote-session-wait-socket";
+    runtimeInputs = [ pkgs.iproute2 pkgs.gnugrep pkgs.coreutils ];
+    text = ''
+      set -eu
+      sock="''${1:?socket path required}"
+      i=0
+      while [ "$i" -lt 300 ]; do
+        if [ -S "$sock" ] && ss -xl 2>/dev/null | grep -qF " $sock"; then
+          exit 0
+        fi
+        i=$((i + 1))
+        sleep 0.1
+      done
+      echo "remote-session-wait-socket: timed out waiting for $sock" >&2
+      exit 1
+    '';
+  };
+
   # Bind the Tailscale interface IPv4 at runtime so the listener only ever
   # exists on the tailnet. Read the address from the interface (no privileges
   # needed) rather than `tailscale ip` (which requires root/operator). If the
@@ -235,6 +257,7 @@ in
           "WAYLAND_DISPLAY=${cfg.display}"
           "HOME=/home/${cfg.user}"
         ];
+        ExecStartPre = "${getExe waitForSocket} ${cfg.runtimeDir}/${cfg.display}";
         ExecStart = "${getExe wayvncWrapper}";
         Restart = "always";
         RestartSec = 3;
