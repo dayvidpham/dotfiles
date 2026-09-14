@@ -6,3 +6,8 @@ keybind = shift+enter=text:\x1b\r
 # the shared user D-Bus, so with multiple sessions (niri + a remote/waypipe
 # sway) a new terminal would appear in whichever session owns the bus name.
 gtk-single-instance = false
+# Let programs read the clipboard via OSC52. Default is "ask", which does not
+# work for TUI-driven reads (e.g. opencode's Ctrl+V), leaving paste empty.
+# Tradeoff: any program running in the terminal can then read the clipboard
+# without a prompt.
+clipboard-read = allow
