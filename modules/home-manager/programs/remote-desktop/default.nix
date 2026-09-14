@@ -29,7 +29,10 @@ let
           kill "$tunnel_pid" 2>/dev/null || true
         fi
       }
-      trap cleanup EXIT INT TERM
+      trap cleanup EXIT
+      # Exit (which triggers cleanup) on these too, so a closed terminal or a
+      # dropped connection does not leave an orphaned ssh -R behind.
+      trap 'exit 1' HUP INT TERM
 
       ${optionalString cfg.clipTunnel.enable ''
       # Forward the laptop's clipd socket to the remote host for the duration of
