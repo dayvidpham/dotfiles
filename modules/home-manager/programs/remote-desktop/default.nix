@@ -38,10 +38,10 @@ let
       # Forward the laptop's clipd socket to the remote host for the duration of
       # this viewer session, so the remote session can paste this machine's
       # clipboard (including images, which VNC's own text-only clipboard cannot).
-      # Dedicated, non-multiplexed connection: a reused ControlMaster would not
-      # add the -R. Uses key auth, so no password prompt.
+      # Use a persistent multiplexed connection so the key passphrase is entered
+      # at most once and reused by later launches; the forward rides the master.
       ssh -N \
-        -o ControlMaster=no -o ControlPath=none \
+        -o ControlMaster=auto -o ControlPath="$HOME/.ssh/clip-%h" -o ControlPersist=yes \
         -o ExitOnForwardFailure=yes \
         -o ServerAliveInterval=30 -o ServerAliveCountMax=3 \
         -R ${cfg.clipTunnel.socketPath}:${cfg.clipTunnel.socketPath} \
