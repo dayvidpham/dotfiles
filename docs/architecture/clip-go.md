@@ -32,6 +32,8 @@ This works but requires a Python runtime, has shell-based lifecycle management, 
 - N2. No new wire protocol/transport (no TCP/TLS/token auth this iteration).
 - N3. No Go rewrite of the NixOS/home-manager module wiring.
 - N4. No port of the remote-session sway/wayvnc wrappers or general `scripts/` glue.
+- N5. No TUI and no clipboard-history storage: `clipse` remains the history manager/TUI; our tools must coexist with it on the same session clipboard.
+- N6. No `sd_notify`/`Type=notify` this iteration (deferred; see §19).
 
 ## 3. Problem space
 
@@ -118,6 +120,8 @@ The master persists so the passphrase is entered at most once; the forward exist
 
 ## 6. CLI surface
 
+Parsed and presented with `charmbracelet/fang` (Cobra-based): styled help, `--version`/commit, and man pages. Subcommands remain stable.
+
 ```
 clip [--config PATH] <command> [flags]
 
@@ -161,7 +165,7 @@ Dependency: `gopkg.in/yaml.v3` (pure Go, static-friendly).
 
 ## 8. Logging, signals, exit codes
 
-- Logging: `log/slog` JSON handler to stderr; no secrets; one event per state change (bind, request error, sync write, tunnel add/cancel).
+- Logging: stdlib `log/slog` with the JSON handler to stderr for `daemon`/`sync`; `charmbracelet/log` (styled) is optional for interactive commands. Never log clipboard contents; one event per state change (bind, request error, sync write, tunnel add/cancel).
 - Signals: `SIGINT`/`SIGTERM` → graceful shutdown (stop accepting, cancel forward, kill supervised children). `SIGHUP` in `tunnel`/`sync` → same teardown (no orphaned ssh).
 - Exit codes: `0` success; `1` runtime error; `2` usage; `3` peer/tunnel unreachable (mirrors current "cannot reach daemon").
 - Auth: the tunnel uses key/agent auth; if a passphrase is required and no agent holds the key, ssh prompts once to create the master.
@@ -176,8 +180,7 @@ Map 1:1 onto today's units, replacing the Python wrapper with `clip`:
 | `clip-sync.service` (user, login session) | `clip-sync <socket> <interval>` | `clip sync --config %t/clip.yaml` |
 | `clip-peer-sync.service` (system, remote-session) | `clip-sync <socket> <interval>` | `clip sync --config /run/user/<uid>/remote/clip.yaml` |
 
-- Add `Type=notify`-style readiness only if cheap; otherwise keep `Type=simple` with the existing start-limit and retry settings.
-- `sd_notify` is optional hardening (avoids races); not required for parity.
+- Readiness stays `Type=simple` with the existing `StartLimitIntervalSec=0` + retry settings; `sd_notify`/`Type=notify` is explicitly deferred (N6).
 
 Nix: `pkgs.buildGoModule` (or `buildGoApplication` with `gomod2nix`) producing `clip`; modules reference `${clip}/bin/clip`. Add `vendorHash` and update on dependency changes.
 
@@ -281,7 +284,63 @@ func (t *Tunnel) Run(ctx context.Context) (int, error) // ensures master, adds f
 - R4. Two reconcilers (login session + remote session) sharing one peer can contend last-writer; out of scope but document.
 - R5. Release workflow target set (darwin client-only vs full matrix) needs a decision before packaging.
 
-## 19. Handoff notes
+## 19. Dependencies and library choices
+
+| Area | Choice | Notes |
+|---|---|---|
+| CLI | `charmbracelet/fang` (Cobra + Lipgloss + Glamour) | subcommands, styled help, `--version`/commit, man pages |
+| Config | `knadh/koanf` (+ YAML provider) | precedence flag > env > file > default without hand-rolled merge |
+| XDG paths | `adrg/xdg` | `$XDG_CONFIG_HOME`/`$XDG_RUNTIME_DIR`; no hardcoded `/run/user/1000` |
+| Concurrency | `golang.org/x/sync/errgroup` | daemon/sync/tunnel goroutine lifecycle and cancellation |
+| Logging | stdlib `log/slog` (JSONL) for daemon/sync; optional `charmbracelet/log` for interactive mode | never log clipboard contents |
+| Testing | stdlib `testing` + `google/go-cmp` | table tests + the mock `wl-clipboard` harness |
+| Release | `goreleaser` (tooling) | static matrix, checksums, unit templates |
+
+Explicitly **not** adopted:
+- `bubbletea`/`bubbles`/`lipgloss` as a TUI — no `clip tui`; `clipse` remains the history/TUI. (Lipgloss/Glamour still arrive transitively via `fang`.)
+- `github.com/coreos/go-systemd/v22/daemon` (`sd_notify`) — sensible and well-maintained, but judged overkill for now; keep `Type=simple`. Revisit only if a startup race appears.
+- Any third-party SSH library — the tunnel supervises the `ssh` binary.
+
+All are pure Go, so `CGO_ENABLED=0` static builds remain valid. Nix vendoring via `buildGoModule` `vendorHash` (or `gomod2nix`).
+
+## 20. Project layout (inspired by `clipse`)
+
+Adapted from `savedra1/clipse`'s shape (`cmd/`, `config/`, `display/`, `handlers/`, `shell/`, `utils/`) to our transport/sync roles and Go's `internal/` convention:
+
+```
+packages/clip-go/
+  go.mod                # module: github.com/dayvidpham/dotfiles/packages/clip-go (extractable later)
+  cmd/clip/main.go      # fang entrypoint; wires subcommands
+  internal/
+    cli/                # fang command definitions: daemon, get, put, info, ping, sync, tunnel
+    config/             # koanf load + precedence + schema
+    protocol/           # wire types (Data, Type), request/response encoding
+    daemon/             # HTTP-over-unix-socket server
+    ctl/                # client for the daemon protocol
+    clipboard/          # local clipboard backend
+      clipboard.go      #   Clipboard interface
+      wl.go             #   wl-clipboard implementation (wl-copy/wl-paste)
+      types.go          #   magic-byte sniffing (PNG/JPEG), MIME constants
+    shell/              # command construction/constants (argv builders) — unit-testable
+    sync/               # reconciler (last-hash algorithm)
+    tunnel/             # supervised ssh master + -R add/cancel + viewer lifecycle
+    xdgpath/            # thin wrappers over adrg/xdg
+    log/                # slog setup (JSONL), level/format
+  testdata/             # fixtures + fake wl-clipboard / fake ssh
+```
+
+Patterns borrowed from `clipse`:
+- A dedicated **`shell/` layer** that builds external commands from constants (paths/flags) instead of scattering argv literals — makes `wl-copy`/`wl-paste`/`ssh` invocations unit-testable (clipse uses `wlCopyHandler`, `wlTypeSpec`, `wlCopyImgCmd` the same way).
+- **Magic-byte type detection** for images (PNG `89 50 4E 47`; JPEG `JFIF` at offset 6) rather than trusting caller-supplied MIME.
+- **Per-type watcher model** (`wl-paste --type <mime> --watch …`) — informs tests and any future event-driven sync, though our reconciler polls by design.
+- **Config-file + temp-dir conventions** and a `constants` package for defaults.
+
+## 21. Prior art / inspiration
+
+- **`savedra1/clipse`** — Go clipboard manager; primary structural inspiration (package layout, `shell/` constants layer, magic-byte image detection, `wl-paste --type … --watch` + `--wl-store`). We deliberately do **not** reimplement its history/TUI; `clipse` stays, and our tools coexist with it on the same session clipboard.
+- **`bugaevc/wl-clipboard`** — the external backend we shell out to (`--watch`, `--type`, `-t` on copy); pinned to the C implementation because `wl-clipboard-rs` lacks `--watch`.
+
+## 22. Handoff notes
 
 - Preserve the wire protocol and CLI exactly; the Nix modules depend on the subcommand surface and socket semantics.
 - The reconciler algorithm (§5.3) is the load-bearing behavior; keep the "seed from peer, never echo" invariant and its tests.
