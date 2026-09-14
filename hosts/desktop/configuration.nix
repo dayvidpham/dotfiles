@@ -289,8 +289,10 @@
   CUSTOM.services.remote-session = {
     enable = true;
     user = "minttea";
-    # GPU rendering on the AMD iGPU (Mesa) rather than the NVIDIA node, which
-    # is more reliable for a headless EGL compositor.
+    # Software compositing is avoided by rendering on the AMD iGPU (Mesa):
+    # WLR_RENDERER=gles2 + WLR_RENDER_DRM_DEVICE. The headless backend still
+    # advertises zwp_linux_dmabuf_v1, so clients get GPU buffers and wayvnc can
+    # capture via dmabuf (-g).
     renderDevice = "/dev/dri/by-path/pci-0000:16:00.0-render";
   };
 

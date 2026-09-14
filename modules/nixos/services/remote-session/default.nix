@@ -12,12 +12,16 @@ let
     mkOption
     types
     getExe
+    optionalString
     ;
 
-  # A long-lived, headless sway session that persists across viewer
-  # disconnects. It runs the user's own sway config minus the session-management
-  # execs (those hijack the host's systemd user manager) and with waybar,
-  # mirroring what the waypipe wrapper does for ad-hoc sessions.
+  # A long-lived sway session that persists across viewer disconnects. It runs
+  # the user's own sway config minus the session-management execs (those hijack
+  # the host's systemd user manager) and with waybar, mirroring what the waypipe
+  # wrapper does for ad-hoc sessions.
+  #
+  # The headless backend is used; with WLR_RENDERER=gles2 + WLR_RENDER_DRM_DEVICE
+  # it still advertises zwp_linux_dmabuf_v1, so clients get GPU buffers.
   swayWrapper = pkgs.writeShellApplication {
     name = "remote-session-sway";
     runtimeInputs = [ pkgs.iproute2 pkgs.gnugrep pkgs.coreutils ];
@@ -38,16 +42,17 @@ let
           | sed -E "s#(/bin/ghostty)(['[:space:]\"])#\1 --gtk-single-instance=false\2#g" \
           > "$out"
         printf '\nexec waybar\n' >> "$out"
+        ${optionalString (cfg.outputMode != null) ''printf 'output * mode ${cfg.outputMode}\n' >> "$out"''}
         exec ${pkgs.sway}/bin/sway --unsupported-gpu -c "$out"
       fi
       exec ${pkgs.sway}/bin/sway --unsupported-gpu
     '';
   };
 
-  # Renderer selection: GPU (gles2 on a DRM render node) when renderDevice is
-  # set, otherwise software (pixman). GPU enables dmabuf, so clients can use
-  # GL/Vulkan and wayvnc can use its dmabuf path; WLR_RENDERER_ALLOW_SOFTWARE
-  # keeps the session usable if EGL fails.
+  # GPU (gles2 on a DRM render node) when renderDevice is set, else pixman.
+  # GPU enables dmabuf so clients can use GL/Vulkan and wayvnc can use its
+  # dmabuf path; WLR_RENDERER_ALLOW_SOFTWARE keeps the session usable if EGL
+  # fails.
   renderEnv =
     if cfg.renderDevice == null
     then [ "WLR_RENDERER=pixman" ]
@@ -56,6 +61,8 @@ let
       "WLR_RENDER_DRM_DEVICE=${cfg.renderDevice}"
       "WLR_RENDERER_ALLOW_SOFTWARE=1"
     ];
+
+  backendEnv = [ "WLR_BACKENDS=headless" ];
 
   wayvncConfig = pkgs.writeText "wayvnc-config" ''
     port=${toString cfg.port}
@@ -81,13 +88,13 @@ let
       '' else ''
       addr="${cfg.address}"
       ''}
-      exec ${getExe pkgs.wayvnc} -C ${wayvncConfig} -f ${toString cfg.maxFps} "$addr"
+      exec ${getExe pkgs.wayvnc} -C ${wayvncConfig} -f ${toString cfg.maxFps} ${optionalString cfg.wayvncGpu "-g"} "$addr"
     '';
   };
 in
 {
   options.CUSTOM.services.remote-session = {
-    enable = mkEnableOption "persistent headless sway session served over VNC (wayvnc)";
+    enable = mkEnableOption "persistent sway session served over VNC (wayvnc)";
 
     user = mkOption {
       type = types.str;
@@ -104,7 +111,14 @@ in
     display = mkOption {
       type = types.str;
       default = "wayland-1";
-      description = "WAYLAND_DISPLAY of the headless compositor";
+      description = "WAYLAND_DISPLAY of the compositor";
+    };
+
+    outputMode = mkOption {
+      type = types.nullOr types.str;
+      default = null;
+      description = "Optional forced output mode (e.g. 1920x1080) applied with `output * mode`";
+      example = "1920x1080";
     };
 
     tailnetOnly = mkOption {
@@ -144,6 +158,12 @@ in
       description = "wayvnc frame-rate limit";
     };
 
+    wayvncGpu = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Pass -g to wayvnc (dmabuf capture / GPU features)";
+    };
+
     renderDevice = mkOption {
       type = types.nullOr types.str;
       default = null;
@@ -157,15 +177,17 @@ in
   };
 
   config = mkIf cfg.enable {
-    assertions = [{
-      # Never allow a wildcard bind: with tailnetOnly the address is the
-      # Tailscale IP; otherwise only loopback is permitted.
-      assertion = cfg.tailnetOnly || cfg.address == "127.0.0.1" || cfg.address == "::1";
-      message = "CUSTOM.services.remote-session: address must be loopback unless tailnetOnly is enabled";
-    }];
+    assertions = [
+      {
+        # Never allow a wildcard bind: with tailnetOnly the address is the
+        # Tailscale IP; otherwise only loopback is permitted.
+        assertion = cfg.tailnetOnly || cfg.address == "127.0.0.1" || cfg.address == "::1";
+        message = "CUSTOM.services.remote-session: address must be loopback unless tailnetOnly is enabled";
+      }
+    ];
 
     systemd.services.remote-session-compositor = {
-      description = "Persistent headless sway session for ${cfg.user}";
+      description = "Persistent sway session for ${cfg.user}";
       documentation = [ "man:sway(1)" ];
 
       wantedBy = [ "multi-user.target" ];
@@ -179,7 +201,6 @@ in
         ExecStartPre = "${pkgs.coreutils}/bin/mkdir -p -m 0700 ${cfg.runtimeDir}";
         Environment = [
           "XDG_RUNTIME_DIR=${cfg.runtimeDir}"
-          "WLR_BACKENDS=headless"
           "WLR_LIBINPUT_NO_DEVICES=1"
           "DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus"
           "HOME=/home/${cfg.user}"
@@ -187,7 +208,7 @@ in
           # profile on PATH; a system service otherwise only sees the system one.
           # Home-manager standalone installs to ~/.nix-profile, not /etc/profiles.
           "PATH=/home/${cfg.user}/.nix-profile/bin:/etc/profiles/per-user/${cfg.user}/bin:/run/current-system/sw/bin:/usr/bin:/bin"
-        ] ++ renderEnv;
+        ] ++ backendEnv ++ renderEnv;
         ExecStart = "${getExe swayWrapper}";
         ExecStop = "-${pkgs.sway}/bin/swaymsg -s ${cfg.runtimeDir}/${cfg.display} exit";
         Restart = "always";
