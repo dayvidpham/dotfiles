@@ -283,6 +283,14 @@
     user = "minttea";
   };
 
+  ############################
+  # Persistent remote session: a headless sway that survives viewer
+  # disconnects, served over VNC (wayvnc, localhost-only; tunnel over ssh).
+  CUSTOM.services.remote-session = {
+    enable = true;
+    user = "minttea";
+  };
+
   ######################################
   # Some user setup: Most user-stuff will be in home-manager
   users.users.minttea = {
