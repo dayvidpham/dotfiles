@@ -166,6 +166,24 @@ in
       '';
     };
 
+    pipewireRuntimeDir = mkOption {
+      type = types.nullOr types.str;
+      default = null;
+      description = "PIPEWIRE_RUNTIME_DIR for session apps (native PipeWire clients)";
+    };
+
+    pulseServer = mkOption {
+      type = types.nullOr types.str;
+      default = null;
+      description = "PULSE_SERVER for session apps (Pulse/PipeWire-pulse clients)";
+    };
+
+    pulseSink = mkOption {
+      type = types.nullOr types.str;
+      default = null;
+      description = "PULSE_SINK: default sink for session apps (e.g. a streaming null sink)";
+    };
+
     outputMode = mkOption {
       type = types.nullOr types.str;
       default = null;
@@ -290,7 +308,10 @@ in
           # profile on PATH; a system service otherwise only sees the system one.
           # Home-manager standalone installs to ~/.nix-profile, not /etc/profiles.
           "PATH=/home/${cfg.user}/.nix-profile/bin:/etc/profiles/per-user/${cfg.user}/bin:/run/current-system/sw/bin:/usr/bin:/bin"
-        ] ++ backendEnv ++ renderEnv;
+        ] ++ backendEnv ++ renderEnv
+          ++ lib.optional (cfg.pipewireRuntimeDir != null) "PIPEWIRE_RUNTIME_DIR=${cfg.pipewireRuntimeDir}"
+          ++ lib.optional (cfg.pulseServer != null) "PULSE_SERVER=${cfg.pulseServer}"
+          ++ lib.optional (cfg.pulseSink != null) "PULSE_SINK=${cfg.pulseSink}";
         ExecStart = "${getExe swayWrapper}";
         ExecStop = "-${pkgs.sway}/bin/swaymsg -s ${cfg.runtimeDir}/${cfg.display} exit";
         Restart = "always";

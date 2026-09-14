@@ -101,6 +101,15 @@ in
   # the laptop's ssh RemoteForward).
   CUSTOM.services.clip-sync.enable = true;
 
+  # Stream the remote session's audio to the laptop over RTP (roc + FEC).
+  # The session's apps play into the `remote_audio` null sink; roc-send captures
+  # its monitor and sends it to flowX13.
+  CUSTOM.services.remote-audio = {
+    enable = true;
+    role = "send";
+    peer = "flowx13";
+  };
+
   ##################
   # Virtualisation
 

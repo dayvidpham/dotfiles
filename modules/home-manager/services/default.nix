@@ -15,5 +15,6 @@
     ./clipd
     ./clip-sync
     ./clipse
+    ./remote-audio
   ];
 }

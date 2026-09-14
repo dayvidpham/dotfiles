@@ -285,6 +285,11 @@
     # advertises zwp_linux_dmabuf_v1, so clients get GPU buffers and wayvnc can
     # capture via dmabuf (-g).
     renderDevice = "/dev/dri/by-path/pci-0000:16:00.0-render";
+    # Audio: session apps talk to the desktop's PipeWire and play into the
+    # remote_audio null sink, whose monitor roc-send captures and streams.
+    pipewireRuntimeDir = "/run/user/1000";
+    pulseServer = "unix:/run/user/1000/pulse/native";
+    pulseSink = "remote_audio";
   };
 
   ######################################

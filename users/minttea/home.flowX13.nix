@@ -32,4 +32,10 @@ in
 
   # Attach to the desktop's persistent sway session over VNC (tailnet-only).
   CUSTOM.programs.remote-desktop.enable = true;
+
+  # Receive the desktop's remote-session audio over RTP (roc) on the tailnet.
+  CUSTOM.services.remote-audio = {
+    enable = true;
+    role = "recv";
+  };
 }
