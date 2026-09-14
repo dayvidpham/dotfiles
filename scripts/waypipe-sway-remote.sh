@@ -76,6 +76,10 @@ sway_config() {
   grep -vE '^[[:space:]]*(exec|exec_always)[[:space:]].*(dbus-update-activation-environment|systemctl --user|polkit-gnome-authentication-agent)' "$src" \
     | sed -E "s#(/bin/ghostty)(['[:space:]\"])#\1 --gtk-single-instance=false\2#g" \
     > "$out" || true
+  # Launch waybar in this session. The balcony config already includes
+  # sway/workspaces + sway/window, so it works here; the niri bar is a separate
+  # systemd service and does not reach this session.
+  printf '\nexec waybar\n' >> "$out"
   printf '%s\n' "$out"
 }
 
