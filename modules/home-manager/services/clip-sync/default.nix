@@ -61,7 +61,7 @@ in
     # into (niri, sway, ...) with no socket name to guess.
     systemd.user.services.clip-sync = {
       Unit = {
-        Description = "Mirror the peer clipboard into this session";
+        Description = "Keep this session's clipboard in sync with the peer";
         PartOf = [ cfg.systemdTarget ];
         After = [ cfg.systemdTarget ];
         ConditionEnvironment = "WAYLAND_DISPLAY";

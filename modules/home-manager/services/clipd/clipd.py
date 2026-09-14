@@ -108,7 +108,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
             return self._json("200 OK", {"type": wanted, "data": base64.b64encode(data).decode()})
         for mime in SUPPORTED:
             data = wl_paste(mime)
-            if data is not None:
+            # Skip empty offers: a copied image often advertises an empty
+            # text/plain, and we want the image, not the empty text.
+            if data:
                 return self._json(
                     "200 OK",
                     {"type": mime, "data": base64.b64encode(data).decode()},

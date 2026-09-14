@@ -327,7 +327,7 @@ in
     environment.systemPackages = lib.optional cfg.clipboard.enable clip;
 
     systemd.services.clip-peer-sync = mkIf cfg.clipboard.enable {
-      description = "Mirror the peer clipboard into the remote session";
+      description = "Keep the remote session clipboard in sync with the peer";
       after = [ "remote-session-compositor.service" ];
       requires = [ "remote-session-compositor.service" ];
       wantedBy = [ "multi-user.target" ];

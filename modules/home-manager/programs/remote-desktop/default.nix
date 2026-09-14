@@ -106,16 +106,15 @@ in
   config = mkIf cfg.enable {
     home.packages = [ cfg.viewer remoteDesktop ];
 
-    # Keep the VNC clipboard as clipboard<->clipboard only. The two "primary"
-    # options make the server's CLIPBOARD mirror the client's PRIMARY and vice
-    # versa, so CLIPBOARD and PRIMARY get populated from different sources and
-    # paste results diverge. Disable that cross-wiring; leave both clipboard
-    # directions enabled.
+    # The clipboard travels through the ssh tunnel (clipd + clip-sync, which is
+    # now bidirectional), so the VNC viewer's own clipboard is disabled to keep
+    # a single authority and avoid last-writer races. This also drops the
+    # primary-selection cross-wiring.
     xdg.configFile."tigervnc/default.tigervnc".text = ''
       TigerVNC Configuration file Version 1.0
-      AcceptClipboard=1
+      AcceptClipboard=0
       SetPrimary=0
-      SendClipboard=1
+      SendClipboard=0
       SendPrimary=0
     '';
   };

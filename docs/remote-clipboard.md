@@ -1,22 +1,33 @@
 # Remote clipboard (laptop <-> desktop)
 
-Bidirectional clipboard over the ssh tunnel that accompanies the VNC session,
-carrying `text/plain` **and** `image/png`. VNC's own clipboard channel is
-text-only, so this is what makes pasting a laptop **screenshot** into the
-remote session work.
+Automatic **bidirectional** clipboard over the ssh tunnel that accompanies the
+VNC session. Carries `text/plain` and `image/png`. The VNC viewer's own
+clipboard is disabled so this is the single clipboard authority (no races).
 
 ## Pieces
 
 | Host | Artifact | Role |
 |------|----------|------|
-| flowX13 (laptop) | `CUSTOM.services.clipd` (home-manager) | `clipd`: a small HTTP-over-unix-socket daemon serving the laptop's `wl-clipboard`; a *user* service, so it inherits `WAYLAND_DISPLAY`/`XDG_RUNTIME_DIR` from the session |
-| flowX13 | `CUSTOM.programs.remote-desktop` | launches the VNC viewer **and** starts/stops a dedicated `ssh -R` for the clipd socket, so the tunnel's lifetime is the viewer session |
-| desktop | `CUSTOM.services.remote-session` (clipboard) | the persistent sway/wayvnc session's clipboard peer-sync (`clip-peer-sync`) mirrors the laptop clipboard into that session, plus the `clip` CLI |
-| desktop | `CUSTOM.services.clip-sync` (home-manager) | optional: mirrors the laptop clipboard into a *local* login session (if you log in directly) |
+| flowX13 (laptop) | `CUSTOM.services.clipd` (home-manager) | `clipd`: HTTP-over-unix-socket daemon serving the laptop's `wl-clipboard` (`GET` read, `PUT` write); a *user* service, so it inherits `WAYLAND_DISPLAY` |
+| flowX13 | `CUSTOM.programs.remote-desktop` | launches the VNC viewer, opens a dedicated `ssh -R` for the clipd socket for the viewer's lifetime, and disables the VNC viewer's own clipboard |
+| desktop | `CUSTOM.services.remote-session` (clipboard) | `clip-peer-sync` reconciles the peer clipboard with the remote session's clipboard; provides the `clip` CLI |
+| desktop | `CUSTOM.services.clip-sync` (home-manager) | same reconciler for a local login session, if you log in directly |
 
-## Usage
+## Synchronisation
 
-On the desktop (or anywhere the forwarded socket exists):
+`clip-sync` polls both clipboards (~1s) and reconciles them against a single
+"last agreed" hash:
+
+```
+if peer != last:   copy peer -> local,  last = peer
+elif local != last: PUT local -> peer,  last = local
+```
+
+So a value that arrived from the peer is never pushed back (no feedback loop),
+and a copy on either machine propagates to the other. Simultaneous changes
+resolve last-writer-wins.
+
+## Usage (manual)
 
 ```sh
 clip info                 # MIME types the peer offers
@@ -27,29 +38,15 @@ clip put image/png < screenshot.png
 clip ping
 ```
 
-## Flow
-
-- **laptop -> desktop**: `clip get` (or `clip-sync`) reads the laptop's
-  `wl-clipboard` over the forwarded socket; `clip-peer-sync` mirrors it into the
-  remote session's clipboard so VNC-session apps can paste.
-- **desktop -> laptop**: `clip put` writes into the laptop's `wl-clipboard`.
-- **Tunnel lifecycle**: `remote-desktop` runs
-  `ssh -N -o ControlMaster=no -o ControlPath=none -o ExitOnForwardFailure=yes -R …`
-  before the viewer and kills it on exit. A dedicated connection is required
-  because a reused `ControlMaster` does not add `-R`; auth is key-based, so no
-  password prompt.
-
 ## Caveats
 
-- **wayvnc clipboard is text-only.** For images, use `clip`/`clip-sync`.
-- **`clipd` is a user service**: no laptop session means nothing to serve
-  (`/clip` returns 204).
-- **Peer socket** is `/run/user/1000/clipd.sock` on both ends. The desktop side
-  is created by sshd from the `remote-desktop` helper; desktop sshd sets
-  `StreamLocalBindUnlink=yes` so a stale socket from an unclean disconnect does
-  not block a later forward.
-- **Display name**: the remote session runs in a dedicated
-  `XDG_RUNTIME_DIR` (`/run/user/1000/remote`) with a stale-socket pre-clean, so
-  its compositor socket is deterministically `wayland-1` (sway 1.12 has no
-  `--socket` flag). `clip-peer-sync` uses the `remote-session` options, not a
-  duplicate literal.
+- **`clipd` is a user service** bound to `graphical-session.target`. No laptop
+  session means nothing to serve; the tunnel socket may be absent.
+- **Peer socket** is `/run/user/1000/clipd.sock` on both ends, created on the
+  desktop by sshd from the `remote-desktop` helper. Desktop sshd sets
+  `StreamLocalBindUnlink=yes` so a stale socket cannot wedge a later forward.
+- **VNC clipboard is off** (`AcceptClipboard=0`, `SendClipboard=0` in
+  `~/.config/tigervnc/default.tigervnc`); the tunnel replaces it. RFB is
+  text-only anyway, so the tunnel is also what carries images.
+- Reading the local clipboard each tick means a large image is re-read/hashed
+  periodically; fine for occasional screenshots.
