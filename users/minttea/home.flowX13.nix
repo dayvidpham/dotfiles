@@ -29,4 +29,7 @@ in
   # Clipboard daemon: a user service, so it inherits WAYLAND_DISPLAY and
   # XDG_RUNTIME_DIR from niri. The desktop reads it over an ssh RemoteForward.
   CUSTOM.services.clipd.enable = true;
+
+  # Attach to the desktop's persistent sway session over VNC (tailnet-only).
+  CUSTOM.programs.remote-desktop.enable = true;
 }

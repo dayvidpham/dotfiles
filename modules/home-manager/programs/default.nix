@@ -19,5 +19,6 @@
     ./beads
     ./unity
     ./btop
+    ./remote-desktop
   ];
 }
