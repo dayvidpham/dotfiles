@@ -12,12 +12,11 @@ let
     mkOption
     types
     getExe
-    optionalString
     ;
-
   # Capture the remote session's audio and stream it over RTP+RS8M (Reed-Solomon
-  # FEC) to the peer. The session's apps play into a dedicated null sink
-  # (created via PipeWire config) whose monitor roc-send captures.
+  # FEC) to the peer. The session's apps play into a dedicated null sink, which
+  # the host creates via services.pipewire.configPackages (named by sinkName);
+  # roc-send captures that sink's monitor.
   sendScript = pkgs.writeShellApplication {
     name = "remote-audio-send";
     runtimeInputs = [ pkgs.roc-toolkit pkgs.glibc pkgs.gawk pkgs.coreutils ];
@@ -61,23 +60,6 @@ let
         --target-latency=${cfg.latency}
     '';
   };
-
-  # Persistent virtual sink the remote session plays into. object.linger keeps
-  # it alive without a client holding it open.
-  nullSink = ''
-    context.objects = [
-      { factory = adapter
-        args = {
-          factory.name = support.null-audio-sink
-          node.name = ${cfg.sinkName}
-          node.description = "Remote session audio"
-          media.class = Audio/Sink
-          object.linger = true
-          audio.position = [ FL FR ]
-        }
-      }
-    ]
-  '';
 in
 {
   options.CUSTOM.services.remote-audio = {
@@ -127,7 +109,7 @@ in
     sinkName = mkOption {
       type = types.str;
       default = "remote_audio";
-      description = "Send: name of the null sink whose monitor is captured";
+      description = "Send: name of the null sink whose monitor is captured (created by the host via services.pipewire.configPackages)";
     };
 
     sourceDevice = mkOption {
@@ -168,10 +150,6 @@ in
         };
         Install.WantedBy = [ "default.target" ];
       };
-    };
-
-    xdg.configFile = mkIf (cfg.role == "send") {
-      "pipewire/pipewire.conf.d/10-remote-audio.conf".text = nullSink;
     };
   };
 }

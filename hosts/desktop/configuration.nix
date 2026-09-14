@@ -10,7 +10,25 @@
 , lib ? config.lib
 , ...
 }:
-
+let
+  # PipeWire null sink the remote session plays into. Declared on the NixOS side
+  # (not in home-manager) so the NixOS-owned pipewire unit can restart when this
+  # changes — see the restartTriggers below.
+  remoteAudioPipewireConf = pkgs.writeTextDir "share/pipewire/pipewire.conf.d/10-remote-audio.conf" ''
+    context.objects = [
+      { factory = adapter
+        args = {
+          factory.name = support.null-audio-sink
+          node.name = remote_audio
+          node.description = "Remote session audio"
+          media.class = Audio/Sink
+          object.linger = true
+          audio.position = [ FL FR ]
+        }
+      }
+    ]
+  '';
+in
 {
   imports = [
     # Include the results of the hardware scan.
@@ -291,6 +309,17 @@
     pulseServer = "unix:/run/user/1000/pulse/native";
     pulseSink = "remote_audio";
   };
+
+  # The pipewire unit belongs to NixOS, not home-manager, so a config change
+  # otherwise waits for a manual restart/re-login. Declare the file here and
+  # restart pipewire (and pipewire-pulse, which follows it) on change.
+  services.pipewire.configPackages = [ remoteAudioPipewireConf ];
+  systemd.user.services.pipewire.restartTriggers = [
+    "${remoteAudioPipewireConf}/share/pipewire/pipewire.conf.d/10-remote-audio.conf"
+  ];
+  systemd.user.services.pipewire-pulse.restartTriggers = [
+    "${remoteAudioPipewireConf}/share/pipewire/pipewire.conf.d/10-remote-audio.conf"
+  ];
 
   ######################################
   # Some user setup: Most user-stuff will be in home-manager
