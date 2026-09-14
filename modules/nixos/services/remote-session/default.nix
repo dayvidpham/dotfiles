@@ -136,6 +136,16 @@ in
       description = "WAYLAND_DISPLAY of the compositor";
     };
 
+    tmuxTmpDir = mkOption {
+      type = types.str;
+      default = "/run/user/1000";
+      description = ''
+        TMUX_TMPDIR for the session, so terminals opened in it reach the same
+        tmux server as the normal login session (tmux resolves its socket under
+        $TMUX_TMPDIR, else /tmp).
+      '';
+    };
+
     outputMode = mkOption {
       type = types.nullOr types.str;
       default = null;
@@ -226,6 +236,7 @@ in
           "WLR_LIBINPUT_NO_DEVICES=1"
           "DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus"
           "HOME=/home/${cfg.user}"
+          "TMUX_TMPDIR=${cfg.tmuxTmpDir}"
           # sway's exec'd children (waybar, ghostty, scripts) need the user's
           # profile on PATH; a system service otherwise only sees the system one.
           # Home-manager standalone installs to ~/.nix-profile, not /etc/profiles.
