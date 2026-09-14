@@ -276,6 +276,9 @@ in
         Type = "simple";
         User = cfg.user;
         Group = "users";
+        # A system service's cwd defaults to /, which spawned terminals inherit
+        # (and run-cwd falls back to) — start the session in the user's home.
+        WorkingDirectory = "/home/${cfg.user}";
         ExecStartPre = "${pkgs.coreutils}/bin/mkdir -p -m 0700 ${cfg.runtimeDir}";
         Environment = [
           "XDG_RUNTIME_DIR=${cfg.runtimeDir}"
