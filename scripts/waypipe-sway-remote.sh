@@ -65,11 +65,17 @@ sweep_stale
 # nested compositor inside the host, and those execs hijack the host's user
 # session (clobbering WAYLAND_DISPLAY/SWAYSOCK, failing kanshi/waybar, and
 # dragging graphical-session services into a display that dies with the tunnel).
+#
+# Also force Ghostty to a new instance. Its default gtk-single-instance=detect
+# hands a launch to the already-running instance over the shared user D-Bus, so
+# a terminal opened here would appear in the host's local session instead.
 sway_config() {
   src="${XDG_CONFIG_HOME:-$HOME/.config}/sway/config"
   [ -f "$src" ] || return 1
   out="$RUNTIME_DIR/waypipe-sway.config"
-  grep -vE '^[[:space:]]*(exec|exec_always)[[:space:]].*(dbus-update-activation-environment|systemctl --user|polkit-gnome-authentication-agent)' "$src" > "$out" || true
+  grep -vE '^[[:space:]]*(exec|exec_always)[[:space:]].*(dbus-update-activation-environment|systemctl --user|polkit-gnome-authentication-agent)' "$src" \
+    | sed -E "s#(/bin/ghostty)(['[:space:]\"])#\1 --gtk-single-instance=false\2#g" \
+    > "$out" || true
   printf '%s\n' "$out"
 }
 
