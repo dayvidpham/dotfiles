@@ -2,6 +2,7 @@
   config,
   pkgs,
   lib ? config.lib,
+  osConfig ? { },
   ...
 }:
 let
@@ -12,6 +13,16 @@ let
     mkEnableOption
     getExe
     ;
+
+  # The login session's runtime dir (/run/user/<uid>). Home Manager's tmux
+  # module (secureSocket) otherwise sets TMUX_TMPDIR=$XDG_RUNTIME_DIR, which in
+  # a nested session (wayvnc/remote-session uses XDG_RUNTIME_DIR=/run/user/<uid>/remote)
+  # points somewhere with no tmux server, so `tmux a` fails there.
+  loginRuntimeDir =
+    let
+      uid = osConfig.users.users.${config.home.username}.uid or null;
+    in
+    if uid != null then "/run/user/${toString uid}" else "/run/user/1000";
 
   # Hook: capture Claude Code session IDs for tmux-resurrect restore.
   # Maps each Claude pane to its session UUID via ~/.claude/sessions/<PID>.json,
@@ -314,6 +325,11 @@ in
   config = mkIf cfg.enable {
     home.packages = [ sessionizer moveWindow repoTheme pkgs.sesh ]; # sesh: Prefix f picker in keybindings.tmux
     programs.zsh.shellAliases.tmux-help = cheatsheet;
+
+    # Override HM's tmux-module default ($XDG_RUNTIME_DIR) so every session's
+    # shells point at the login session's tmux server, including nested
+    # remote-session/VNC shells whose XDG_RUNTIME_DIR is /run/user/<uid>/remote.
+    home.sessionVariables.TMUX_TMPDIR = lib.mkForce loginRuntimeDir;
     programs.tmux = {
       enable = true;
       prefix = "M-Space";
