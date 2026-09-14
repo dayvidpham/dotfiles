@@ -52,8 +52,12 @@ independent of the transport.
 - VNC authentication/encryption is disabled: the tailnet (WireGuard) provides
   transport encryption and device authentication. To expose beyond the tailnet,
   enable wayvnc auth (TLS cert/key or RSA-AES, `enable_auth`).
-- The compositor renders with `WLR_RENDERER=pixman` (software); fine for
-  terminals/editors, weaker for GPU-heavy apps.
+- The compositor renders on the **AMD iGPU** (`WLR_RENDERER=gles2`,
+  `WLR_RENDER_DRM_DEVICE=/dev/dri/by-path/pci-0000:16:00.0-render`) with
+  `WLR_RENDERER_ALLOW_SOFTWARE=1` as a fallback. The AMD/Mesa (`radeonsi`) path
+  is used rather than the NVIDIA node for reliability with headless EGL; it
+  brings dmabuf support, so clients can use GL/Vulkan and wayvnc can use its
+  dmabuf path. Set `renderDevice = null` to fall back to software (pixman).
 - One virtual output; resolution is the wlroots headless default.
 - The sway config is the user's, filtered to drop the session-management execs
   (same transformation as the waypipe wrapper); keep the two in sync if you

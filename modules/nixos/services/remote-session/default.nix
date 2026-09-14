@@ -44,6 +44,19 @@ let
     '';
   };
 
+  # Renderer selection: GPU (gles2 on a DRM render node) when renderDevice is
+  # set, otherwise software (pixman). GPU enables dmabuf, so clients can use
+  # GL/Vulkan and wayvnc can use its dmabuf path; WLR_RENDERER_ALLOW_SOFTWARE
+  # keeps the session usable if EGL fails.
+  renderEnv =
+    if cfg.renderDevice == null
+    then [ "WLR_RENDERER=pixman" ]
+    else [
+      "WLR_RENDERER=gles2"
+      "WLR_RENDER_DRM_DEVICE=${cfg.renderDevice}"
+      "WLR_RENDERER_ALLOW_SOFTWARE=1"
+    ];
+
   wayvncConfig = pkgs.writeText "wayvnc-config" ''
     port=${toString cfg.port}
     enable_auth=false
@@ -130,6 +143,17 @@ in
       default = 30;
       description = "wayvnc frame-rate limit";
     };
+
+    renderDevice = mkOption {
+      type = types.nullOr types.str;
+      default = null;
+      description = ''
+        DRM render node for GPU rendering (e.g. an iGPU's
+        /dev/dri/by-path/pci-0000:16:00.0-render). When null, the compositor
+        uses the software renderer (pixman).
+      '';
+      example = "/dev/dri/by-path/pci-0000:16:00.0-render";
+    };
   };
 
   config = mkIf cfg.enable {
@@ -156,14 +180,14 @@ in
         Environment = [
           "XDG_RUNTIME_DIR=${cfg.runtimeDir}"
           "WLR_BACKENDS=headless"
-          "WLR_RENDERER=pixman"
           "WLR_LIBINPUT_NO_DEVICES=1"
           "DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus"
           "HOME=/home/${cfg.user}"
           # sway's exec'd children (waybar, ghostty, scripts) need the user's
           # profile on PATH; a system service otherwise only sees the system one.
-          "PATH=/etc/profiles/per-user/${cfg.user}/bin:/run/current-system/sw/bin:/usr/bin:/bin"
-        ];
+          # Home-manager standalone installs to ~/.nix-profile, not /etc/profiles.
+          "PATH=/home/${cfg.user}/.nix-profile/bin:/etc/profiles/per-user/${cfg.user}/bin:/run/current-system/sw/bin:/usr/bin:/bin"
+        ] ++ renderEnv;
         ExecStart = "${getExe swayWrapper}";
         ExecStop = "-${pkgs.sway}/bin/swaymsg -s ${cfg.runtimeDir}/${cfg.display} exit";
         Restart = "always";

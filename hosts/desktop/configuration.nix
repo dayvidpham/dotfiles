@@ -289,6 +289,9 @@
   CUSTOM.services.remote-session = {
     enable = true;
     user = "minttea";
+    # GPU rendering on the AMD iGPU (Mesa) rather than the NVIDIA node, which
+    # is more reliable for a headless EGL compositor.
+    renderDevice = "/dev/dri/by-path/pci-0000:16:00.0-render";
   };
 
   ######################################
