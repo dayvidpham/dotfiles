@@ -77,7 +77,16 @@ let
     extraPackages = basePackages ++ cfg.extraPackages
       ++ lib.optional cfg.podman.enable podman
       ++ lib.optional cfg.podman.enable dockerShim;
-    serviceOverrides = lib.optionalAttrs cfg.podman.enable {
+    serviceOverrides = {
+      # The job workspace must exist before systemd sets up the mount
+      # namespace for the unit's BindPaths. StateDirectory is created by
+      # systemd on every unit start; a tmpfiles rule would not be applied
+      # on the first nixos-rebuild switch.
+      StateDirectory = mkForce [
+        "github-runner/${runnerName}"
+        (lib.removePrefix "/var/lib/" (workDirFor runnerName))
+      ];
+    } // lib.optionalAttrs cfg.podman.enable {
       # Rootless podman needs real user/network namespaces, the setuid
       # newuidmap/newgidmap helpers, and its per-user socket under /run/user.
       PrivateUsers = false;
@@ -212,6 +221,13 @@ in
   };
 
   config = mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = lib.hasPrefix "/var/lib/" cfg.workDir;
+        message = "CUSTOM.services.github-runner.workDir must live under /var/lib so systemd can create it as a state directory before setting up the unit's mount namespace";
+      }
+    ];
+
     CUSTOM.virtualisation.podman.enable = mkIf cfg.podman.enable true;
 
     security.polkit.enable = mkDefault true; # Required for linger
@@ -242,10 +258,6 @@ in
         }
       ];
     };
-
-    systemd.tmpfiles.rules = map
-      (runnerName: "d ${workDirFor runnerName} 0700 ${cfg.user.name} ${cfg.user.name} - -")
-      runnerNames;
 
     services.github-runners = lib.genAttrs runnerNames mkRunner;
 
