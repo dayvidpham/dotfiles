@@ -757,3 +757,4 @@
 {"actor":"David Huu Pham","comment":null,"created_at":"2026-09-14T17:21:07Z","event_type":"created","id":764,"issue_id":"plabs-vyg","new_value":"","old_value":""}
 {"actor":"David Huu Pham","comment":null,"created_at":"2026-09-14T17:21:14Z","event_type":"closed","id":765,"issue_id":"plabs-63j","new_value":"Phases 1-2 implemented, gates green, pushed to origin/main; Phase 3 tracked in plabs-vyg.","old_value":""}
 {"actor":"David Huu Pham","comment":null,"created_at":"2026-09-15T00:24:32Z","event_type":"created","id":766,"issue_id":"plabs-72y","new_value":"","old_value":""}
+{"actor":"David Huu Pham","comment":null,"created_at":"2026-09-15T00:24:43Z","event_type":"closed","id":767,"issue_id":"plabs-vyg","new_value":"Runner pool deployed and proven end to end with a smoke PR; routing work moved to plabs-72y.","old_value":""}
