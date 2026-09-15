@@ -758,3 +758,7 @@
 {"actor":"David Huu Pham","comment":null,"created_at":"2026-09-14T17:21:14Z","event_type":"closed","id":765,"issue_id":"plabs-63j","new_value":"Phases 1-2 implemented, gates green, pushed to origin/main; Phase 3 tracked in plabs-vyg.","old_value":""}
 {"actor":"David Huu Pham","comment":null,"created_at":"2026-09-15T00:24:32Z","event_type":"created","id":766,"issue_id":"plabs-72y","new_value":"","old_value":""}
 {"actor":"David Huu Pham","comment":null,"created_at":"2026-09-15T00:24:43Z","event_type":"closed","id":767,"issue_id":"plabs-vyg","new_value":"Runner pool deployed and proven end to end with a smoke PR; routing work moved to plabs-72y.","old_value":""}
+{"actor":"David Huu Pham","comment":null,"created_at":"2026-09-15T01:29:23Z","event_type":"closed","id":768,"issue_id":"plabs-72y","new_value":"Superseded by the GitHub epic peasant-labs/peasant#420; the task mirror lives in the workspace Beads database (plabs-cm5v45).","old_value":""}
+{"actor":"David Huu Pham","comment":null,"created_at":"2026-09-15T12:03:43Z","event_type":"created","id":769,"issue_id":"plabs-7nr","new_value":"","old_value":""}
+{"actor":"David Huu Pham","comment":"Added label: tmux","created_at":"2026-09-15T12:03:43Z","event_type":"label_added","id":770,"issue_id":"plabs-7nr","new_value":null,"old_value":null}
+{"actor":"David Huu Pham","comment":"Added label: config","created_at":"2026-09-15T12:03:43Z","event_type":"label_added","id":771,"issue_id":"plabs-7nr","new_value":null,"old_value":null}

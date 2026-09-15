@@ -167,6 +167,8 @@
 {"issue_id":"plabs-6mh","label":"pasture:p9-impl:s9-slice"}
 {"issue_id":"plabs-6rh","label":"pasture:p9-impl:s9-slice"}
 {"issue_id":"plabs-6ui","label":"pasture:p9-impl:s9-slice"}
+{"issue_id":"plabs-7nr","label":"config"}
+{"issue_id":"plabs-7nr","label":"tmux"}
 {"issue_id":"plabs-7tg","label":"pasture:p4-plan:s4-review"}
 {"issue_id":"plabs-8hz","label":"pasture:p9-impl:s9-slice"}
 {"issue_id":"plabs-8u1","label":"pasture:p9-impl:s9-slice"}
