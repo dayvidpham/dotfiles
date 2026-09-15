@@ -22,6 +22,16 @@ let
 
   podman = config.virtualisation.podman.package;
 
+  # nixpkgs bundles only the node24 runtime. Actions that still declare
+  # node20 (for example actions/cache@v4) resolve externals/node20 and fail
+  # to start. Point that path at node24; the runner itself already remaps
+  # node20 actions onto node24 where it can.
+  runnerPackage = pkgs.github-runner.overrideAttrs (old: {
+    postInstall = (old.postInstall or "") + ''
+      ln -sfn node24 $out/lib/externals/node20
+    '';
+  });
+
   # `virtualisation.podman.dockerCompat` only installs the `docker` shim into
   # the system profile, which systemd services do not inherit.
   dockerShim = pkgs.runCommand "docker-podman-shim" { } ''
@@ -32,12 +42,14 @@ let
   # The nixpkgs module provides bash, coreutils, git, tar, gzip and nix;
   # jobs expect a normal Linux command set on top of that.
   basePackages = with pkgs; [
+    binutils
     curl
     diffutils
     file
     findutils
     gawk
     gnugrep
+    gnumake
     gnused
     jq
     less
@@ -60,6 +72,7 @@ let
     url = cfg.url;
     name = runnerName;
     replace = true;
+    package = runnerPackage;
     inherit (cfg) ephemeral runnerGroup tokenFile;
     extraLabels = cfg.labels;
     user = cfg.user.name;
@@ -98,6 +111,9 @@ let
       # which crun calls in the container's own UTS namespace. A non-root user
       # cannot change the host hostname either way.
       ProtectHostname = false;
+      # Job service containers fail to initialize when /proc/1/cgroup is
+      # hidden ("Could not find a part of the path '/proc/1/cgroup'").
+      ProtectProc = mkForce "default";
       # The upstream deny list is aimed at plain services; podman needs
       # mount/unshare/pivot_root.
       SystemCallFilter = mkForce [ ];
@@ -264,6 +280,11 @@ in
     };
 
     services.github-runners = lib.genAttrs runnerNames mkRunner;
+
+    # Do not interrupt a running job on nixos-rebuild switch. Ephemeral
+    # runners exit after each job, and systemd starts the updated unit then.
+    systemd.services = lib.genAttrs (map (runnerName: "github-runner-${runnerName}") runnerNames)
+      (_: { restartIfChanged = false; });
 
     nix.settings.allowed-users = mkIf cfg.nixAccess.enable [ cfg.user.name ];
 
