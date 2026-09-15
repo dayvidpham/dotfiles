@@ -48,6 +48,7 @@ let
     file
     findutils
     gawk
+    gcc # cgo linking for Go jobs (race detector, tree-sitter)
     gnugrep
     gnumake
     gnused
