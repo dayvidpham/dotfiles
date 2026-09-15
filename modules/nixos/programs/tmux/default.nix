@@ -16,6 +16,27 @@ let
     ;
 
   tmux = getExe pkgs.tmux;
+
+  # The login session's runtime dir (/run/user/<uid>). home-manager sets
+  # TMUX_TMPDIR to this so every shell talks to the same tmux server; the
+  # service must match it, otherwise it creates a second, invisible server
+  # under /tmp. Socket path: $TMUX_TMPDIR/tmux-<uid>/<socket name>.
+  #
+  # users.users.<name>.uid is null when NixOS auto-assigns the uid (and
+  # config.ids.uids only covers system users), so the runtime dir may only be
+  # known at runtime - the start/stop scripts resolve it with `id -u`.
+  uid = config.users.users.${cfg.server.user}.uid or null;
+  loginRuntimeDir = if uid != null then "/run/user/${toString uid}" else null;
+  userRuntimeDirUnit = if uid != null then "user-runtime-dir@${toString uid}.service" else null;
+  userHome = config.users.users.${cfg.server.user}.home or "/home/${cfg.server.user}";
+
+  # Prefix for ExecStart/ExecStop: resolve the real uid and export the
+  # runtime env so tmux targets the same socket the user's shells use.
+  runtimeEnv = ''
+    uid=$(id -u)
+    export TMUX_TMPDIR="''${TMUX_TMPDIR:-/run/user/$uid}"
+    export XDG_RUNTIME_DIR="''${XDG_RUNTIME_DIR:-/run/user/$uid}"
+  '';
 in
 {
   options.CUSTOM.programs.tmux = {
@@ -43,22 +64,35 @@ in
     # Enable lingering so user can attach to the session even after logout
     users.users.${cfg.server.user}.linger = true;
 
-    # System-level tmux service running as the specified user
-    # Socket created at /tmp/tmux-${UID}/default - user can attach with `tmux a`
+    # System-level tmux service running as the specified user.
+    # Socket at $TMUX_TMPDIR/tmux-<uid>/default (the login runtime dir) so
+    # user shells attach to this server with `tmux a`.
     systemd.services.tmux-server = {
       description = "Persistent tmux server for ${cfg.server.user}";
       documentation = [ "man:tmux(1)" ];
 
       wantedBy = [ "multi-user.target" ];
-      after = [ "network.target" ];
+      # /run/user/<uid> must exist before the server can create its socket
+      after = [ "network.target" ] ++ lib.optional (userRuntimeDirUnit != null) userRuntimeDirUnit;
+      wants = lib.optional (userRuntimeDirUnit != null) userRuntimeDirUnit;
 
       serviceConfig = {
         Type = "forking";
         User = cfg.server.user;
         Group = "users";
 
+        # HOME pins the config the server loads (~/.config/tmux/tmux.conf).
+        # TMUX_TMPDIR/XDG_RUNTIME_DIR are set here only when the uid is known
+        # at evaluation time; otherwise the scripts below resolve them.
+        Environment = [
+          "HOME=${userHome}"
+        ]
+        ++ lib.optional (loginRuntimeDir != null) "TMUX_TMPDIR=${loginRuntimeDir}"
+        ++ lib.optional (loginRuntimeDir != null) "XDG_RUNTIME_DIR=${loginRuntimeDir}";
+
         # Start tmux server, creating a session if none exist
         ExecStart = pkgs.writeShellScript "tmux-server-start" ''
+          ${runtimeEnv}
           if ${tmux} has-session 2>/dev/null; then
             echo "tmux server already running with sessions"
             exit 0
@@ -66,7 +100,11 @@ in
           exec ${tmux} new-session -d -s "${cfg.server.defaultSession}"
         '';
 
-        ExecStop = "${tmux} kill-server";
+        ExecStop = pkgs.writeShellScript "tmux-server-stop" ''
+          ${runtimeEnv}
+          exec ${tmux} kill-server
+        '';
+
         Restart = "on-failure";
         RestartSec = 5;
       };
