@@ -165,7 +165,7 @@ in
   # (Settings -> Actions -> Runners).
   CUSTOM.services.github-runner = {
     enable = true;
-    count = 2;
+    count = 4;
     labels = [ "nixos" "podman" ];
     runnerGroup = "minttea--desktop";
     tokenFile = config.sops.secrets."github-runner/token".path;
