@@ -159,6 +159,19 @@ in
     sudoInto.fromUser = "minttea";
   };
 
+  # GitHub Actions self-hosted runners for the peasant-labs org. Ephemeral
+  # runners register per job with the fine-grained PAT in sops; the "desktop"
+  # runner group must already exist in the org (Settings -> Actions -> Runners).
+  CUSTOM.services.github-runner = {
+    enable = true;
+    count = 2;
+    labels = [ "nixos" "podman" ];
+    runnerGroup = "desktop";
+    tokenFile = config.sops.secrets."github-runner/token".path;
+    sudoInto.enable = true;
+    sudoInto.fromUser = "minttea";
+  };
+
   #####################################################
   # Package management
   nixpkgs.config.cudaSupport = true;
@@ -277,6 +290,12 @@ in
     sopsFile = ../../secrets/dolt/secrets.yaml;
     key = "dolt_remote_password";
     owner = "minttea";
+  };
+
+  # GitHub Actions runner registration PAT (fine-grained, org self-hosted runners)
+  sops.secrets."github-runner/token" = {
+    sopsFile = ../../secrets/github-runner/secrets.yaml;
+    key = "github_runner_pat";
   };
 
   # Try getting AMD iGPU to work @_@
