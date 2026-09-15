@@ -160,13 +160,14 @@ in
   };
 
   # GitHub Actions self-hosted runners for the peasant-labs org. Ephemeral
-  # runners register per job with the fine-grained PAT in sops; the "desktop"
-  # runner group must already exist in the org (Settings -> Actions -> Runners).
+  # runners register per job with the fine-grained PAT in sops; the
+  # "minttea--desktop" runner group must already exist in the org
+  # (Settings -> Actions -> Runners).
   CUSTOM.services.github-runner = {
     enable = true;
     count = 2;
     labels = [ "nixos" "podman" ];
-    runnerGroup = "desktop";
+    runnerGroup = "minttea--desktop";
     tokenFile = config.sops.secrets."github-runner/token".path;
     sudoInto.enable = true;
     sudoInto.fromUser = "minttea";
