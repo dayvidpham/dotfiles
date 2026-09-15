@@ -94,6 +94,10 @@ let
       NoNewPrivileges = false;
       ProtectHome = false;
       PrivateDevices = false; # /dev/fuse, /dev/net/tun for podman storage/network
+      # ProtectHostname installs a seccomp filter that blocks sethostname(2),
+      # which crun calls in the container's own UTS namespace. A non-root user
+      # cannot change the host hostname either way.
+      ProtectHostname = false;
       # The upstream deny list is aimed at plain services; podman needs
       # mount/unshare/pivot_root.
       SystemCallFilter = mkForce [ ];
