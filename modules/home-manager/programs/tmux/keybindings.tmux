@@ -76,6 +76,10 @@ bind f display-popup -E "sesh connect $(sesh list | fzf --reverse --border --hei
 # Move current window to another session
 bind M display-popup -E "tmux-move-window"
 
+# Render the current window at a chosen attached client's size (popup picker).
+# Picking a client pins the window there; "auto" restores the global rule.
+bind Z display-popup -E "tmux-client-size '#{window_id}'"
+
 # Send pane: break into new window or join an existing one
 bind S display-menu -T "Send pane" \
   "New window"           n "break-pane" \

@@ -27,35 +27,68 @@ let
   # Hook: capture Claude Code session IDs for tmux-resurrect restore.
   # Maps each Claude pane to its session UUID via ~/.claude/sessions/<PID>.json,
   # and captures whether --dangerously-skip-permissions was active.
+  #
+  # One `tmux list-panes` call builds a pane_pid -> pane map; each session then
+  # walks its /proc parent chain with no further tmux clients (the old version
+  # called `tmux list-panes` once per process-tree level). The file is published
+  # atomically, and a previous good file is kept if the server doesn't answer.
   claudeSave = pkgs.writeShellScript "tmux-claude-save" ''
     CLAUDE_FILE="$HOME/.tmux/resurrect/claude_panes.txt"
-    : > "$CLAUDE_FILE"
+    TMP_FILE="$CLAUDE_FILE.tmp"
+
+    # One tmux call: pane pid -> session:window.pane
+    declare -A PANE_OF
+    panes_ok=0
+    while read -r pane_pid target; do
+      [ -n "$pane_pid" ] || continue
+      PANE_OF[$pane_pid]="$target"
+      panes_ok=1
+    done < <(${pkgs.coreutils}/bin/timeout 5 ${getExe pkgs.tmux} list-panes -a -F '#{pane_pid} #{session_name}:#{window_index}.#{pane_index}' 2>/dev/null)
+
+    # Server didn't answer - keep the previous good file instead of clobbering it
+    [ "$panes_ok" -eq 1 ] || exit 0
+
+    : > "$TMP_FILE"
 
     for sf in "$HOME"/.claude/sessions/*.json; do
-      pid=$(basename "$sf" .json)
-      session_id=$(${getExe pkgs.gnugrep} -o '"sessionId":"[^"]*"' "$sf" | cut -d'"' -f4)
+      [ -e "$sf" ] || continue
+      pid=''${sf##*/}
+      pid=''${pid%.json}
+      case "$pid" in ""|*[!0-9]*) continue ;; esac
+      [ -r "/proc/$pid/cmdline" ] || continue
+
+      # One cmdline read gives us both: is this really claude, and was bypass on?
+      bypass=""
+      is_claude=0
+      while IFS= read -r -d "" arg; do
+        [ "$arg" = "--dangerously-skip-permissions" ] && bypass="--dangerously-skip-permissions"
+        case "$arg" in claude|*/claude) is_claude=1 ;; esac
+      done < "/proc/$pid/cmdline"
+      [ "$is_claude" -eq 1 ] || continue # stale file / pid reuse guard
+
+      session_id=$(${getExe pkgs.gnugrep} -o '"sessionId":"[^"]*"' "$sf" | ${pkgs.coreutils}/bin/cut -d'"' -f4)
       [ -z "$session_id" ] && continue
 
-      # Walk up the process tree to find which tmux pane owns this process
-      check_pid=$pid
-      pane_target=""
-      while [ "$check_pid" -gt 1 ]; do
-        pane_target=$(tmux list-panes -a -F '#{pane_pid} #{session_name}:#{window_index}.#{pane_index}' 2>/dev/null \
-          | ${getExe pkgs.gawk} -v p="$check_pid" '$1 == p {print $2; exit}')
-        [ -n "$pane_target" ] && break
-        check_pid=$(${getExe pkgs.gawk} '{print $4}' /proc/"$check_pid"/stat 2>/dev/null)
-        [ -z "$check_pid" ] && break
+      # Walk parents in pure bash: /proc/<pid>/status PPid line, no forks
+      p=$pid
+      target=""
+      while [ "$p" -gt 1 ]; do
+        target="''${PANE_OF[$p]}"
+        [ -n "$target" ] && break
+        ppid=""
+        while read -r key val _; do
+          [ "$key" = "PPid:" ] && { ppid="$val"; break; }
+        done < "/proc/$p/status"
+        [ -n "$ppid" ] || break
+        p=$ppid
       done
-      [ -z "$pane_target" ] && continue
+      [ -n "$target" ] || continue
 
-      bypass=""
-      if tr '\0' ' ' < /proc/"$pid"/cmdline 2>/dev/null \
-          | ${getExe pkgs.gnugrep} -q -- '--dangerously-skip-permissions'; then
-        bypass="--dangerously-skip-permissions"
-      fi
-
-      printf '%s\t%s\t%s\n' "$pane_target" "$session_id" "$bypass" >> "$CLAUDE_FILE"
+      printf '%s\t%s\t%s\n' "$target" "$session_id" "$bypass" >> "$TMP_FILE"
     done
+
+    # Atomic publish
+    ${pkgs.coreutils}/bin/mv -f "$TMP_FILE" "$CLAUDE_FILE"
   '';
 
   # Hook: restore Claude Code sessions with exact session IDs
@@ -89,6 +122,53 @@ let
     if [[ -n "$target" ]]; then
       tmux move-window -t "$target:"
     fi
+  '';
+
+  # Picker: render the current window at a chosen attached client's size.
+  # Bound in keybindings.tmux (Prefix Z); the popup passes the target window.
+  # Picking a client pins the window via `resize-window` (sets window-size=manual
+  # on it); "auto" removes the override so the global window-size applies again.
+  clientSize = pkgs.writeShellScriptBin "tmux-client-size" ''
+    target_window="''${1:-}"
+    [ -n "$target_window" ] || target_window=$(${getExe pkgs.tmux} display-message -p '#{window_id}')
+
+    selection=$(
+      {
+        printf 'auto|-|global window-size (tmux decides)\n'
+        ${getExe pkgs.tmux} list-clients -F '#{client_tty}|#{client_width}x#{client_height}|#{client_session}|#{client_termname}'
+      } | ${getExe pkgs.fzf} --reverse --border --height=100% --prompt='Render window at> '
+    ) || exit 0
+    [ -n "$selection" ] || exit 0
+
+    IFS='|' read -r tty size session info <<< "$selection"
+
+    if [ "$tty" = "auto" ]; then
+      # Drop the per-window override; tmux refits via the global window-size
+      ${getExe pkgs.tmux} setw -t "$target_window" -u window-size
+      ${getExe pkgs.tmux} display-message "Window sizing: auto"
+      exit 0
+    fi
+
+    case "$size" in
+      [0-9]*x[0-9]*) ;;
+      *) exit 0 ;;
+    esac
+    w=''${size%x*}
+    h=''${size#*x}
+
+    # Status lines for this session (tmux's `status` option is the line count);
+    # the window area is client height minus status lines, as tmux computes it.
+    # -A includes inherited values: the session often only inherits `status`.
+    status_lines=$(${getExe pkgs.tmux} show-options -A -t "$session" -v status)
+    [ -n "$status_lines" ] || status_lines=$(${getExe pkgs.tmux} show-options -gv status)
+    if [ "$status_lines" = "off" ]; then
+      status_lines=0
+    elif [ -z "$status_lines" ] || [ "$status_lines" = "on" ]; then
+      status_lines=1
+    fi
+
+    ${getExe pkgs.tmux} resize-window -t "$target_window" -x "$w" -y "$((h - status_lines))"
+    ${getExe pkgs.tmux} display-message "Window sizing: pinned ''${w}x$((h - status_lines)) ($session, $info)"
   '';
 
   repoTheme = pkgs.writeShellScriptBin "tmux-repo-theme" ''
@@ -312,6 +392,7 @@ CONF
     │ Prefix S                │ Send pane to window # (prompt)      │
     │ Prefix R                │ Rename session (prompt)             │
     │ Prefix T                │ Name current pane (prompt)          │
+    │ Prefix Z                │ Render at client size (picker)      │
     │ tmux-sessionizer        │ Run from shell                      │
     └─────────────────────────┴─────────────────────────────────────┘
     "
@@ -323,7 +404,7 @@ in
   };
 
   config = mkIf cfg.enable {
-    home.packages = [ sessionizer moveWindow repoTheme pkgs.sesh ]; # sesh: Prefix f picker in keybindings.tmux
+    home.packages = [ sessionizer moveWindow repoTheme clientSize pkgs.sesh ]; # sesh: Prefix f picker in keybindings.tmux
     programs.zsh.shellAliases.tmux-help = cheatsheet;
 
     # Override HM's tmux-module default ($XDG_RUNTIME_DIR) so every session's
@@ -380,6 +461,10 @@ in
 
       # Source keybindings from symlinked file (edit without rebuild)
       extraConfig = ''
+        # Fit windows to the smallest attached client so nothing is ever clipped;
+        # Prefix Z (keybindings.tmux) can pin a window to a specific client's size.
+        setw -g window-size smallest
+
         source-file ~/.config/tmux/keybindings.tmux
       '';
     };
