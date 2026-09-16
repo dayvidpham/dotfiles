@@ -1,34 +1,61 @@
 # GitHub Actions self-hosted runners (desktop)
 
 Module: `modules/nixos/services/github-runner/`. Enabled in
-`hosts/desktop/configuration.nix`. The runner user's registration PAT is the
-sops secret `github-runner/token`; the routing jobs in the repositories use the
-organization secret `RUNNER_STATUS_TOKEN` (read-only runner list).
+`hosts/desktop/configuration.nix`. The runner registration PAT is the sops
+secret `github-runner/token` (owned by `minttea`); the routing jobs in the
+repositories use the organization secret `RUNNER_STATUS_TOKEN` (read-only
+runner list).
 
 ## How it works
 
-- Four ephemeral runners (`desktop-1..4`) in the organization runner group
-  `minttea--desktop`, labels `self-hosted`, `linux`, `x64`, `nixos`, `podman`.
-- Each runner handles one job, deregisters, and systemd registers a fresh
-  instance. `restartIfChanged = false` keeps a `nixos-rebuild switch` from
-  killing a running job; the update is picked up after the next job.
-- Jobs use the runner user's rootless podman socket via `DOCKER_HOST`; the
-  work directories are systemd state directories (created before the unit's
-  mount namespace is set up).
-- The routing probe lives in the infra repository
-  (`.github/workflows/runner-routing-probe.yml`, `workflow_dispatch`).
+- Four **rootless podman containers** (`desktop-container-1..4`) in the
+  organization runner group `minttea--desktop`, labels `self-hosted`, `linux`,
+  `x64`, `container`. The image is built from
+  `container/Containerfile` (Ubuntu 24.04 + actions/runner + build-essential +
+  docker CLI + gh + podman) and tagged `localhost/peasant-github-runner:<runner
+  version>`. A content stamp skips the rebuild when nothing changed.
+- The module's state tree (`stateDir`, default
+  `~/.local/share/github-runner-containers`) is mounted into every container at
+  the same path it has on the host, and holds three subtrees:
+  - `runners/<name>` — the runner install copy, credentials, `_diag`;
+  - `work/<name>` — `_work`, `_temp`, `_actions`, and `TMPDIR`;
+  - `cache` — shared toolchain (`AGENT_TOOLSDIRECTORY`), `GOMODCACHE`,
+    `GOCACHE`.
+  Path identity is what lets a job's **sibling containers** bind mount
+  workspace paths: service containers, `docker run` steps, `container:` jobs
+  (e.g. the AUR makepkg job), and the release e2e distro stacks all resolve
+  their mounts on the host.
+- The runner container mounts the host user's podman socket at
+  `/var/run/docker.sock` (`DOCKER_HOST` and `CONTAINER_HOST` both point there)
+  so the docker CLI tail the runner shells out to talks to the host engine.
+  `--network=host` keeps published ports reachable. The prepare unit grants the
+  container user's host-mapped uid access to the socket with `setfacl`.
+- Registration uses `config.sh --pat` with the sops PAT; the entrypoint
+  re-registers with `--replace` when the PAT rotates (stamp file in the runner
+  root). `ephemeral = true` switches to per-job registration.
+- Lifecycle is systemd user services for `minttea`:
+  `github-runner-image` (build), `github-runner-prepare` (directories + socket
+  ACL), `github-runner-container@<instance>` (one `podman run` in the
+  foreground per runner). The user has linger enabled, so the pool comes back
+  after a reboot and a `nixos-rebuild switch` restarts only what changed.
 
-## Hosted-parity quirks handled here
+## Hosted-parity notes
 
-- `gnumake`, `binutils`: hosted images ship `make` and `ar`; jobs call them.
-- `node20` runtime alias: nixpkgs ships the runner with `node24` only; some
-  actions (for example `actions/cache`) resolve `externals/node20`.
-- `ProtectProc = "default"`: the runner reads `/proc/1/cgroup` while
-  initializing job service containers; `invisible` hides it.
-- `ProtectHostname = false`: crun calls `sethostname(2)` in the container's
-  UTS namespace; the seccomp filter blocks it.
-- Sandbox relaxations for rootless podman: namespaces, setuid helpers,
-  `ProtectHome`, device access.
+The container image is Ubuntu, so the pool looks like a GitHub-hosted runner to
+jobs: `gcc`/`CGO_ENABLED=1` by default, apt available, node available to
+`setup-node`, no NixOS quirks (no `ProtectProc`, `ProtectHostname`, `node20`
+alias, or `make`/`ar` shims needed — those were host-native concerns).
+
+Known gaps:
+
+- **No Nix** inside the pool. Jobs that need `nix develop` (for example
+  Peasant's harvester version guard) stay on their previous runners until the
+  image grows Nix or those jobs get a container-native toolchain.
+- **Job containers cannot use the podman socket**: the runner passes
+  `-v /var/run/docker.sock:/var/run/docker.sock` to job containers, and that
+  host path does not exist for a sibling container. Jobs that need Docker
+  inside a `container:` job would need the socket bind adjusted at the host
+  path.
 
 ## Reference configurations
 
@@ -44,4 +71,5 @@ Working NixOS runner setups consulted while building this module:
 - `bitcoin-dev-tools/nix-github-runner` — full deployment with sops-managed
   registration tokens.
 - NixOS manual: `services.github-runners` options (nixpkgs
-  `nixos/modules/services/continuous-integration/github-runner/`).
+  `nixos/modules/services/continuous-integration/github-runner/`) — the
+  host-native implementation this module used before the containers.
