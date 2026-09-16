@@ -56,10 +56,11 @@ let
     "-e" "CONTAINER_HOST=unix:///var/run/docker.sock"
     "-e" "GITHUB_RUNNER_URL=${cfg.url}"
     "-e" "GITHUB_RUNNER_NAME=${instance}"
-    "-e" "GITHUB_RUNNER_TOKEN_FILE=/run/github-runner/token"
     "-e" "GITHUB_RUNNER_GROUP=${lib.optionalString (cfg.runnerGroup != null) cfg.runnerGroup}"
     "-e" "GITHUB_RUNNER_LABELS=${lib.concatStringsSep "," cfg.labels}"
     "-e" "GITHUB_RUNNER_EPHEMERAL=${if cfg.ephemeral then "1" else "0"}"
+    # Fallback path for the PAT when the host user cannot read it under this
+    # user's ownership; the primary path passes it through the environment.
     "-v" "${cfg.tokenFile}:/run/github-runner/token:ro"
     "-e" "RUNNER_ROOT=${cfg.stateDir}/runners/${instance}"
     "-e" "RUNNER_WORK=${cfg.stateDir}/work/${instance}"
@@ -67,8 +68,18 @@ let
     "-e" "AGENT_TOOLSDIRECTORY=${cfg.stateDir}/cache/_tool"
     "-e" "GOMODCACHE=${cfg.stateDir}/cache/gomod"
     "-e" "GOCACHE=${cfg.stateDir}/cache/gobuild"
-    "${imageTag}"
   ];
+
+  # The PAT is read by the host user (the module's sops secret is readable
+  # there) and handed to the container through its environment, so the
+  # container user never needs read access to the secret file. The entrypoint
+  # unsets it before the listener starts, so job steps cannot inherit it.
+  mkRunScript = instance: pkgs.writeShellScript "github-runner-run-${instance}" ''
+    set -euo pipefail
+    token="$(cat ${cfg.tokenFile})"
+    exec ${podman} ${lib.escapeShellArgs (mkPodmanRunArgs instance)} \
+      --env "GITHUB_RUNNER_TOKEN=$token" ${imageTag}
+  '';
 
   buildImage = pkgs.writeShellScript "github-runner-build-image" ''
     set -euo pipefail
@@ -240,7 +251,7 @@ in
         after = [ "github-runner-image.service" "github-runner-prepare.service" ];
         requires = [ "github-runner-image.service" "github-runner-prepare.service" ];
         serviceConfig = {
-          ExecStart = "${podman} ${lib.escapeShellArgs (mkPodmanRunArgs instance)}";
+          ExecStart = mkRunScript instance;
           ExecStop = "${podman} stop --time 60 github-runner-${instance}";
           TimeoutStopSec = 90;
           Restart = if cfg.ephemeral then "on-success" else "always";
