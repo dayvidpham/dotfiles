@@ -159,12 +159,14 @@ in
     sudoInto.fromUser = "minttea";
   };
 
-  # GitHub Actions self-hosted runners for the peasant-labs org. Ephemeral
-  # runners register per job with the fine-grained PAT in sops; the
-  # "minttea--desktop" runner group must already exist in the org
-  # (Settings -> Actions -> Runners).
+  # GitHub Actions self-hosted runners for the peasant-labs org are RETIRED on
+  # this host: the org pool is now containerized (podman containers running an
+  # Ubuntu runner image with the host podman socket mounted). The recipe lives
+  # in the workspace handoff and will move here as a systemd/quadlet unit when
+  # the pool gets its permanent home. Re-enable for a one-off host-native pool
+  # by setting enable = true and the count below.
   CUSTOM.services.github-runner = {
-    enable = true;
+    enable = false;
     count = 4;
     labels = [ "nixos" "podman" ];
     runnerGroup = "minttea--desktop";
