@@ -39,14 +39,17 @@ runner list).
   foreground per runner). The user has linger enabled, so the pool comes back
   after a reboot and a `nixos-rebuild switch` restarts only what changed.
 - **Resource isolation:** each runner has its own `github-runner-<n>.slice`
-  nested under the explicit `github-runner.slice` pool group, with limits from
-  `resources.runner` (per runner) and `resources.pool` (all runners together).
-  The service unit sets `Slice=` and the wrapper passes
-  `--cgroup-parent=github-runner-<n>.slice`, so the runner container and the
-  job processes inside it are bounded. Job-created containers (service
-  containers, `docker run` steps, job containers, e2e distro stacks) are
-  created through the host podman socket and land in their own scopes under
-  `user.slice`, so they are **not** covered by a runner's slice limits.
+  nested under the explicit `github-runner.slice` pool group. The pool slice is
+  the host-protection ceiling (hard `MemoryMax` with a soft `MemoryHigh`, and a
+  `CPUQuota` that reserves cores for the desktop); each runner slice is the
+  sibling fence (hard `MemoryMax`/`MemoryHigh` plus equal `CPUWeight`s, so a
+  lone runner can burst across the pool's idle cores). Limits come from
+  `resources.pool` and `resources.runner`. The service unit sets `Slice=` and
+  the wrapper passes `--cgroup-parent=github-runner-<n>.slice`, so the runner
+  container and the job processes inside it are bounded. Job-created
+  containers (service containers, `docker run` steps, job containers, e2e
+  distro stacks) are created through the host podman socket and land in their
+  own scopes under `user.slice`, so they are **not** covered by these limits.
 
 ## Hosted-parity notes
 

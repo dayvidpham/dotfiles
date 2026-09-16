@@ -38,16 +38,14 @@ let
 
   instanceNames = map (instance: instance.name) instances;
 
-  sliceConfig = lib.filterAttrs (_: value: value != null) {
-    MemoryMax = cfg.resources.runner.memoryMax;
-    CPUQuota = cfg.resources.runner.cpuQuota;
-    TasksMax = cfg.resources.runner.tasksMax;
-  };
-
-  poolSliceConfig = lib.filterAttrs (_: value: value != null) {
-    MemoryMax = cfg.resources.pool.memoryMax;
-    CPUQuota = cfg.resources.pool.cpuQuota;
-    TasksMax = cfg.resources.pool.tasksMax;
+  # systemd slice settings for one resource tier; null options are dropped so
+  # the slice keeps systemd's default for that knob.
+  mkSliceConfig = tier: lib.filterAttrs (_: value: value != null) {
+    MemoryMax = tier.memoryMax;
+    MemoryHigh = tier.memoryHigh;
+    CPUQuota = tier.cpuQuota;
+    CPUWeight = tier.cpuWeight;
+    TasksMax = tier.tasksMax;
   };
 
   containerDir = ./container;
@@ -204,13 +202,36 @@ in
           '';
         };
 
+        memoryHigh = mkOption {
+          type = types.nullOr types.str;
+          default = null;
+          example = "40G";
+          description = ''
+            `MemoryHigh` soft limit for the pool's parent slice: the kernel
+            reclaims and throttles before the hard {option}`resources.pool.memoryMax`
+            kill; `null` leaves it unset.
+          '';
+        };
+
         cpuQuota = mkOption {
           type = types.nullOr types.str;
           default = null;
-          example = "3200%";
+          example = "2400%";
           description = ''
-            `CPUQuota` for the pool's parent slice (100% is one core); `null`
-            leaves it unlimited.
+            `CPUQuota` for the pool's parent slice (100% is one core): a hard
+            bandwidth ceiling that reserves headroom for the rest of the
+            machine; `null` leaves it unlimited.
+          '';
+        };
+
+        cpuWeight = mkOption {
+          type = types.nullOr types.int;
+          default = null;
+          example = 100;
+          description = ''
+            `CPUWeight` for the pool's parent slice, its relative share against
+            the rest of the user session when CPU is contended (systemd default
+            100); `null` leaves it at the default.
           '';
         };
 
@@ -239,14 +260,36 @@ in
           '';
         };
 
+        memoryHigh = mkOption {
+          type = types.nullOr types.str;
+          default = null;
+          example = "10G";
+          description = ''
+            `MemoryHigh` soft limit per runner slice: reclaim pressure before
+            the hard {option}`resources.runner.memoryMax` kill; `null` leaves
+            it unset.
+          '';
+        };
+
         cpuQuota = mkOption {
           type = types.nullOr types.str;
           default = null;
           example = "800%";
           description = ''
-            `CPUQuota` for each runner's systemd slice (100% is one core);
-            `null` leaves it unlimited. Same coverage caveat as
-            {option}`resources.runner.memoryMax`.
+            `CPUQuota` hard bandwidth cap per runner slice (100% is one core).
+            Prefer {option}`resources.runner.cpuWeight` for CI: a quota caps
+            throughput even when the machine is idle.
+          '';
+        };
+
+        cpuWeight = mkOption {
+          type = types.nullOr types.int;
+          default = null;
+          example = 100;
+          description = ''
+            `CPUWeight` per runner slice: equal weights divide the pool's CPU
+            fairly under contention while a lone runner can still burst across
+            idle cores; `null` leaves it at systemd's default (100).
           '';
         };
 
@@ -363,11 +406,11 @@ in
     systemd.user.slices = {
       github-runner = {
         description = "GitHub Actions runner pool resource slice";
-        sliceConfig = poolSliceConfig;
+        sliceConfig = mkSliceConfig cfg.resources.pool;
       };
     } // lib.genAttrs (map (instance: instance.slice) instances) (slice: {
       description = "GitHub Actions runner resource slice ${slice}";
-      sliceConfig = sliceConfig;
+      sliceConfig = mkSliceConfig cfg.resources.runner;
     });
   };
 }

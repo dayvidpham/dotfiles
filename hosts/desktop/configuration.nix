@@ -170,19 +170,22 @@ in
     labels = [ "container" ];
     runnerGroup = "minttea--desktop";
     tokenFile = config.sops.secrets."github-runner/token".path;
-    # Bound the pool on a 32-core / 61 GB host: the parent slice caps all four
-    # runners together, each runner slice caps one. Job-created containers
-    # (service containers, job containers, e2e distro stacks) are separate
-    # scopes and are not covered by these limits.
+    # Bound the pool on a 32-core / 61 GB host. The parent slice is the
+    # host-protection ceiling (hard memory cap with a soft high water mark, and
+    # a CPU bandwidth cap that reserves ~8 cores for the desktop); each runner
+    # slice is the sibling fence: a hard memory cap plus equal CPU weights, so
+    # a lone runner can still burst across the pool's idle cores.
     resources = {
       pool = {
         memoryMax = "48G";
-        cpuQuota = "3200%";
+        memoryHigh = "40G";
+        cpuQuota = "2400%";
         tasksMax = 16384;
       };
       runner = {
         memoryMax = "12G";
-        cpuQuota = "800%";
+        memoryHigh = "10G";
+        cpuWeight = 100;
         tasksMax = 4096;
       };
     };
