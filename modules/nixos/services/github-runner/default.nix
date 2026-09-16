@@ -44,6 +44,8 @@ let
 
   mkPodmanRunArgs = instance: [
     "run" "--rm"
+    # --replace removes a leftover container with the same name after a crash.
+    "--replace"
     "--name" "github-runner-${instance}"
     "--network=host"
     # The whole state tree is mounted at its host path so sibling containers
