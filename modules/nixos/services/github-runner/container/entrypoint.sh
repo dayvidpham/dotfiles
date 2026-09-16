@@ -27,7 +27,7 @@ ephemeral="${GITHUB_RUNNER_EPHEMERAL:-0}"
 mkdir -p "$root" "$work/tmp"
 cd "$root"
 
-for f in config.sh run.sh run-helper.sh env.sh bin externals; do
+for f in config.sh run.sh run-helper.sh.template env.sh bin externals; do
   if [ ! -e "$root/$f" ] && [ -e "/home/runner/$f" ]; then
     cp -a "/home/runner/$f" "$root/"
   fi
