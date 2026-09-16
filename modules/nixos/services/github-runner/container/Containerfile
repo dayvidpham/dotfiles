@@ -1,0 +1,54 @@
+# GitHub Actions runner container image (Ubuntu 24.04).
+#
+# Built by the github-runner NixOS module with rootless podman; the module owns
+# the run flags. The runner works from a host-visible root directory so sibling
+# containers started by jobs (service containers, `docker run` steps, job
+# containers, e2e distro stacks) can bind mount workspace paths.
+FROM docker.io/library/ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=0
+ARG RUNNER_VERSION=2.337.0
+ARG DOCKER_VERSION=27.5.1
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+       ca-certificates \
+       curl \
+       git \
+       gh \
+       jq \
+       build-essential \
+       libicu74 \
+       podman \
+       sudo \
+  && rm -rf /var/lib/apt/lists/*
+
+RUN useradd -m runner \
+  && echo "runner ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+# Static docker CLI: the runner shells out to `docker` for service containers,
+# `docker run` steps, and job containers. Against the mounted host podman
+# socket it must be the real docker client, not a podman symlink (nested
+# podman cannot set up its inner userns).
+RUN curl -fsSL -o /tmp/docker.tgz \
+      "https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz" \
+  && tar -xzf /tmp/docker.tgz -C /tmp docker/docker \
+  && install -m 0755 /tmp/docker/docker /usr/local/bin/docker \
+  && rm -rf /tmp/docker.tgz /tmp/docker \
+  && docker --version
+
+WORKDIR /home/runner
+
+RUN curl -fsSL -o runner.tar.gz \
+      "https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz" \
+  && tar xzf runner.tar.gz \
+  && rm runner.tar.gz \
+  && ./bin/installdependencies.sh \
+  && chown -R runner:runner /home/runner
+
+COPY entrypoint.sh /usr/local/bin/github-runner-entrypoint
+RUN chmod 0755 /usr/local/bin/github-runner-entrypoint
+
+USER runner
+
+ENTRYPOINT ["/usr/local/bin/github-runner-entrypoint"]

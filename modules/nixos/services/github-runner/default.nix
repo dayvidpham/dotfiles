@@ -7,151 +7,130 @@ let
   cfg = config.CUSTOM.services.github-runner;
 
   inherit (lib)
-    mkDefault
+    concatMapStringsSep
+    escapeShellArg
+    genAttrs
     mkEnableOption
-    mkForce
     mkIf
     mkOption
     types
     ;
 
-  # Kept clear of the subid ranges used by minttea and gitlab-runner
-  # (100000-265534) and the openclaw instances (300000-431071).
-  subIdStart = 500000;
-  subIdCount = 65536;
+  podman = "${config.virtualisation.podman.package}/bin/podman";
 
-  podman = config.virtualisation.podman.package;
+  # The in-container runner user is uid 1001; rootless podman maps it onto the
+  # host user's subuid range, so the host-side owner is startUid + 1000. The
+  # module needs that host uid to grant the container access to the podman
+  # socket (setfacl) and to hand the runner its directories.
+  subUidStart = (lib.head config.users.users.${cfg.user}.subUidRanges).startUid;
+  containerHostUid = subUidStart + 1000;
 
-  # nixpkgs bundles only the node24 runtime. Actions that still declare
-  # node20 (for example actions/cache@v4) resolve externals/node20 and fail
-  # to start. Point that path at node24; the runner itself already remaps
-  # node20 actions onto node24 where it can.
-  runnerPackage = pkgs.github-runner.overrideAttrs (old: {
-    postInstall = (old.postInstall or "") + ''
-      ln -sfn node24 $out/lib/externals/node20
-    '';
-  });
+  instanceNames = map (i: "${cfg.name}-${toString i}") (lib.range 1 cfg.count);
 
-  # `virtualisation.podman.dockerCompat` only installs the `docker` shim into
-  # the system profile, which systemd services do not inherit.
-  dockerShim = pkgs.runCommand "docker-podman-shim" { } ''
-    mkdir -p $out/bin
-    ln -s ${podman}/bin/podman $out/bin/docker
-  '';
+  containerDir = ./container;
+  containerfile = "${containerDir}/Containerfile";
+  entrypoint = "${containerDir}/entrypoint.sh";
 
-  # The nixpkgs module provides bash, coreutils, git, tar, gzip and nix;
-  # jobs expect a normal Linux command set on top of that.
-  basePackages = with pkgs; [
-    binutils
-    curl
-    diffutils
-    file
-    findutils
-    gawk
-    gcc # cgo linking for Go jobs (race detector, tree-sitter)
-    gnugrep
-    gnumake
-    gnused
-    jq
-    less
-    openssh
-    procps
-    psmisc
-    unzip
-    which
-    xz
-    zip
-    zstd
+  imageTag = "localhost/peasant-github-runner:${cfg.runnerVersion}";
+
+  imageHash = builtins.substring 0 12 (builtins.hashString "sha256"
+    (builtins.readFile containerfile + builtins.readFile entrypoint));
+
+  # %t is the user manager's runtime directory (/run/user/<uid>), so the
+  # container always mounts the podman socket of the user running it.
+  socketPath = "%t/podman/podman.sock";
+
+  mkPodmanRunArgs = instance: [
+    "run" "--rm"
+    "--name" "github-runner-${instance}"
+    "--network=host"
+    # The whole state tree is mounted at its host path so sibling containers
+    # started by jobs can bind mount workspace paths by identical path.
+    "-v" "${cfg.stateDir}:${cfg.stateDir}"
+    "-v" "${socketPath}:/var/run/docker.sock"
+    "-e" "DOCKER_HOST=unix:///var/run/docker.sock"
+    "-e" "CONTAINER_HOST=unix:///var/run/docker.sock"
+    "-e" "GITHUB_RUNNER_URL=${cfg.url}"
+    "-e" "GITHUB_RUNNER_NAME=${instance}"
+    "-e" "GITHUB_RUNNER_TOKEN_FILE=/run/github-runner/token"
+    "-e" "GITHUB_RUNNER_GROUP=${lib.optionalString (cfg.runnerGroup != null) cfg.runnerGroup}"
+    "-e" "GITHUB_RUNNER_LABELS=${lib.concatStringsSep "," cfg.labels}"
+    "-e" "GITHUB_RUNNER_EPHEMERAL=${if cfg.ephemeral then "1" else "0"}"
+    "-v" "${cfg.tokenFile}:/run/github-runner/token:ro"
+    "-e" "RUNNER_ROOT=${cfg.stateDir}/runners/${instance}"
+    "-e" "RUNNER_WORK=${cfg.stateDir}/work/${instance}"
+    "-e" "TMPDIR=${cfg.stateDir}/work/${instance}/tmp"
+    "-e" "AGENT_TOOLSDIRECTORY=${cfg.stateDir}/cache/_tool"
+    "-e" "GOMODCACHE=${cfg.stateDir}/cache/gomod"
+    "-e" "GOCACHE=${cfg.stateDir}/cache/gobuild"
+    "${imageTag}"
   ];
 
-  runnerNames = map (i: "${cfg.name}-${toString i}") (lib.range 1 cfg.count);
+  buildImage = pkgs.writeShellScript "github-runner-build-image" ''
+    set -euo pipefail
+    mkdir -p ${escapeShellArg cfg.stateDir}
+    stamp=${escapeShellArg "${cfg.stateDir}/.image-stamp"}
+    hash=${escapeShellArg imageHash}
+    if ${podman} image exists ${escapeShellArg imageTag} \
+      && [ -f "$stamp" ] && [ "$(cat "$stamp")" = "$hash" ]; then
+      exit 0
+    fi
+    ${podman} build --tag ${escapeShellArg imageTag} \
+      --file ${containerfile} ${containerDir}
+    printf '%s' "$hash" > "$stamp"
+  '';
 
-  workDirFor = name: "${cfg.workDir}/${name}";
-
-  mkRunner = runnerName: {
-    enable = true;
-    url = cfg.url;
-    name = runnerName;
-    replace = true;
-    package = runnerPackage;
-    inherit (cfg) ephemeral runnerGroup tokenFile;
-    extraLabels = cfg.labels;
-    user = cfg.user.name;
-    group = cfg.user.name;
-    workDir = workDirFor runnerName;
-    extraEnvironment = {
-      # systemd services do not inherit the interactive shell CA setup.
-      SSL_CERT_FILE = "/etc/ssl/certs/ca-bundle.crt";
-      CURL_CA_BUNDLE = "/etc/ssl/certs/ca-bundle.crt";
-    } // lib.optionalAttrs cfg.podman.enable {
-      # Jobs talk to the runner user's rootless podman socket, never the
-      # root-equivalent system socket.
-      DOCKER_HOST = "unix:///run/user/${toString cfg.user.uid}/podman/podman.sock";
-    } // cfg.extraEnvironment;
-    extraPackages = basePackages ++ cfg.extraPackages
-      ++ lib.optional cfg.podman.enable podman
-      ++ lib.optional cfg.podman.enable dockerShim;
-    serviceOverrides = {
-      # The job workspace must exist before systemd sets up the mount
-      # namespace for the unit's BindPaths. StateDirectory is created by
-      # systemd on every unit start; a tmpfiles rule would not be applied
-      # on the first nixos-rebuild switch.
-      StateDirectory = mkForce [
-        "github-runner/${runnerName}"
-        (lib.removePrefix "/var/lib/" (workDirFor runnerName))
-      ];
-    } // lib.optionalAttrs cfg.podman.enable {
-      # Rootless podman needs real user/network namespaces, the setuid
-      # newuidmap/newgidmap helpers, and its per-user socket under /run/user.
-      PrivateUsers = false;
-      RestrictNamespaces = false;
-      NoNewPrivileges = false;
-      ProtectHome = false;
-      PrivateDevices = false; # /dev/fuse, /dev/net/tun for podman storage/network
-      # ProtectHostname installs a seccomp filter that blocks sethostname(2),
-      # which crun calls in the container's own UTS namespace. A non-root user
-      # cannot change the host hostname either way.
-      ProtectHostname = false;
-      # Job service containers fail to initialize when /proc/1/cgroup is
-      # hidden ("Could not find a part of the path '/proc/1/cgroup'").
-      ProtectProc = mkForce "default";
-      # The upstream deny list is aimed at plain services; podman needs
-      # mount/unshare/pivot_root.
-      SystemCallFilter = mkForce [ ];
-      # The upstream "optimizations" neutralize the setuid newuidmap/newgidmap
-      # helpers and drop all capabilities, which rootless podman requires.
-      RestrictSUIDSGID = false;
-      AmbientCapabilities = mkForce [ ];
-      CapabilityBoundingSet = mkForce [ ];
-      DeviceAllow = mkForce [ ];
-    } // cfg.serviceOverrides;
-  };
+  prepareState = pkgs.writeShellScript "github-runner-prepare-state" ''
+    set -euo pipefail
+    runtime="''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+    socket="$runtime/podman/podman.sock"
+    ${concatMapStringsSep "\n" (instance: ''
+      mkdir -p ${escapeShellArg cfg.stateDir}/runners/${instance} \
+               ${escapeShellArg cfg.stateDir}/work/${instance}/tmp
+    '') instanceNames}
+    mkdir -p ${escapeShellArg cfg.stateDir}/cache
+    # The shared root stays with the host user; each runner subtree belongs to
+    # the in-container runner user's host-mapped uid.
+    ${podman} unshare chown 0:0 ${escapeShellArg cfg.stateDir}
+    ${concatMapStringsSep "\n" (instance: ''
+      ${podman} unshare chown -R ${toString containerHostUid}:${toString containerHostUid} \
+        ${escapeShellArg cfg.stateDir}/runners/${instance} \
+        ${escapeShellArg cfg.stateDir}/work/${instance}
+    '') instanceNames}
+    ${podman} unshare chown -R ${toString containerHostUid}:${toString containerHostUid} \
+      ${escapeShellArg cfg.stateDir}/cache
+    if [ ! -S "$socket" ]; then
+      echo "github-runner: $socket is not present; is the podman user socket running?" >&2
+      exit 1
+    fi
+    ${pkgs.acl}/bin/setfacl -m u:${toString containerHostUid}:rw "$socket"
+  '';
 in
 {
   options.CUSTOM.services.github-runner = {
-    enable = mkEnableOption "GitHub Actions self-hosted runner";
+    enable = mkEnableOption "GitHub Actions self-hosted runner containers (rootless podman)";
 
     url = mkOption {
       type = types.str;
       default = "https://github.com/peasant-labs";
-      description = "GitHub organization (or repository) the runner registers against";
+      description = "GitHub organization URL the runners register against";
     };
 
     name = mkOption {
       type = types.str;
-      default = config.networking.hostName;
+      default = "${config.networking.hostName}-container";
       description = "Base runner name; instances are suffixed -1..count";
     };
 
     count = mkOption {
       type = types.int;
       default = 1;
-      description = "Runner instances to run; each handles one job at a time";
+      description = "Runner containers to run; each handles one job at a time";
     };
 
     labels = mkOption {
       type = types.listOf types.str;
-      default = [ "nixos" "podman" ];
+      default = [ "container" ];
       description = "Extra labels on top of the default self-hosted/linux/x64 labels";
     };
 
@@ -160,149 +139,108 @@ in
       default = null;
       description = ''
         Organization runner group. Must already exist in GitHub before the
-        service starts, otherwise registration fails.
-      '';
-    };
-
-    ephemeral = mkOption {
-      type = types.bool;
-      default = true;
-      description = ''
-        Register per job and wipe runner state afterwards. Requires a
-        fine-grained PAT in {option}`tokenFile`.
+        containers start, otherwise registration fails.
       '';
     };
 
     tokenFile = mkOption {
       type = types.path;
       description = ''
-        File containing a fine-grained PAT with organization "Self-hosted
+        File holding a fine-grained PAT with organization "Self-hosted
         runners: Read and write" permission (or a classic admin:org PAT).
+        Must be readable by {option}`user`.
       '';
       example = "/run/secrets/github-runner/token";
     };
 
-    user.name = mkOption {
-      type = types.str;
-      default = "github-runner";
-      description = "System user the runner and its jobs run as";
-    };
-
-    user.uid = mkOption {
-      type = types.int;
-      default = 981;
-      description = "UID for the runner user";
-    };
-
-    workDir = mkOption {
-      type = types.str;
-      default = "/var/lib/github-runner/work";
-      description = "Parent directory for per-instance job workspaces";
-    };
-
-    nixAccess.enable = mkOption {
+    ephemeral = mkOption {
       type = types.bool;
-      default = true;
-      description = "Allow the runner user to talk to the Nix daemon (nix.settings.allowed-users)";
+      default = false;
+      description = ''
+        Register per job and wipe runner state afterwards. Ephemeral runners
+        re-register through the PAT before every job.
+      '';
     };
 
-    podman.enable = mkOption {
-      type = types.bool;
-      default = true;
-      description = "Rootless podman access for jobs, via a docker-compatible socket";
+    user = mkOption {
+      type = types.str;
+      default = "minttea";
+      description = "Host user whose rootless podman runs the containers and owns the state tree";
     };
 
-    extraPackages = mkOption {
-      type = types.listOf types.package;
-      default = [ ];
-      description = "Additional packages on the runner's PATH";
+    stateDir = mkOption {
+      type = types.str;
+      default = "/home/${cfg.user}/.local/share/github-runner-containers";
+      description = ''
+        Host directory holding the runner install copies, workspaces and
+        shared caches. It is mounted into the containers at the same path so
+        sibling containers can bind mount workspace paths.
+      '';
     };
 
-    extraEnvironment = mkOption {
-      type = types.attrs;
-      default = { };
-      description = "Additional environment variables for the runner service";
-    };
-
-    serviceOverrides = mkOption {
-      type = types.attrs;
-      default = { };
-      description = "systemd service overrides, merged last (see services.github-runners)";
-    };
-
-    sudoInto = {
-      enable = mkEnableOption "passwordless sudo login to the runner user for debugging";
-      fromUser = mkOption {
-        type = types.str;
-        default = null;
-        description = "User allowed to call sudo -u <runner> -i without a password";
-        example = "minttea";
-      };
+    runnerVersion = mkOption {
+      type = types.str;
+      default = "2.337.0";
+      description = "actions/runner release to bake into the image";
     };
   };
 
   config = mkIf cfg.enable {
     assertions = [
       {
-        assertion = lib.hasPrefix "/var/lib/" cfg.workDir;
-        message = "CUSTOM.services.github-runner.workDir must live under /var/lib so systemd can create it as a state directory before setting up the unit's mount namespace";
+        assertion = config.users.users.${cfg.user}.subUidRanges != [ ];
+        message = "CUSTOM.services.github-runner.user must have subuid ranges for rootless podman";
       }
     ];
 
-    CUSTOM.virtualisation.podman.enable = mkIf cfg.podman.enable true;
+    CUSTOM.virtualisation.podman.enable = true;
 
-    security.polkit.enable = mkDefault true; # Required for linger
+    systemd.user.services = {
+      # Image build: podman builds from the module's Containerfile, guarded by
+      # a content stamp so a rebuild only happens when the inputs change.
+      github-runner-image = {
+        description = "Build the GitHub Actions runner container image";
+        after = [ "podman.socket" ];
+        requires = [ "podman.socket" ];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          ExecStart = buildImage;
+        };
+        wantedBy = [ "default.target" ];
+      };
 
-    users.groups.${cfg.user.name} = { };
+      # Shared directories and the podman socket ACL the containers need.
+      github-runner-prepare = {
+        description = "Prepare GitHub Actions runner container state";
+        after = [ "podman.socket" ];
+        requires = [ "podman.socket" ];
+        serviceConfig = {
+          Type = "oneshot";
+          RemainAfterExit = true;
+          ExecStart = prepareState;
+        };
+        wantedBy = [ "default.target" ];
+      };
 
-    users.extraUsers.${cfg.user.name} = {
-      name = cfg.user.name;
-      group = cfg.user.name;
-      description = "For GitHub Actions runners";
-      uid = cfg.user.uid;
-      isNormalUser = false;
-      isSystemUser = true;
-      createHome = true;
-      home = "/var/lib/${cfg.user.name}";
-      homeMode = "0770";
-      linger = true; # NOTE: requires security.polkit.enable = true
-      subUidRanges = [
-        {
-          startUid = subIdStart;
-          count = subIdCount;
-        }
-      ];
-      subGidRanges = [
-        {
-          startGid = subIdStart;
-          count = subIdCount;
-        }
-      ];
-    };
-
-    services.github-runners = lib.genAttrs runnerNames mkRunner;
-
-    # Do not interrupt a running job on nixos-rebuild switch. Ephemeral
-    # runners exit after each job, and systemd starts the updated unit then.
-    systemd.services = lib.genAttrs (map (runnerName: "github-runner-${runnerName}") runnerNames)
-      (_: { restartIfChanged = false; });
-
-    nix.settings.allowed-users = mkIf cfg.nixAccess.enable [ cfg.user.name ];
-
-    security.sudo = mkIf cfg.sudoInto.enable {
-      enable = true;
-      extraRules = [
-        {
-          users = [ cfg.sudoInto.fromUser ];
-          runAs = cfg.user.name;
-          commands = [
-            {
-              command = "ALL";
-              options = [ "NOPASSWD" "SETENV" ];
-            }
-          ];
-        }
-      ];
-    };
+      # One container per instance. The template runs `podman run` in the
+      # foreground so systemd owns the lifecycle; the entrypoint registers on
+      # first start (or when the PAT rotates) and then launches the listener.
+      "github-runner-container@" = {
+        description = "GitHub Actions runner container %i";
+        after = [ "github-runner-image.service" "github-runner-prepare.service" ];
+        requires = [ "github-runner-image.service" "github-runner-prepare.service" ];
+        serviceConfig = {
+          ExecStart = "${podman} ${lib.escapeShellArgs (mkPodmanRunArgs "%i")}";
+          ExecStop = "${podman} stop --time 60 github-runner-%i";
+          TimeoutStopSec = 90;
+          Restart = if cfg.ephemeral then "on-success" else "always";
+          RestartSec = 5;
+        };
+        wantedBy = [ "default.target" ];
+      };
+    } // genAttrs
+      (map (instance: "github-runner-container@${instance}") instanceNames)
+      (_: { wantedBy = [ "default.target" ]; });
   };
 }

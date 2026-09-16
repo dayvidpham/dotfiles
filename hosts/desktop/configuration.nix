@@ -159,20 +159,17 @@ in
     sudoInto.fromUser = "minttea";
   };
 
-  # GitHub Actions self-hosted runners for the peasant-labs org are RETIRED on
-  # this host: the org pool is now containerized (podman containers running an
-  # Ubuntu runner image with the host podman socket mounted). The recipe lives
-  # in the workspace handoff and will move here as a systemd/quadlet unit when
-  # the pool gets its permanent home. Re-enable for a one-off host-native pool
-  # by setting enable = true and the count below.
+  # GitHub Actions self-hosted runners for the peasant-labs org. Rootless
+  # podman containers built from the module's Containerfile; the containers
+  # carry the "container" label and the org router selects them when a runner
+  # is online. The "minttea--desktop" runner group must already exist in the
+  # org (Settings -> Actions -> Runners).
   CUSTOM.services.github-runner = {
-    enable = false;
+    enable = true;
     count = 4;
-    labels = [ "nixos" "podman" ];
+    labels = [ "container" ];
     runnerGroup = "minttea--desktop";
     tokenFile = config.sops.secrets."github-runner/token".path;
-    sudoInto.enable = true;
-    sudoInto.fromUser = "minttea";
   };
 
   #####################################################
@@ -295,10 +292,13 @@ in
     owner = "minttea";
   };
 
-  # GitHub Actions runner registration PAT (fine-grained, org self-hosted runners)
+  # GitHub Actions runner registration PAT (fine-grained, org self-hosted
+  # runners). Owned by the host user because the runner containers run under
+  # that user's rootless podman.
   sops.secrets."github-runner/token" = {
     sopsFile = ../../secrets/github-runner/secrets.yaml;
     key = "github_runner_pat";
+    owner = "minttea";
   };
 
   # Try getting AMD iGPU to work @_@
