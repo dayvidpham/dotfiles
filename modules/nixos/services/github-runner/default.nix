@@ -18,12 +18,14 @@ let
 
   podman = "${config.virtualisation.podman.package}/bin/podman";
 
-  # The in-container runner user is uid 1001; rootless podman maps it onto the
-  # host user's subuid range, so the host-side owner is startUid + 1000. The
-  # module needs that host uid to grant the container access to the podman
-  # socket (setfacl) and to hand the runner its directories.
+  # The image's runner user is uid 1001 (Ubuntu's first user occupies 1000), and
+  # rootless podman maps it onto the host user's subuid range:
+  #   host uid = subUidStart + runnerUid - 1
+  # `podman unshare chown` takes the in-container uid; the podman socket ACL
+  # needs the host uid.
+  runnerUid = 1001;
   subUidStart = (lib.head config.users.users.${cfg.user}.subUidRanges).startUid;
-  containerHostUid = subUidStart + 1000;
+  runnerHostUid = subUidStart + runnerUid - 1;
 
   instanceNames = map (i: "${cfg.name}-${toString i}") (lib.range 1 cfg.count);
 
@@ -93,17 +95,17 @@ let
     # the in-container runner user's host-mapped uid.
     ${podman} unshare chown 0:0 ${escapeShellArg cfg.stateDir}
     ${concatMapStringsSep "\n" (instance: ''
-      ${podman} unshare chown -R ${toString containerHostUid}:${toString containerHostUid} \
+      ${podman} unshare chown -R ${toString runnerUid}:${toString runnerUid} \
         ${escapeShellArg cfg.stateDir}/runners/${instance} \
         ${escapeShellArg cfg.stateDir}/work/${instance}
     '') instanceNames}
-    ${podman} unshare chown -R ${toString containerHostUid}:${toString containerHostUid} \
+    ${podman} unshare chown -R ${toString runnerUid}:${toString runnerUid} \
       ${escapeShellArg cfg.stateDir}/cache
     if [ ! -S "$socket" ]; then
       echo "github-runner: $socket is not present; is the podman user socket running?" >&2
       exit 1
     fi
-    ${pkgs.acl}/bin/setfacl -m u:${toString containerHostUid}:rw "$socket"
+    ${pkgs.acl}/bin/setfacl -m u:${toString runnerHostUid}:rw "$socket"
   '';
 in
 {
