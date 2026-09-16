@@ -38,6 +38,14 @@ runner list).
   ACL), `github-runner-container@<instance>` (one `podman run` in the
   foreground per runner). The user has linger enabled, so the pool comes back
   after a reboot and a `nixos-rebuild switch` restarts only what changed.
+- **Resource isolation:** each runner has its own `github-runner-<n>.slice`
+  with the limits from `resources` (`memoryMax`, `cpuQuota`, `tasksMax`); the
+  service unit sets `Slice=` and the wrapper passes
+  `--cgroup-parent=github-runner-<n>.slice`, so the runner container and the
+  job processes inside it are bounded. Job-created containers (service
+  containers, `docker run` steps, job containers, e2e distro stacks) are
+  created through the host podman socket and land in their own scopes under
+  `user.slice`, so they are **not** covered by a runner's slice limits.
 
 ## Hosted-parity notes
 

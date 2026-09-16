@@ -170,6 +170,14 @@ in
     labels = [ "container" ];
     runnerGroup = "minttea--desktop";
     tokenFile = config.sops.secrets."github-runner/token".path;
+    # Bound each runner on a 32-core / 64 GB host. Job-created containers
+    # (service containers, job containers, e2e distro stacks) are separate
+    # scopes and are not covered by these limits.
+    resources = {
+      memoryMax = "12G";
+      cpuQuota = "800%";
+      tasksMax = 4096;
+    };
   };
 
   #####################################################

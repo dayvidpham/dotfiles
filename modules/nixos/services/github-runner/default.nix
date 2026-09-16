@@ -27,7 +27,22 @@ let
   subUidStart = (lib.head config.users.users.${cfg.user}.subUidRanges).startUid;
   runnerHostUid = subUidStart + runnerUid - 1;
 
-  instanceNames = map (i: "${cfg.name}-${toString i}") (lib.range 1 cfg.count);
+  # Each runner lives in its own systemd slice so its cgroup tree (the runner
+  # container and the job processes inside it) can carry resource limits. The
+  # slice name is index-based to keep the implicit slice hierarchy shallow:
+  # systemd nests `a-b-c.slice` under `a-b.slice` under `a.slice`.
+  instances = map (i: {
+    name = "${cfg.name}-${toString i}";
+    slice = "github-runner-${toString i}";
+  }) (lib.range 1 cfg.count);
+
+  instanceNames = map (instance: instance.name) instances;
+
+  sliceConfig = lib.filterAttrs (_: value: value != null) {
+    MemoryMax = cfg.resources.memoryMax;
+    CPUQuota = cfg.resources.cpuQuota;
+    TasksMax = cfg.resources.tasksMax;
+  };
 
   containerDir = ./container;
   containerfile = "${containerDir}/Containerfile";
@@ -38,11 +53,14 @@ let
   imageHash = builtins.substring 0 12 (builtins.hashString "sha256"
     (builtins.readFile containerfile + builtins.readFile entrypoint));
 
-  mkPodmanRunArgs = instance: [
+  mkPodmanRunArgs = instance: slice: [
     "run" "--rm"
     # --replace removes a leftover container with the same name after a crash.
     "--replace"
     "--name" "github-runner-${instance}"
+    # Keep the container payload inside the runner's own systemd slice so the
+    # slice's MemoryMax/CPUQuota apply to the jobs, not just to the CLI.
+    "--cgroup-parent=${slice}.slice"
     "--network=host"
     # The whole state tree is mounted at its host path so sibling containers
     # started by jobs can bind mount workspace paths by identical path.
@@ -71,12 +89,12 @@ let
   # unsets it before the listener starts, so job steps cannot inherit it.
   # The podman socket is resolved when the script runs: systemd specifiers
   # (%t) only expand in the unit's ExecStart line, not inside a script body.
-  mkRunScript = instance: pkgs.writeShellScript "github-runner-run-${instance}" ''
+  mkRunScript = instance: slice: pkgs.writeShellScript "github-runner-run-${instance}" ''
     set -euo pipefail
     runtime="''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
     socket="$runtime/podman/podman.sock"
     token="$(cat ${cfg.tokenFile})"
-    exec ${podman} ${lib.escapeShellArgs (mkPodmanRunArgs instance)} \
+    exec ${podman} ${lib.escapeShellArgs (mkPodmanRunArgs instance slice)} \
       --volume "$socket:/var/run/docker.sock" \
       --env "GITHUB_RUNNER_TOKEN=$token" ${imageTag}
   '';
@@ -168,6 +186,42 @@ in
       example = "/run/secrets/github-runner/token";
     };
 
+    resources = {
+      memoryMax = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        example = "12G";
+        description = ''
+          `MemoryMax` for each runner's systemd slice. The runner container and
+          the job processes inside it run under this limit; `null` leaves it
+          unlimited. Containers that jobs start through the podman socket
+          (service containers, `docker run` steps, job containers) are separate
+          scopes and are NOT covered.
+        '';
+      };
+
+      cpuQuota = mkOption {
+        type = types.nullOr types.str;
+        default = null;
+        example = "800%";
+        description = ''
+          `CPUQuota` for each runner's systemd slice (100% is one core); `null`
+          leaves it unlimited. Same coverage caveat as
+          {option}`memoryMax`.
+        '';
+      };
+
+      tasksMax = mkOption {
+        type = types.nullOr types.int;
+        default = null;
+        example = 4096;
+        description = ''
+          `TasksMax` for each runner's systemd slice (process/thread cap);
+          `null` leaves it at systemd's default.
+        '';
+      };
+    };
+
     ephemeral = mkOption {
       type = types.bool;
       default = false;
@@ -245,20 +299,28 @@ in
       # lifecycle; the entrypoint registers on first start (or when the PAT
       # rotates) and then launches the listener.
     } // lib.listToAttrs (map (instance: {
-      name = "github-runner-container@${instance}";
+      name = "github-runner-container@${instance.name}";
       value = {
-        description = "GitHub Actions runner container ${instance}";
+        description = "GitHub Actions runner container ${instance.name}";
         after = [ "github-runner-image.service" "github-runner-prepare.service" ];
         requires = [ "github-runner-image.service" "github-runner-prepare.service" ];
         serviceConfig = {
-          ExecStart = mkRunScript instance;
-          ExecStop = "${podman} stop --time 60 github-runner-${instance}";
+          Slice = "${instance.slice}.slice";
+          ExecStart = mkRunScript instance.name instance.slice;
+          ExecStop = "${podman} stop --time 60 github-runner-${instance.name}";
           TimeoutStopSec = 90;
           Restart = if cfg.ephemeral then "on-success" else "always";
           RestartSec = 5;
         };
         wantedBy = [ "default.target" ];
       };
-    }) instanceNames);
+    }) instances);
+
+    # One resource slice per runner. The runner unit and its container payload
+    # live inside it, so MemoryMax/CPUQuota/TasksMax bound what jobs can use.
+    systemd.user.slices = lib.genAttrs (map (instance: instance.slice) instances) (slice: {
+      description = "GitHub Actions runner resource slice ${slice}";
+      sliceConfig = sliceConfig;
+    });
   };
 }
