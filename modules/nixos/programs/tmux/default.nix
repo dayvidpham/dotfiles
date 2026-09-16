@@ -89,9 +89,10 @@ in
       wants = lib.optional (userRuntimeDirUnit != null) userRuntimeDirUnit;
 
       # The server runs the plugin/hook scripts (continuum, resurrect) with
-      # this PATH instead of a login shell's, so it needs the tools those
-      # scripts use - plus the user profile for keybindings like Prefix Z /
-      # Prefix M / Prefix f.
+      # this PATH instead of a login shell's: it needs the tools those scripts
+      # use, the user profile for keybindings (Prefix Z/M/f, wl-copy, ...) and
+      # the system profile - without a shell they fail with 127 and the
+      # plugins (continuum restore, ...) never load.
       path = [
         cfg.server.package
         pkgs.procps
@@ -102,7 +103,8 @@ in
         pkgs.findutils
         pkgs.gnutar
         pkgs.gzip
-        (builtins.toPath "${userHome}/.nix-profile/bin")
+        (builtins.toPath "${userHome}/.nix-profile")
+        config.system.path
       ];
 
       serviceConfig = {
