@@ -223,24 +223,26 @@ in
         wantedBy = [ "default.target" ];
       };
 
-      # One container per instance. The template runs `podman run` in the
-      # foreground so systemd owns the lifecycle; the entrypoint registers on
-      # first start (or when the PAT rotates) and then launches the listener.
-      "github-runner-container@" = {
-        description = "GitHub Actions runner container %i";
+      # One container per instance. Each instance gets its own unit (NixOS
+      # writes every systemd.user.services attribute as a unit file; a
+      # separate template attribute does not supply ExecStart to them). The
+      # unit runs `podman run` in the foreground so systemd owns the
+      # lifecycle; the entrypoint registers on first start (or when the PAT
+      # rotates) and then launches the listener.
+    } // genAttrs
+      (map (instance: "github-runner-container@${instance}") instanceNames)
+      (instance: {
+        description = "GitHub Actions runner container ${instance}";
         after = [ "github-runner-image.service" "github-runner-prepare.service" ];
         requires = [ "github-runner-image.service" "github-runner-prepare.service" ];
         serviceConfig = {
-          ExecStart = "${podman} ${lib.escapeShellArgs (mkPodmanRunArgs "%i")}";
-          ExecStop = "${podman} stop --time 60 github-runner-%i";
+          ExecStart = "${podman} ${lib.escapeShellArgs (mkPodmanRunArgs instance)}";
+          ExecStop = "${podman} stop --time 60 github-runner-${instance}";
           TimeoutStopSec = 90;
           Restart = if cfg.ephemeral then "on-success" else "always";
           RestartSec = 5;
         };
         wantedBy = [ "default.target" ];
-      };
-    } // genAttrs
-      (map (instance: "github-runner-container@${instance}") instanceNames)
-      (_: { wantedBy = [ "default.target" ]; });
+      });
   };
 }
