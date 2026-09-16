@@ -39,9 +39,15 @@ let
   instanceNames = map (instance: instance.name) instances;
 
   sliceConfig = lib.filterAttrs (_: value: value != null) {
-    MemoryMax = cfg.resources.memoryMax;
-    CPUQuota = cfg.resources.cpuQuota;
-    TasksMax = cfg.resources.tasksMax;
+    MemoryMax = cfg.resources.runner.memoryMax;
+    CPUQuota = cfg.resources.runner.cpuQuota;
+    TasksMax = cfg.resources.runner.tasksMax;
+  };
+
+  poolSliceConfig = lib.filterAttrs (_: value: value != null) {
+    MemoryMax = cfg.resources.pool.memoryMax;
+    CPUQuota = cfg.resources.pool.cpuQuota;
+    TasksMax = cfg.resources.pool.tasksMax;
   };
 
   containerDir = ./container;
@@ -187,38 +193,72 @@ in
     };
 
     resources = {
-      memoryMax = mkOption {
-        type = types.nullOr types.str;
-        default = null;
-        example = "12G";
-        description = ''
-          `MemoryMax` for each runner's systemd slice. The runner container and
-          the job processes inside it run under this limit; `null` leaves it
-          unlimited. Containers that jobs start through the podman socket
-          (service containers, `docker run` steps, job containers) are separate
-          scopes and are NOT covered.
-        '';
+      pool = {
+        memoryMax = mkOption {
+          type = types.nullOr types.str;
+          default = null;
+          example = "48G";
+          description = ''
+            `MemoryMax` for the pool's parent slice (`github-runner.slice`),
+            the ceiling for all runners together; `null` leaves it unlimited.
+          '';
+        };
+
+        cpuQuota = mkOption {
+          type = types.nullOr types.str;
+          default = null;
+          example = "3200%";
+          description = ''
+            `CPUQuota` for the pool's parent slice (100% is one core); `null`
+            leaves it unlimited.
+          '';
+        };
+
+        tasksMax = mkOption {
+          type = types.nullOr types.int;
+          default = null;
+          example = 16384;
+          description = ''
+            `TasksMax` for the pool's parent slice; `null` leaves it at
+            systemd's default.
+          '';
+        };
       };
 
-      cpuQuota = mkOption {
-        type = types.nullOr types.str;
-        default = null;
-        example = "800%";
-        description = ''
-          `CPUQuota` for each runner's systemd slice (100% is one core); `null`
-          leaves it unlimited. Same coverage caveat as
-          {option}`memoryMax`.
-        '';
-      };
+      runner = {
+        memoryMax = mkOption {
+          type = types.nullOr types.str;
+          default = null;
+          example = "12G";
+          description = ''
+            `MemoryMax` for each runner's systemd slice. The runner container
+            and the job processes inside it run under this limit; `null`
+            leaves it unlimited. Containers that jobs start through the podman
+            socket (service containers, `docker run` steps, job containers)
+            are separate scopes and are NOT covered.
+          '';
+        };
 
-      tasksMax = mkOption {
-        type = types.nullOr types.int;
-        default = null;
-        example = 4096;
-        description = ''
-          `TasksMax` for each runner's systemd slice (process/thread cap);
-          `null` leaves it at systemd's default.
-        '';
+        cpuQuota = mkOption {
+          type = types.nullOr types.str;
+          default = null;
+          example = "800%";
+          description = ''
+            `CPUQuota` for each runner's systemd slice (100% is one core);
+            `null` leaves it unlimited. Same coverage caveat as
+            {option}`resources.runner.memoryMax`.
+          '';
+        };
+
+        tasksMax = mkOption {
+          type = types.nullOr types.int;
+          default = null;
+          example = 4096;
+          description = ''
+            `TasksMax` for each runner's systemd slice (process/thread cap);
+            `null` leaves it at systemd's default.
+          '';
+        };
       };
     };
 
@@ -316,9 +356,16 @@ in
       };
     }) instances);
 
-    # One resource slice per runner. The runner unit and its container payload
-    # live inside it, so MemoryMax/CPUQuota/TasksMax bound what jobs can use.
-    systemd.user.slices = lib.genAttrs (map (instance: instance.slice) instances) (slice: {
+    # One resource slice per runner, all nested under the explicit
+    # github-runner.slice pool group. The runner unit and its container payload
+    # live inside the runner slice, so MemoryMax/CPUQuota/TasksMax bound what
+    # jobs can use; the pool slice bounds all runners together.
+    systemd.user.slices = {
+      github-runner = {
+        description = "GitHub Actions runner pool resource slice";
+        sliceConfig = poolSliceConfig;
+      };
+    } // lib.genAttrs (map (instance: instance.slice) instances) (slice: {
       description = "GitHub Actions runner resource slice ${slice}";
       sliceConfig = sliceConfig;
     });

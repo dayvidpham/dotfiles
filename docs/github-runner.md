@@ -39,8 +39,9 @@ runner list).
   foreground per runner). The user has linger enabled, so the pool comes back
   after a reboot and a `nixos-rebuild switch` restarts only what changed.
 - **Resource isolation:** each runner has its own `github-runner-<n>.slice`
-  with the limits from `resources` (`memoryMax`, `cpuQuota`, `tasksMax`); the
-  service unit sets `Slice=` and the wrapper passes
+  nested under the explicit `github-runner.slice` pool group, with limits from
+  `resources.runner` (per runner) and `resources.pool` (all runners together).
+  The service unit sets `Slice=` and the wrapper passes
   `--cgroup-parent=github-runner-<n>.slice`, so the runner container and the
   job processes inside it are bounded. Job-created containers (service
   containers, `docker run` steps, job containers, e2e distro stacks) are
