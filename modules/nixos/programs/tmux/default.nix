@@ -94,7 +94,7 @@ in
         pkgs.gawk
         pkgs.coreutils
         pkgs.findutils
-        pkgs.tar
+        pkgs.gnutar
         pkgs.gzip
         (builtins.toPath "${userHome}/.nix-profile/bin")
       ];
