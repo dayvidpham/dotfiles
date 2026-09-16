@@ -71,6 +71,12 @@ in
       description = "Persistent tmux server for ${cfg.server.user}";
       documentation = [ "man:tmux(1)" ];
 
+      # Never restart on nixos-rebuild switch: the service manages the same
+      # server the user's shells attach to, so a switch-driven restart would
+      # kill every session (continuum restores them, but avoid the surprise).
+      # Apply unit changes explicitly with `systemctl restart tmux-server`.
+      restartIfChanged = false;
+
       wantedBy = [ "multi-user.target" ];
       # /run/user/<uid> must exist before the server can create its socket
       after = [ "network.target" ] ++ lib.optional (userRuntimeDirUnit != null) userRuntimeDirUnit;
