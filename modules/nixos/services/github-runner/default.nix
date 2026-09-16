@@ -229,9 +229,9 @@ in
       # unit runs `podman run` in the foreground so systemd owns the
       # lifecycle; the entrypoint registers on first start (or when the PAT
       # rotates) and then launches the listener.
-    } // genAttrs
-      (map (instance: "github-runner-container@${instance}") instanceNames)
-      (instance: {
+    } // lib.listToAttrs (map (instance: {
+      name = "github-runner-container@${instance}";
+      value = {
         description = "GitHub Actions runner container ${instance}";
         after = [ "github-runner-image.service" "github-runner-prepare.service" ];
         requires = [ "github-runner-image.service" "github-runner-prepare.service" ];
@@ -243,6 +243,7 @@ in
           RestartSec = 5;
         };
         wantedBy = [ "default.target" ];
-      });
+      };
+    }) instanceNames);
   };
 }
