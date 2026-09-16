@@ -163,8 +163,12 @@
 {"issue_id":"plabs-2p6","label":"pasture:superseded"}
 {"issue_id":"plabs-5lo","label":"pasture:p9-impl:s9-slice"}
 {"issue_id":"plabs-622","label":"pasture:p9-impl:s9-slice"}
+{"issue_id":"plabs-6ah","label":"config"}
+{"issue_id":"plabs-6ah","label":"tmux"}
 {"issue_id":"plabs-6hc","label":"pasture:p9-impl:s9-slice"}
 {"issue_id":"plabs-6mh","label":"pasture:p9-impl:s9-slice"}
+{"issue_id":"plabs-6ms","label":"config"}
+{"issue_id":"plabs-6ms","label":"tmux"}
 {"issue_id":"plabs-6pa","label":"nix"}
 {"issue_id":"plabs-6pa","label":"tmux"}
 {"issue_id":"plabs-6rh","label":"pasture:p9-impl:s9-slice"}
