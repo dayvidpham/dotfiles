@@ -15,7 +15,7 @@ let
     getExe
     ;
 
-  tmux = getExe pkgs.tmux;
+  tmux = getExe cfg.server.package;
 
   # The login session's runtime dir (/run/user/<uid>). home-manager sets
   # TMUX_TMPDIR to this so every shell talks to the same tmux server; the
@@ -47,6 +47,12 @@ in
         type = types.str;
         description = "The user to run tmux server as";
         example = "minttea";
+      };
+
+      package = mkOption {
+        type = types.package;
+        default = pkgs.tmux;
+        description = "tmux package for the persistent server; keep it in sync with the clients (programs.tmux.package)";
       };
 
       defaultSession = mkOption {
@@ -87,7 +93,7 @@ in
       # scripts use - plus the user profile for keybindings like Prefix Z /
       # Prefix M / Prefix f.
       path = [
-        pkgs.tmux
+        cfg.server.package
         pkgs.procps
         pkgs.gnugrep
         pkgs.gnused

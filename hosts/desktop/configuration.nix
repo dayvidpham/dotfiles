@@ -312,6 +312,9 @@ in
   CUSTOM.programs.tmux.server = {
     enable = true;
     user = "minttea";
+    # Match home-manager's programs.tmux.package (pkgs-unstable) so server and
+    # clients are the same version - the config/plugins assume 3.7 sort names.
+    package = pkgs-unstable.tmux;
   };
 
   ############################
