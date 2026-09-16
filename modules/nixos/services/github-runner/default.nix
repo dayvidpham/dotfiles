@@ -38,10 +38,6 @@ let
   imageHash = builtins.substring 0 12 (builtins.hashString "sha256"
     (builtins.readFile containerfile + builtins.readFile entrypoint));
 
-  # %t is the user manager's runtime directory (/run/user/<uid>), so the
-  # container always mounts the podman socket of the user running it.
-  socketPath = "%t/podman/podman.sock";
-
   mkPodmanRunArgs = instance: [
     "run" "--rm"
     # --replace removes a leftover container with the same name after a crash.
@@ -51,7 +47,6 @@ let
     # The whole state tree is mounted at its host path so sibling containers
     # started by jobs can bind mount workspace paths by identical path.
     "-v" "${cfg.stateDir}:${cfg.stateDir}"
-    "-v" "${socketPath}:/var/run/docker.sock"
     "-e" "DOCKER_HOST=unix:///var/run/docker.sock"
     "-e" "CONTAINER_HOST=unix:///var/run/docker.sock"
     "-e" "GITHUB_RUNNER_URL=${cfg.url}"
@@ -74,10 +69,15 @@ let
   # there) and handed to the container through its environment, so the
   # container user never needs read access to the secret file. The entrypoint
   # unsets it before the listener starts, so job steps cannot inherit it.
+  # The podman socket is resolved when the script runs: systemd specifiers
+  # (%t) only expand in the unit's ExecStart line, not inside a script body.
   mkRunScript = instance: pkgs.writeShellScript "github-runner-run-${instance}" ''
     set -euo pipefail
+    runtime="''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+    socket="$runtime/podman/podman.sock"
     token="$(cat ${cfg.tokenFile})"
     exec ${podman} ${lib.escapeShellArgs (mkPodmanRunArgs instance)} \
+      --volume "$socket:/var/run/docker.sock" \
       --env "GITHUB_RUNNER_TOKEN=$token" ${imageTag}
   '';
 
