@@ -181,6 +181,8 @@
 {"issue_id":"plabs-ahv","label":"pasture:p9-impl:s9-slice"}
 {"issue_id":"plabs-b5g","label":"pasture:p5-user:s5-uat"}
 {"issue_id":"plabs-brd","label":"pasture:p4-plan:s4-review"}
+{"issue_id":"plabs-cdj","label":"config"}
+{"issue_id":"plabs-cdj","label":"tmux"}
 {"issue_id":"plabs-cj9","label":"pasture:p9-impl:s9-slice"}
 {"issue_id":"plabs-cvp","label":"pasture:p9-impl:s9-slice"}
 {"issue_id":"plabs-cwj","label":"pasture:p9-impl:s9-slice"}
