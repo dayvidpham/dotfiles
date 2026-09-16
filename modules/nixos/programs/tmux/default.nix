@@ -82,10 +82,30 @@ in
       after = [ "network.target" ] ++ lib.optional (userRuntimeDirUnit != null) userRuntimeDirUnit;
       wants = lib.optional (userRuntimeDirUnit != null) userRuntimeDirUnit;
 
+      # The server runs the plugin/hook scripts (continuum, resurrect) with
+      # this PATH instead of a login shell's, so it needs the tools those
+      # scripts use - plus the user profile for keybindings like Prefix Z /
+      # Prefix M / Prefix f.
+      path = [
+        pkgs.tmux
+        pkgs.procps
+        pkgs.gnugrep
+        pkgs.gnused
+        pkgs.gawk
+        pkgs.coreutils
+        pkgs.findutils
+        pkgs.tar
+        pkgs.gzip
+        (builtins.toPath "${userHome}/.nix-profile/bin")
+      ];
+
       serviceConfig = {
         Type = "forking";
         User = cfg.server.user;
         Group = "users";
+
+        # System services default to /; tmux should start sessions in $HOME.
+        WorkingDirectory = userHome;
 
         # HOME pins the config the server loads (~/.config/tmux/tmux.conf).
         # TMUX_TMPDIR/XDG_RUNTIME_DIR are set here only when the uid is known
