@@ -199,6 +199,8 @@
 {"issue_id":"plabs-j24","label":"pasture:p3-plan:s3-propose"}
 {"issue_id":"plabs-j24","label":"pasture:p6-plan:s6-ratify"}
 {"issue_id":"plabs-kw7","label":"pasture:p4-plan:s4-review"}
+{"issue_id":"plabs-kye","label":"config"}
+{"issue_id":"plabs-kye","label":"tmux"}
 {"issue_id":"plabs-l7x","label":"pasture:p9-impl:s9-slice"}
 {"issue_id":"plabs-lu5","label":"pasture:p8-impl:s8-plan"}
 {"issue_id":"plabs-lu5","label":"pasture:p8-impl:s8_1-plan"}
