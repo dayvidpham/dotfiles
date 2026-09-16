@@ -50,6 +50,9 @@ runner list).
   containers (service containers, `docker run` steps, job containers, e2e
   distro stacks) are created through the host podman socket and land in their
   own scopes under `user.slice`, so they are **not** covered by these limits.
+  Changing a limit takes effect after `systemctl --user daemon-reload` (the
+  switch writes the slice unit files; the running user manager applies the
+  changed resource settings on reload) or a reboot.
 
 ## Hosted-parity notes
 
