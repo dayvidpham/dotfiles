@@ -71,10 +71,10 @@ in
       description = "Persistent tmux server for ${cfg.server.user}";
       documentation = [ "man:tmux(1)" ];
 
-      # Never restart on nixos-rebuild switch: the service manages the same
-      # server the user's shells attach to, so a switch-driven restart would
-      # kill every session (continuum restores them, but avoid the surprise).
-      # Apply unit changes explicitly with `systemctl restart tmux-server`.
+      # The switch machinery starts/stops this unit (it has the default
+      # systemd dependencies on sysinit.target); with a normal ExecStop that
+      # would run `tmux kill-server` on every rebuild. This unit is a boot
+      # starter only - it must never signal the server (see KillMode below).
       restartIfChanged = false;
 
       wantedBy = [ "multi-user.target" ];
@@ -106,10 +106,12 @@ in
           exec ${tmux} new-session -d -s "${cfg.server.defaultSession}"
         '';
 
-        ExecStop = pkgs.writeShellScript "tmux-server-stop" ''
-          ${runtimeEnv}
-          exec ${tmux} kill-server
-        '';
+        # Default KillMode would cgroup-kill the server if this unit is ever
+        # stopped (service-started server); with no ExecStop and no cgroup
+        # kill, no switch, stop or restart of the unit can end the server.
+        # To actually kill the server: `tmux kill-server`.
+        KillMode = "none";
+        TimeoutStopSec = 5;
 
         Restart = "on-failure";
         RestartSec = 5;
