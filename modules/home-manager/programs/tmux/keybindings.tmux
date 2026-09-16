@@ -78,7 +78,9 @@ bind M display-popup -E "tmux-move-window"
 
 # Render the current window at a chosen attached client's size (popup picker).
 # Picking a client pins the window there; "auto" restores the global rule.
-bind Z display-popup -E "tmux-client-size '#{window_id}'"
+# display-popup does not format-expand its command, so expand #{window_id}
+# via run-shell -C (same trick as the tree binding above).
+bind Z run-shell -C 'display-popup -E "tmux-client-size #{window_id}"'
 
 # Send pane: break into new window or join an existing one
 bind S display-menu -T "Send pane" \
