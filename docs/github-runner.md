@@ -28,7 +28,8 @@ runner list).
 - The runner container mounts the host user's podman socket at
   `/var/run/docker.sock` (`DOCKER_HOST` and `CONTAINER_HOST` both point there)
   so the docker CLI tail the runner shells out to talks to the host engine.
-  `--network=host` keeps published ports reachable.
+  `--network=host` keeps published ports reachable. The socket already belongs
+  to the host user, which is the agent's host identity, so no ACL is needed.
 - **Single-owner workspaces:** the agent runs as the container's root
   (`--user 0` with `RUNNER_ALLOW_RUNASROOT=1`), which under rootless podman maps
   to the host user — the same identity that root inside job containers and
@@ -44,8 +45,8 @@ runner list).
   re-registers with `--replace` when the PAT rotates (stamp file in the runner
   root). `ephemeral = true` switches to per-job registration.
 - Lifecycle is systemd user services for `minttea`:
-  `github-runner-image` (build), `github-runner-prepare` (directories + socket
-  ACL), `github-runner-container@<instance>` (one `podman run` in the
+  `github-runner-image` (build), `github-runner-prepare` (directories and
+  state ownership), `github-runner-container@<instance>` (one `podman run` in the
   foreground per runner). The user has linger enabled, so the pool comes back
   after a reboot and a `nixos-rebuild switch` restarts only what changed.
 - **Resource isolation:** each runner has its own `github-runner-<n>.slice`
