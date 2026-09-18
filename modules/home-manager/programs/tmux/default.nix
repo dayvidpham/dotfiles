@@ -439,6 +439,10 @@ in
           extraConfig = ''
             set -g @resurrect-strategy-nvim 'session'
             set -g @resurrect-capture-pane-contents 'on'
+            # Capture only the visible screen per pane, not the full 10k-line
+            # history: full-history captures across ~50 panes swamped the
+            # server during saves under IO pressure (2026-09-18 hang).
+            set -g @resurrect-pane-contents-area 'visible'
             set -g @resurrect-hook-post-save-all '${claudeSave}'
             set -g @resurrect-hook-post-restore-all '${claudeRestore}'
           '';
@@ -447,7 +451,10 @@ in
           plugin = continuum;
           extraConfig = ''
             set -g @continuum-restore 'on'
-            set -g @continuum-save-interval '5'
+            # 15 min (was 5): under IO pressure a save could take longer than
+            # 5 min, so saves overlapped and piled capture-pane load on the
+            # server until it stopped responding (2026-09-18).
+            set -g @continuum-save-interval '15'
           '';
         }
         {
@@ -464,6 +471,10 @@ in
         # Fit windows to the smallest attached client so nothing is ever clipped;
         # Prefix Z (keybindings.tmux) can pin a window to a specific client's size.
         setw -g window-size smallest
+
+        # tmux-sensible sets this to 5s; 15s cuts the status-right
+        # #(continuum_save.sh) fork churn by 3x. Must load after the plugins.
+        set -g status-interval 15
 
         source-file ~/.config/tmux/keybindings.tmux
       '';

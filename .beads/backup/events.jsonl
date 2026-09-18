@@ -799,3 +799,4 @@
 {"actor":"David Huu Pham","comment":null,"created_at":"2026-09-16T11:42:29Z","event_type":"created","id":806,"issue_id":"plabs-6ah","new_value":"","old_value":""}
 {"actor":"David Huu Pham","comment":"Added label: tmux","created_at":"2026-09-16T11:42:29Z","event_type":"label_added","id":807,"issue_id":"plabs-6ah","new_value":null,"old_value":null}
 {"actor":"David Huu Pham","comment":"Added label: config","created_at":"2026-09-16T11:42:29Z","event_type":"label_added","id":808,"issue_id":"plabs-6ah","new_value":null,"old_value":null}
+{"actor":"David Huu Pham","comment":null,"created_at":"2026-09-16T11:42:29Z","event_type":"closed","id":809,"issue_id":"plabs-6ah","new_value":"config.system.path added to the unit PATH; bash now resolves with the generated unit PATH (env bash test); desktop toplevel builds.","old_value":""}
