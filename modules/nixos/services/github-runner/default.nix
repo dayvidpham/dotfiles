@@ -18,14 +18,18 @@ let
 
   podman = "${config.virtualisation.podman.package}/bin/podman";
 
-  # The image's runner user is uid 1001 (Ubuntu's first user occupies 1000), and
-  # rootless podman maps it onto the host user's subuid range:
-  #   host uid = subUidStart + runnerUid - 1
-  # `podman unshare chown` takes the in-container uid; the podman socket ACL
-  # needs the host uid.
-  runnerUid = 1001;
-  subUidStart = (lib.head config.users.users.${cfg.user}.subUidRanges).startUid;
-  runnerHostUid = subUidStart + runnerUid - 1;
+  # Identity model: every writer in a runner's cgroup tree is the host user.
+  # The runner container runs as its userns root (container uid 0 -> the host
+  # user), and root inside job containers plus `sudo` in the runner container
+  # map the same way, because they all share this user's user namespace. A
+  # directory written by any of them is therefore owned by the host user and
+  # can be cleaned by the others. Running the runner as a non-root container
+  # user (for example uid 1001) maps it onto a subuid instead and splits the
+  # workspace between two writers that cannot clean up after each other. The
+  # de-facto standard runner images run the agent as root for the same reason.
+  #
+  # Rootless podman still needs the user's subuid/subgid ranges for the job
+  # containers' own user namespaces; the assertion below keeps that true.
 
   # Each runner lives in its own systemd slice so its cgroup tree (the runner
   # container and the job processes inside it) can carry resource limits. The
@@ -62,6 +66,11 @@ let
     # --replace removes a leftover container with the same name after a crash.
     "--replace"
     "--name" "github-runner-${instance}"
+    # Run the agent as the userns root (the host user). See the identity-model
+    # comment above: this is what keeps the workspace single-owner. The runner
+    # refuses to configure or start as root without this acknowledgement.
+    "--user" "0"
+    "-e" "RUNNER_ALLOW_RUNASROOT=1"
     # Keep the container payload inside the runner's own systemd slice so the
     # slice's MemoryMax/CPUQuota apply to the jobs, not just to the CLI.
     "--cgroup-parent=${slice}.slice"
@@ -119,28 +128,20 @@ let
 
   prepareState = pkgs.writeShellScript "github-runner-prepare-state" ''
     set -euo pipefail
-    runtime="''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
-    socket="$runtime/podman/podman.sock"
     ${concatMapStringsSep "\n" (instance: ''
       mkdir -p ${escapeShellArg cfg.stateDir}/runners/${instance} \
                ${escapeShellArg cfg.stateDir}/work/${instance}/tmp
     '') instanceNames}
     mkdir -p ${escapeShellArg cfg.stateDir}/cache
-    # The shared root stays with the host user; each runner subtree belongs to
-    # the in-container runner user's host-mapped uid.
-    ${podman} unshare chown 0:0 ${escapeShellArg cfg.stateDir}
+    # One owner for the whole tree: the host user. The runner container runs as
+    # the userns root (host user) and job containers' root and `sudo` map the
+    # same way, so nothing here needs a subuid mapping or a socket ACL.
     ${concatMapStringsSep "\n" (instance: ''
-      ${podman} unshare chown -R ${toString runnerUid}:${toString runnerUid} \
+      ${podman} unshare chown -R 0:0 \
         ${escapeShellArg cfg.stateDir}/runners/${instance} \
         ${escapeShellArg cfg.stateDir}/work/${instance}
     '') instanceNames}
-    ${podman} unshare chown -R ${toString runnerUid}:${toString runnerUid} \
-      ${escapeShellArg cfg.stateDir}/cache
-    if [ ! -S "$socket" ]; then
-      echo "github-runner: $socket is not present; is the podman user socket running?" >&2
-      exit 1
-    fi
-    ${pkgs.acl}/bin/setfacl -m u:${toString runnerHostUid}:rw "$socket"
+    ${podman} unshare chown -R 0:0 ${escapeShellArg cfg.stateDir}/cache
   '';
 in
 {

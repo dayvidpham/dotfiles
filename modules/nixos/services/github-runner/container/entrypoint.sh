@@ -33,6 +33,12 @@ for f in config.sh run.sh run-helper.sh.template env.sh bin externals; do
   fi
 done
 
+# The image's /home/runner tree is owned by its `runner` user (uid 1001). The
+# agent runs as the userns root, so keep the seeded copy single-owner too.
+if [ "$(id -u)" = 0 ]; then
+  chown -R 0:0 "$root" "$work"
+fi
+
 if [ -n "${GITHUB_RUNNER_TOKEN:-}" ]; then
   token="$GITHUB_RUNNER_TOKEN"
 else
