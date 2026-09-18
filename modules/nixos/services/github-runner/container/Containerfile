@@ -1,15 +1,36 @@
-# GitHub Actions runner container image (Ubuntu 24.04).
+# GitHub Actions runner container image (Ubuntu 26.04, Resolute Raccoon).
 #
 # Built by the github-runner NixOS module with rootless podman; the module owns
 # the run flags. The runner works from a host-visible root directory so sibling
 # containers started by jobs (service containers, `docker run` steps, job
 # containers, e2e distro stacks) can bind mount workspace paths.
-FROM docker.io/library/ubuntu:24.04
+#
+# Pinning: the base image is pinned by digest and apt installs from the dated
+# Ubuntu snapshot below, so a rebuild reproduces the same package versions
+# instead of tracking the live archive. Bump the digest and the snapshot
+# together; the versions the snapshot resolves are listed beside the package
+# set for review.
+FROM docker.io/library/ubuntu:26.04@sha256:da6fc2be547864451aa253836dd926da33623312df4a9a243e35dc877c378a78
 
 ENV DEBIAN_FRONTEND=noninteractive DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=0
 ARG RUNNER_VERSION=2.337.0
 ARG DOCKER_VERSION=27.5.1
+ARG UBUNTU_SNAPSHOT=20260917T000000Z
 
+# Freeze the archive: every apt source resolves against the dated snapshot.
+# check-valid-until stays off because a pinned snapshot is intentionally older
+# than the archive's moving validity window.
+RUN echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99snapshot \
+  && sed -i -E \
+       -e "s|https?://archive\.ubuntu\.com/ubuntu|https://snapshot.ubuntu.com/ubuntu/${UBUNTU_SNAPSHOT}|g" \
+       -e "s|https?://security\.ubuntu\.com/ubuntu|https://snapshot.ubuntu.com/ubuntu/${UBUNTU_SNAPSHOT}|g" \
+       /etc/apt/sources.list.d/ubuntu.sources
+
+# Snapshot 20260917T000000Z resolves these versions (updates/security pockets
+# supersede the release pocket): build-essential 12.12ubuntu2.26.04.2,
+# ca-certificates 20260601~26.04.1, curl 8.18.0-1ubuntu2.5, file 1:5.46-5build2,
+# gh 2.46.0-4, git 1:2.53.0-1ubuntu1, jq 1.8.1-4ubuntu2, libicu78 78.2-2ubuntu1,
+# podman 5.7.0+ds2-3build1, sudo 1.9.17p2-1ubuntu3.
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
        ca-certificates \
@@ -19,7 +40,7 @@ RUN apt-get update \
        gh \
        jq \
        build-essential \
-       libicu74 \
+       libicu78 \
        podman \
        sudo \
   && rm -rf /var/lib/apt/lists/*
