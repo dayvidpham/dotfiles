@@ -28,8 +28,18 @@ runner list).
 - The runner container mounts the host user's podman socket at
   `/var/run/docker.sock` (`DOCKER_HOST` and `CONTAINER_HOST` both point there)
   so the docker CLI tail the runner shells out to talks to the host engine.
-  `--network=host` keeps published ports reachable. The prepare unit grants the
-  container user's host-mapped uid access to the socket with `setfacl`.
+  `--network=host` keeps published ports reachable.
+- **Single-owner workspaces:** the agent runs as the container's root
+  (`--user 0` with `RUNNER_ALLOW_RUNASROOT=1`), which under rootless podman maps
+  to the host user — the same identity that root inside job containers and
+  `sudo` in the runner container map to. Every writer in the runner's cgroup
+  tree therefore owns the same files, so a job can always clean up what an
+  earlier step or sibling container wrote. Running the agent as a non-root
+  container user instead (for example the image's uid 1001) maps it onto a
+  subuid, which splits the workspace between two identities that cannot clean
+  up after each other (`dist/` removal fails with EACCES). Container root here
+  has no host privilege: the userns maps only the host user and their subuids,
+  and the container holds no capabilities.
 - Registration uses `config.sh --pat` with the sops PAT; the entrypoint
   re-registers with `--replace` when the PAT rotates (stamp file in the runner
   root). `ephemeral = true` switches to per-job registration.
