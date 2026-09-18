@@ -30,8 +30,18 @@ in
     # shell (greetd/tmux/ssh) and terminal shells share ~/.config/zsh and the
     # antidote zwc cache in /tmp; two different zsh versions ping-pong
     # recompiling it ("zwc file has wrong version") on every shell start.
+    #
+    # defaultUserShell only applies to new users: mutableUsers (the default)
+    # never rewrites an existing user's shell, so /etc/passwd keeps resolving
+    # via /run/current-system/sw/bin/zsh.  Overlay the system zsh (nixos-26.05
+    # hardcodes pkgs.zsh into programs.zsh and wins that symlink) onto
+    # home-manager's, so every shell lands on the same version regardless of
+    # which of the two paths it uses.
     users.defaultUserShell = pkgs-unstable.zsh;
     environment.shells = [ pkgs-unstable.zsh ];
+    nixpkgs.overlays = [
+      (final: prev: { zsh = pkgs-unstable.zsh; })
+    ];
     programs.zsh = {
       enable = true;
 
