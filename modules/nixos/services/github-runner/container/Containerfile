@@ -17,32 +17,31 @@ ARG RUNNER_VERSION=2.337.0
 ARG DOCKER_VERSION=27.5.1
 ARG UBUNTU_SNAPSHOT=20260917T000000Z
 
-# Freeze the archive: every apt source resolves against the dated snapshot.
+# The base image ships no CA store, so the first update bootstraps
+# ca-certificates from the default plain-HTTP archive sources (APT still
+# verifies the Release signatures), then every source is frozen to the dated
+# snapshot and the real install pins the snapshot's exact versions.
 # check-valid-until stays off because a pinned snapshot is intentionally older
 # than the archive's moving validity window.
-RUN echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99snapshot \
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends ca-certificates \
+  && echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99snapshot \
   && sed -i -E \
        -e "s|https?://archive\.ubuntu\.com/ubuntu|https://snapshot.ubuntu.com/ubuntu/${UBUNTU_SNAPSHOT}|g" \
        -e "s|https?://security\.ubuntu\.com/ubuntu|https://snapshot.ubuntu.com/ubuntu/${UBUNTU_SNAPSHOT}|g" \
-       /etc/apt/sources.list.d/ubuntu.sources
-
-# Snapshot 20260917T000000Z resolves these versions (updates/security pockets
-# supersede the release pocket): build-essential 12.12ubuntu2.26.04.2,
-# ca-certificates 20260601~26.04.1, curl 8.18.0-1ubuntu2.5, file 1:5.46-5build2,
-# gh 2.46.0-4, git 1:2.53.0-1ubuntu1, jq 1.8.1-4ubuntu2, libicu78 78.2-2ubuntu1,
-# podman 5.7.0+ds2-3build1, sudo 1.9.17p2-1ubuntu3.
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends \
-       ca-certificates \
-       curl \
-       file \
-       git \
-       gh \
-       jq \
-       build-essential \
-       libicu78 \
-       podman \
-       sudo \
+       /etc/apt/sources.list.d/ubuntu.sources \
+  && apt-get update \
+  && apt-get install -y --no-install-recommends --allow-downgrades \
+       ca-certificates=20260601~26.04.1 \
+       curl=8.18.0-1ubuntu2.5 \
+       file=1:5.46-5build2 \
+       git=1:2.53.0-1ubuntu1 \
+       gh=2.46.0-4 \
+       jq=1.8.1-4ubuntu2 \
+       build-essential=12.12ubuntu2.26.04.2 \
+       libicu78=78.2-2ubuntu1 \
+       podman=5.7.0+ds2-3build1 \
+       sudo=1.9.17p2-1ubuntu3 \
   && rm -rf /var/lib/apt/lists/*
 
 RUN useradd -m runner \
