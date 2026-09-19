@@ -10,11 +10,17 @@
 # instead of tracking the live archive. Bump the digest and the snapshot
 # together; the versions the snapshot resolves are listed beside the package
 # set for review.
+#
+# The runner and docker CLI tarballs are verified against the SHA-256 digests
+# below before they are used. Renovate (renovate.json5) tracks the base digest
+# and the two *_VERSION args; bump the matching *_SHA256 in the same change.
 FROM docker.io/library/ubuntu:26.04@sha256:da6fc2be547864451aa253836dd926da33623312df4a9a243e35dc877c378a78
 
 ENV DEBIAN_FRONTEND=noninteractive DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=0
 ARG RUNNER_VERSION=2.337.0
+ARG RUNNER_SHA256=70920811a4f8ad4328818682bca5c6469c1c942fab52448868071d0063816613
 ARG DOCKER_VERSION=27.5.1
+ARG DOCKER_SHA256=4f798b3ee1e0140eab5bf30b0edc4e84f4cdb53255a429dc3bbae9524845d640
 ARG UBUNTU_SNAPSHOT=20260917T000000Z
 
 # The base image ships no CA store, so the first update bootstraps
@@ -53,6 +59,7 @@ RUN useradd -m runner \
 # podman cannot set up its inner userns).
 RUN curl -fsSL -o /tmp/docker.tgz \
       "https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz" \
+  && echo "${DOCKER_SHA256}  /tmp/docker.tgz" | sha256sum -c - \
   && tar -xzf /tmp/docker.tgz -C /tmp docker/docker \
   && install -m 0755 /tmp/docker/docker /usr/local/bin/docker \
   && rm -rf /tmp/docker.tgz /tmp/docker \
@@ -62,6 +69,7 @@ WORKDIR /home/runner
 
 RUN curl -fsSL -o runner.tar.gz \
       "https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz" \
+  && echo "${RUNNER_SHA256}  runner.tar.gz" | sha256sum -c - \
   && tar xzf runner.tar.gz \
   && rm runner.tar.gz \
   && ./bin/installdependencies.sh \
