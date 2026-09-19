@@ -11,8 +11,10 @@ runner list).
 - Four **rootless podman containers** (`desktop-container-1..4`) in the
   organization runner group `minttea--desktop`, labels `self-hosted`, `linux`,
   `x64`, `container`. The image is built from
-  `container/Containerfile` (Ubuntu 24.04 + actions/runner + build-essential +
-  docker CLI + gh + podman) and tagged `localhost/peasant-github-runner:<runner
+  `container/Containerfile` (digest-pinned Ubuntu 26.04 + actions/runner +
+  build-essential + docker CLI + gh + podman; apt installs from a dated
+  archive snapshot; both downloaded tarballs SHA-256 verified) and tagged
+  `localhost/peasant-github-runner:<runner
   version>`. A content stamp skips the rebuild when nothing changed.
 - The module's state tree (`stateDir`, default
   `~/.local/share/github-runner-containers`) is mounted into every container at
@@ -64,6 +66,44 @@ runner list).
   Changing a limit takes effect after `systemctl --user daemon-reload` (the
   switch writes the slice unit files; the running user manager applies the
   changed resource settings on reload) or a reboot.
+
+## Pin freshness and checksums
+
+`container/Containerfile` pins every build input: the Ubuntu base digest, the
+dated archive snapshot the apt versions resolve from, the exact apt versions,
+and the two downloaded tarballs with their SHA-256 digests. The build verifies
+each download with `sha256sum -c` and fails closed on a mismatch.
+
+`renovate.json5` (repo root) asks Renovate to track the pins that have an
+upstream feed:
+
+- the `ubuntu:26.04` digest — digest updates only; a release-line change
+  re-resolves the apt snapshot and version set, so it stays deliberate;
+- `RUNNER_VERSION` — `actions/runner` GitHub releases;
+- `DOCKER_VERSION` — the static-tarball directory listing.
+
+The pins come as one grouped PR ("runner image pins"). Renovate only moves
+versions; the matching `*_SHA256` args (and, for a base change,
+`UBUNTU_SNAPSHOT` plus the apt version list) must move in the same change, as
+the PR note says. `UBUNTU_SNAPSHOT` itself has no upstream index — the
+snapshot service accepts any timestamp after 2023-03-01 and publishes no
+listing — so Renovate never proposes it; bump it by hand together with the
+digest and the apt pins.
+
+Recompute a digest manually when bumping a version:
+
+```sh
+# actions/runner (the release asset digest is also visible in the GitHub API)
+curl -fsSL "https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-x64-${RUNNER_VERSION}.tar.gz" | sha256sum
+
+# docker CLI static tarball (Docker publishes no checksum file for it)
+curl -fsSL "https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz" | sha256sum
+```
+
+The module hashes the Containerfile, so the next `nixos-rebuild switch`
+rebuilds the image and re-runs the verification. Renovate must be enabled for
+this repository (the Mend Renovate app, or a self-hosted run against
+`renovate.json5`) before it can open update PRs.
 
 ## Hosted-parity notes
 
