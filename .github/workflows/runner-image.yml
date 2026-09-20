@@ -1,0 +1,76 @@
+# Builds, pushes, and keylessly signs the runner container image on Quay.
+#
+# Manual dispatch on purpose: publishing an image is a deliberate act, and the
+# digest this workflow reports is the one the NixOS module pins. The signature
+# is keyless (Sigstore): Fulcio binds it to this workflow's OIDC identity and
+# Rekor logs it, so the module verifies the image without a stored key.
+name: Runner image
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    name: build, sign, push
+    runs-on: ubuntu-24.04
+    env:
+      IMAGE: quay.io/peasant-labs/github-runner
+      IDENTITY: https://github.com/${{ github.repository }}/.github/workflows/runner-image.yml@${{ github.ref }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac  # v3
+
+      - name: Log in to Quay
+        env:
+          QUAY_ROBOT_TOKEN: ${{ secrets.QUAY_ROBOT_TOKEN }}
+        run: echo "$QUAY_ROBOT_TOKEN" | docker login quay.io --username 'peasant-labs+builder' --password-stdin
+
+      - name: Build
+        working-directory: modules/nixos/services/github-runner/container
+        run: |
+          set -euo pipefail
+          version="$(sed -nE 's/^ARG RUNNER_VERSION=([^[:space:]]+)$/\1/p' Containerfile)"
+          test -n "$version"
+          echo "runner_version=$version" >> "$GITHUB_ENV"
+          docker build --file Containerfile --tag "${IMAGE}:${version}" .
+
+      - name: Push and read the registry digest
+        run: |
+          set -euo pipefail
+          docker push "${IMAGE}:${runner_version}"
+          repository="${IMAGE#quay.io/}"
+          digest="$(curl -s -D - -o /dev/null \
+            -H 'Accept: application/vnd.oci.image.manifest.v1+json' \
+            "https://quay.io/v2/${repository}/manifests/${runner_version}" \
+            | tr -d '\r' | awk 'tolower($1) == "docker-content-digest:" { print $2 }')"
+          test -n "$digest"
+          echo "digest=$digest" >> "$GITHUB_ENV"
+
+      - name: Sign
+        run: cosign sign --yes "${IMAGE}@${digest}"
+
+      - name: Verify the signature
+        run: |
+          cosign verify \
+            --certificate-identity "$IDENTITY" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            "${IMAGE}@${digest}"
+
+      - name: Summary
+        run: |
+          {
+            echo "### Runner image published"
+            echo ""
+            echo "- tag: \`${IMAGE}:${runner_version}\`"
+            echo "- digest: \`${digest}\`"
+            echo "- signature identity: \`${IDENTITY}\`"
+            echo ""
+            echo "Pin the digest in modules/nixos/services/github-runner/default.nix."
+          } >> "$GITHUB_STEP_SUMMARY"
