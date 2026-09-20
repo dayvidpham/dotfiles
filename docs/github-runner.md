@@ -77,10 +77,16 @@ each download with `sha256sum -c` and fails closed on a mismatch.
 `renovate.json5` (repo root) asks Renovate to track the pins that have an
 upstream feed:
 
-- the `ubuntu:26.04` digest — digest updates only; a release-line change
-  re-resolves the apt snapshot and version set, so it stays deliberate;
+- the mirrored base `quay.io/peasant-labs/ubuntu:26.04` — digest updates only;
+  a release-line change re-resolves the apt snapshot and version set, so it
+  stays deliberate;
 - `RUNNER_VERSION` — `actions/runner` GitHub releases;
 - `DOCKER_VERSION` — the static-tarball directory listing.
+
+The base image is mirrored into `quay.io/peasant-labs/ubuntu` (public, free
+tier) so builds never consume Docker Hub's anonymous pull limits. The same
+mirrors serve the pool's test images: `quay.io/peasant-labs/postgres` and
+`quay.io/peasant-labs/caddy`.
 
 The pins come as one grouped PR ("runner image pins"). Renovate only moves
 versions; the matching `*_SHA256` args (and, for a base change,

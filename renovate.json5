@@ -43,7 +43,7 @@
     {
       "description": "Keep the runner base on its release line; refresh the digest only",
       "matchDatasources": ["docker"],
-      "matchPackageNames": ["ubuntu"],
+      "matchPackageNames": ["ubuntu", "peasant-labs/ubuntu"],
       "matchUpdateTypes": ["major", "minor", "patch"],
       "enabled": false
     },

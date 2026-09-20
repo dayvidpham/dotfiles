@@ -54,7 +54,7 @@ let
   });
 
   # Container images
-  postgresImage = "docker.io/library/postgres:16-alpine";
+  postgresImage = "quay.io/peasant-labs/postgres:16-alpine";
   keycloakImage = "quay.io/keycloak/keycloak:26.0";
 
   # Service name prefix for all systemd services

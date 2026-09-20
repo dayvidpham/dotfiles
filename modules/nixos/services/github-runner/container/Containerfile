@@ -1,20 +1,21 @@
 # GitHub Actions runner container image (Ubuntu 26.04, Resolute Raccoon).
 #
-# Built by the github-runner NixOS module with rootless podman; the module owns
-# the run flags. The runner works from a host-visible root directory so sibling
-# containers started by jobs (service containers, `docker run` steps, job
-# containers, e2e distro stacks) can bind mount workspace paths.
+# Built and signed by the runner-image GitHub Actions workflow; the
+# github-runner NixOS module pulls the signed image and owns the run flags. The
+# runner works from a host-visible root directory so sibling containers started
+# by jobs (service containers, `docker run` steps, job containers, e2e distro
+# stacks) can bind mount workspace paths.
 #
-# Pinning: the base image is pinned by digest and apt installs from the dated
-# Ubuntu snapshot below, so a rebuild reproduces the same package versions
-# instead of tracking the live archive. Bump the digest and the snapshot
-# together; the versions the snapshot resolves are listed beside the package
-# set for review.
+# Pinning: the base image is the project's Quay mirror, pinned by digest, and
+# apt installs from the dated Ubuntu snapshot below, so a rebuild reproduces
+# the same package versions instead of tracking the live archive. Bump the
+# digest and the snapshot together; the versions the snapshot resolves are
+# listed beside the package set for review.
 #
 # The runner and docker CLI tarballs are verified against the SHA-256 digests
 # below before they are used. Renovate (renovate.json5) tracks the base digest
 # and the two *_VERSION args; bump the matching *_SHA256 in the same change.
-FROM docker.io/library/ubuntu:26.04@sha256:da6fc2be547864451aa253836dd926da33623312df4a9a243e35dc877c378a78
+FROM quay.io/peasant-labs/ubuntu:26.04@sha256:ac877d2d205a92e3483908326e088d324bdc9d4a249bbc3f261a86b0c0926ce4
 
 ENV DEBIAN_FRONTEND=noninteractive DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=0
 ARG RUNNER_VERSION=2.337.0
