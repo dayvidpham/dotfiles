@@ -41,17 +41,33 @@ jobs:
           echo "runner_version=$version" >> "$GITHUB_ENV"
           docker build --file Containerfile --tag "${IMAGE}:${version}" .
 
-      - name: Push and read the registry digest
+      - name: Push and resolve the stored digest
         run: |
           set -euo pipefail
           docker push "${IMAGE}:${runner_version}"
+
+          # Quay re-serializes the manifest on the fly per Accept media type,
+          # and the converted form is not addressable by digest. Hash the served
+          # bytes and accept only a digest the registry itself resolves.
           repository="${IMAGE#quay.io/}"
-          digest="$(curl -s -D - -o /dev/null \
-            -H 'Accept: application/vnd.oci.image.manifest.v1+json' \
-            "https://quay.io/v2/${repository}/manifests/${runner_version}" \
-            | tr -d '\r' | awk 'tolower($1) == "docker-content-digest:" { print $2 }')"
-          test -n "$digest"
-          echo "digest=$digest" >> "$GITHUB_ENV"
+          url="https://quay.io/v2/${repository}/manifests/${runner_version}"
+          digest=""
+          accept=""
+          for candidate_accept in \
+            application/vnd.docker.distribution.manifest.v2+json \
+            application/vnd.oci.image.manifest.v1+json; do
+            curl -fsS -H "Accept: ${candidate_accept}" "${url}" -o "${RUNNER_TEMP}/manifest.json"
+            candidate="sha256:$(sha256sum "${RUNNER_TEMP}/manifest.json" | awk '{print $1}')"
+            if curl -fsS -o /dev/null -H "Accept: ${candidate_accept}" \
+                "https://quay.io/v2/${repository}/manifests/${candidate}"; then
+              digest="${candidate}"
+              accept="${candidate_accept}"
+              break
+            fi
+          done
+          test -n "${digest}"
+          echo "digest=${digest}" >> "$GITHUB_ENV"
+          echo "manifest media type: ${accept}"
 
       - name: Sign
         run: cosign sign --yes "${IMAGE}@${digest}"
