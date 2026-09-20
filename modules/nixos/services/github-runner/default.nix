@@ -52,11 +52,13 @@ let
     TasksMax = tier.tasksMax;
   };
 
-  # The runner image is published to Quay and pinned by digest, so every host
-  # runs the same bits with no local build. `container/Containerfile` stays in
-  # the repository as the recipe that produces it: build, push, and bump this
-  # digest together (docs/github-runner.md).
-  imageRef = "quay.io/peasant-labs/github-runner@sha256:5958cd53d9b54ff454987488251d4103eb3aee268d4b313b24baa28d53c91419";
+  # The runner image is published by .github/workflows/runner-image.yml and
+  # pinned by digest, so every host runs the same bits with no local build and
+  # no registry trust: the pull is verified against the workflow's keyless
+  # Sigstore signature before any container starts. `container/Containerfile`
+  # stays in the repository as the recipe that produces it.
+  imageRef = "quay.io/peasant-labs/github-runner@sha256:acff4e7d59929595c42ac4e8efae0a0a21db1e17631b55ce11c9b60f39cedf45";
+  imageSigner = "https://github.com/dayvidpham/dotfiles/.github/workflows/runner-image.yml@refs/heads/main";
 
   mkPodmanRunArgs = instance: slice: [
     "run" "--rm"
@@ -109,14 +111,21 @@ let
       --env "GITHUB_RUNNER_TOKEN=$token" ${imageRef}
   '';
 
-  # The digest is immutable, so an image already in the local store is always
-  # the right one; the registry is contacted only on first use or after a bump.
+  # Pull once and verify the signature; the stamp records the verified
+  # reference, so a reboot needs neither the registry nor Sigstore.
   pullImage = pkgs.writeShellScript "github-runner-pull-image" ''
     set -euo pipefail
-    if ${podman} image exists ${escapeShellArg imageRef}; then
+    stamp=${escapeShellArg "${cfg.stateDir}/.image-verified"}
+    if ${podman} image exists ${escapeShellArg imageRef} \
+      && [ -f "$stamp" ] && [ "$(cat "$stamp")" = ${escapeShellArg imageRef} ]; then
       exit 0
     fi
     ${podman} pull ${escapeShellArg imageRef}
+    ${pkgs.cosign}/bin/cosign verify \
+      --certificate-identity ${escapeShellArg imageSigner} \
+      --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+      ${escapeShellArg imageRef}
+    printf '%s' ${escapeShellArg imageRef} > "$stamp"
   '';
 
   prepareState = pkgs.writeShellScript "github-runner-prepare-state" ''
@@ -337,10 +346,11 @@ in
     CUSTOM.virtualisation.podman.enable = true;
 
     systemd.user.services = {
-      # Image: pull the digest-pinned runner image from Quay into the local
-      # store. The repository is public, so the pull is anonymous.
+      # Image: pull and verify the digest-pinned runner image from Quay. The
+      # repository is public (anonymous pull); the signature check is the trust
+      # anchor for what runs.
       github-runner-image = {
-        description = "Pull the GitHub Actions runner container image";
+        description = "Pull and verify the GitHub Actions runner container image";
         after = [ "podman.socket" ];
         requires = [ "podman.socket" ];
         serviceConfig = {

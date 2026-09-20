@@ -47,7 +47,7 @@ runner list).
   re-registers with `--replace` when the PAT rotates (stamp file in the runner
   root). `ephemeral = true` switches to per-job registration.
 - Lifecycle is systemd user services for `minttea`:
-  `github-runner-image` (pulls the pinned image), `github-runner-prepare` (directories and
+  `github-runner-image` (pulls and verifies the pinned image), `github-runner-prepare` (directories and
   state ownership), `github-runner-container@<instance>` (one `podman run` in the
   foreground per runner). The user has linger enabled, so the pool comes back
   after a reboot and a `nixos-rebuild switch` restarts only what changed.
@@ -106,30 +106,34 @@ self-hosted run against `renovate.json5`) before it can open update PRs.
 ## Publishing the runner image
 
 The module does not build the image. It pulls
-`quay.io/peasant-labs/github-runner@sha256:…`, a public image pinned by digest,
-so every host runs the same bits and the pull needs no credentials. The
-Containerfile stays in the repository as the recipe. To publish a new version:
+`quay.io/peasant-labs/github-runner@sha256:…`, verifies the image's Sigstore
+signature against the publishing workflow's identity, and only then starts
+containers. The Containerfile stays in the repository as the recipe.
 
-```sh
-cd modules/nixos/services/github-runner/container
-podman build --tag localhost/peasant-github-runner:<RUNNER_VERSION> --file ./Containerfile .
-podman tag localhost/peasant-github-runner:<RUNNER_VERSION> \
-  quay.io/peasant-labs/github-runner:<RUNNER_VERSION>
-podman login quay.io -u 'peasant-labs+builder'   # robot with write on that repository
-podman push quay.io/peasant-labs/github-runner:<RUNNER_VERSION>
-```
+Publishing runs in GitHub Actions: **Actions → Runner image → Run workflow**.
+The workflow builds the Containerfile, pushes
+`quay.io/peasant-labs/github-runner:<RUNNER_VERSION>`, and keylessly signs the
+stored digest with cosign. The signature names
+`https://github.com/dayvidpham/dotfiles/.github/workflows/runner-image.yml@refs/heads/main`
+and is recorded in the Sigstore transparency log. It authenticates to Quay with
+the `QUAY_ROBOT_TOKEN` repository secret (the `peasant-labs+builder` robot,
+write on the `github-runner` repository).
 
-Pin the digest the registry reports — use `Docker-Content-Digest`, not the
-`RepoDigests` value podman prints after a push, because the two can differ:
+Copy the digest from the run summary into `imageRef` in `default.nix`.
 
-```sh
-curl -sI -H 'Accept: application/vnd.oci.image.manifest.v1+json' \
-  https://quay.io/v2/peasant-labs/github-runner/manifests/<RUNNER_VERSION> \
-  | grep -i docker-content-digest
-```
+Two Quay quirks the workflow already handles, and that any manual publish must
+respect:
 
-Copy that digest into `imageRef` in `default.nix`. An image already in the
-local store is left untouched, so a reboot does not need the registry.
+- Quay re-serializes the manifest per `Accept` media type, and the converted
+  form is not addressable by digest. Resolve the digest from the served
+  manifest bytes and require the registry to resolve that digest before
+  signing; do not trust the `Docker-Content-Digest` header or a client-side
+  `RepoDigests` value alone.
+- A tag push is not a re-publish; the digest changes with every build, so pin
+  the new digest rather than reusing an old one.
+
+The module records the verified reference in a stamp file, so a reboot needs
+neither the registry nor Sigstore.
 
 ## Hosted-parity notes
 
