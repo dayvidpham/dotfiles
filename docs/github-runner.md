@@ -47,7 +47,7 @@ runner list).
   re-registers with `--replace` when the PAT rotates (stamp file in the runner
   root). `ephemeral = true` switches to per-job registration.
 - Lifecycle is systemd user services for `minttea`:
-  `github-runner-image` (build), `github-runner-prepare` (directories and
+  `github-runner-image` (pulls the pinned image), `github-runner-prepare` (directories and
   state ownership), `github-runner-container@<instance>` (one `podman run` in the
   foreground per runner). The user has linger enabled, so the pool comes back
   after a reboot and a `nixos-rebuild switch` restarts only what changed.
@@ -100,10 +100,36 @@ curl -fsSL "https://github.com/actions/runner/releases/download/v${RUNNER_VERSIO
 curl -fsSL "https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz" | sha256sum
 ```
 
-The module hashes the Containerfile, so the next `nixos-rebuild switch`
-rebuilds the image and re-runs the verification. Renovate must be enabled for
-this repository (the Mend Renovate app, or a self-hosted run against
-`renovate.json5`) before it can open update PRs.
+Renovate must be enabled for this repository (the Mend Renovate app, or a
+self-hosted run against `renovate.json5`) before it can open update PRs.
+
+## Publishing the runner image
+
+The module does not build the image. It pulls
+`quay.io/peasant-labs/github-runner@sha256:…`, a public image pinned by digest,
+so every host runs the same bits and the pull needs no credentials. The
+Containerfile stays in the repository as the recipe. To publish a new version:
+
+```sh
+cd modules/nixos/services/github-runner/container
+podman build --tag localhost/peasant-github-runner:<RUNNER_VERSION> --file ./Containerfile .
+podman tag localhost/peasant-github-runner:<RUNNER_VERSION> \
+  quay.io/peasant-labs/github-runner:<RUNNER_VERSION>
+podman login quay.io -u 'peasant-labs+builder'   # robot with write on that repository
+podman push quay.io/peasant-labs/github-runner:<RUNNER_VERSION>
+```
+
+Pin the digest the registry reports — use `Docker-Content-Digest`, not the
+`RepoDigests` value podman prints after a push, because the two can differ:
+
+```sh
+curl -sI -H 'Accept: application/vnd.oci.image.manifest.v1+json' \
+  https://quay.io/v2/peasant-labs/github-runner/manifests/<RUNNER_VERSION> \
+  | grep -i docker-content-digest
+```
+
+Copy that digest into `imageRef` in `default.nix`. An image already in the
+local store is left untouched, so a reboot does not need the registry.
 
 ## Hosted-parity notes
 

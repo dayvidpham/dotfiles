@@ -52,14 +52,11 @@ let
     TasksMax = tier.tasksMax;
   };
 
-  containerDir = ./container;
-  containerfile = "${containerDir}/Containerfile";
-  entrypoint = "${containerDir}/entrypoint.sh";
-
-  imageTag = "localhost/peasant-github-runner:${cfg.runnerVersion}";
-
-  imageHash = builtins.substring 0 12 (builtins.hashString "sha256"
-    (builtins.readFile containerfile + builtins.readFile entrypoint));
+  # The runner image is published to Quay and pinned by digest, so every host
+  # runs the same bits with no local build. `container/Containerfile` stays in
+  # the repository as the recipe that produces it: build, push, and bump this
+  # digest together (docs/github-runner.md).
+  imageRef = "quay.io/peasant-labs/github-runner@sha256:5958cd53d9b54ff454987488251d4103eb3aee268d4b313b24baa28d53c91419";
 
   mkPodmanRunArgs = instance: slice: [
     "run" "--rm"
@@ -109,21 +106,17 @@ let
     token="$(cat ${cfg.tokenFile})"
     exec ${podman} ${lib.escapeShellArgs (mkPodmanRunArgs instance slice)} \
       --volume "$socket:/var/run/docker.sock" \
-      --env "GITHUB_RUNNER_TOKEN=$token" ${imageTag}
+      --env "GITHUB_RUNNER_TOKEN=$token" ${imageRef}
   '';
 
-  buildImage = pkgs.writeShellScript "github-runner-build-image" ''
+  # The digest is immutable, so an image already in the local store is always
+  # the right one; the registry is contacted only on first use or after a bump.
+  pullImage = pkgs.writeShellScript "github-runner-pull-image" ''
     set -euo pipefail
-    mkdir -p ${escapeShellArg cfg.stateDir}
-    stamp=${escapeShellArg "${cfg.stateDir}/.image-stamp"}
-    hash=${escapeShellArg imageHash}
-    if ${podman} image exists ${escapeShellArg imageTag} \
-      && [ -f "$stamp" ] && [ "$(cat "$stamp")" = "$hash" ]; then
+    if ${podman} image exists ${escapeShellArg imageRef}; then
       exit 0
     fi
-    ${podman} build --tag ${escapeShellArg imageTag} \
-      --file ${containerfile} ${containerDir}
-    printf '%s' "$hash" > "$stamp"
+    ${podman} pull ${escapeShellArg imageRef}
   '';
 
   prepareState = pkgs.writeShellScript "github-runner-prepare-state" ''
@@ -331,11 +324,6 @@ in
       '';
     };
 
-    runnerVersion = mkOption {
-      type = types.str;
-      default = "2.337.0";
-      description = "actions/runner release to bake into the image";
-    };
   };
 
   config = mkIf cfg.enable {
@@ -349,16 +337,16 @@ in
     CUSTOM.virtualisation.podman.enable = true;
 
     systemd.user.services = {
-      # Image build: podman builds from the module's Containerfile, guarded by
-      # a content stamp so a rebuild only happens when the inputs change.
+      # Image: pull the digest-pinned runner image from Quay into the local
+      # store. The repository is public, so the pull is anonymous.
       github-runner-image = {
-        description = "Build the GitHub Actions runner container image";
+        description = "Pull the GitHub Actions runner container image";
         after = [ "podman.socket" ];
         requires = [ "podman.socket" ];
         serviceConfig = {
           Type = "oneshot";
           RemainAfterExit = true;
-          ExecStart = buildImage;
+          ExecStart = pullImage;
         };
         wantedBy = [ "default.target" ];
       };
