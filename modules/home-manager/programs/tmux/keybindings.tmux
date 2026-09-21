@@ -99,8 +99,13 @@ bind T command-prompt -p "Pane title:" "select-pane -T '%%'"
 # live reload of this file cannot leave the pane-focus-in hook below dead.
 set -g focus-events on
 
-# Re-apply repo theme when switching panes (pass path directly to avoid tmux#3506)
-set-hook -g pane-focus-in 'run-shell "tmux-repo-theme \"#{pane_current_path}\""'
+# Re-apply repo theme when switching panes (pass path directly to avoid tmux#3506).
+# MUST stay -b (background): a foreground run-shell here serializes every focus
+# switch behind up to ~6 tmux round-trips + git calls. On 2026-09-20 a stuck
+# repo-theme job coincided with the server going fully deaf (100% CPU, no
+# client serviced) until the job exited; backgrounding keeps a slow hook from
+# ever stalling the event loop for other clients.
+set-hook -g pane-focus-in 'run-shell -b "tmux-repo-theme \"#{pane_current_path}\""'
 
 # Pane border labels: title first, then session:window.pane
 # Bold title text for worktree panes (when @repo-worktree is 1)
