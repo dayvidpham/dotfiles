@@ -406,19 +406,21 @@
         };
 
         # OpenClaw microVM - runs openclaw gateway with network access to safemolt
-        openclaw-vm = mkMinimalHost {
-          name = "openclaw-vm";
-          hostSpecialArgs = {
-            inherit pkgs pkgs-unstable nix-openclaw;
-            # Shim: openclaw-vm module expects opencode flake output shape
-            # but we consume opencode from llm-agents overlay instead
-            opencode = { packages.${system}.opencode = pkgs-unstable.llm-agents.opencode; };
-          };
-          modules = [
-            microvm.nixosModules.microvm
-            openclaw-modules.nixosModules.openclaw-vm-guest
-          ];
-        };
+        # Deprecated for now: unmaintained OpenClaw package evaluation breaks flake check.
+        # Keep this standalone definition for restoration once package evaluation is fixed.
+        # openclaw-vm = mkMinimalHost {
+        #   name = "openclaw-vm";
+        #   hostSpecialArgs = {
+        #     inherit pkgs pkgs-unstable nix-openclaw;
+        #     # Shim: openclaw-vm module expects opencode flake output shape
+        #     # but we consume opencode from llm-agents overlay instead
+        #     opencode = { packages.${system}.opencode = pkgs-unstable.llm-agents.opencode; };
+        #   };
+        #   modules = [
+        #     microvm.nixosModules.microvm
+        #     openclaw-modules.nixosModules.openclaw-vm-guest
+        #   ];
+        # };
       };
 
       checks.${system}.flowX13-gpu-profiles =
