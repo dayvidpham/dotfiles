@@ -57,7 +57,7 @@ let
   # no registry trust: the pull is verified against the workflow's keyless
   # Sigstore signature before any container starts. `container/Containerfile`
   # stays in the repository as the recipe that produces it.
-  imageRef = "quay.io/peasant-labs/github-runner@sha256:acff4e7d59929595c42ac4e8efae0a0a21db1e17631b55ce11c9b60f39cedf45";
+  imageRef = "quay.io/peasant-labs/github-runner@sha256:2c9ff917c0fd87c9d9ebefba2ab181e7f8bf65d10d53ec5d507639d6d7e52ec8";
   imageSigner = "https://github.com/dayvidpham/dotfiles/.github/workflows/runner-image.yml@refs/heads/main";
 
   mkPodmanRunArgs = instance: slice: [
