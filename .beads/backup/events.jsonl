@@ -805,3 +805,5 @@
 {"actor":"David Huu Pham","comment":null,"created_at":"2026-09-18T09:46:00Z","event_type":"created","id":812,"issue_id":"plabs-529","new_value":"","old_value":""}
 {"actor":"David Huu Pham","comment":null,"created_at":"2026-09-18T09:46:00Z","event_type":"closed","id":813,"issue_id":"plabs-529","new_value":"Fixed in modules/nixos/programs/zsh/default.nix (overlay); built toplevel sw/bin/zsh = zsh-5.9.2","old_value":""}
 {"actor":"David Huu Pham","comment":null,"created_at":"2026-09-20T21:04:03Z","event_type":"created","id":814,"issue_id":"plabs-mzc","new_value":"","old_value":""}
+{"actor":"David Huu Pham","comment":null,"created_at":"2026-09-20T21:04:10Z","event_type":"closed","id":815,"issue_id":"plabs-mzc","new_value":"Committed; live server still needs set-hook reload (server too sick to accept it right now, will apply on next reload); persistent via next home-manager switch","old_value":""}
+{"actor":"David Huu Pham","comment":null,"created_at":"2026-09-22T23:35:45Z","event_type":"created","id":816,"issue_id":"plabs-7vv","new_value":"","old_value":""}
