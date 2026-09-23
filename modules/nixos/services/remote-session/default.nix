@@ -15,10 +15,36 @@ let
     optionalString
     ;
 
+  # Home-manager standalone installs to ~/.nix-profile, not /etc/profiles.
+  userPath = "/home/${cfg.user}/.nix-profile/bin:/etc/profiles/per-user/${cfg.user}/bin:/run/current-system/sw/bin:/usr/bin:/bin";
+  userDataDirs = "/home/${cfg.user}/.nix-profile/share:/etc/profiles/per-user/${cfg.user}/share:/run/current-system/sw/share";
+
+  # A profile is locked to one running Firefox, so the session gets its own;
+  # otherwise Firefox here and on the physical desktop cannot coexist.
+  firefoxWrapper = pkgs.writeShellApplication {
+    name = "firefox";
+    runtimeInputs = [ pkgs.coreutils ];
+    text = ''
+      export PATH=${lib.escapeShellArg userPath}
+      for arg in "$@"; do
+        case "$arg" in
+          -P | -p | --P | -profile | --profile | -ProfileManager | --ProfileManager) exec firefox "$@" ;;
+        esac
+      done
+      mkdir -p ${lib.escapeShellArg cfg.firefoxProfile}
+      exec firefox --profile ${lib.escapeShellArg cfg.firefoxProfile} "$@"
+    '';
+  };
+
   # A long-lived sway session that persists across viewer disconnects. It runs
   # the user's own sway config minus the session-management execs (those hijack
   # the host's systemd user manager) and with waybar, mirroring what the waypipe
   # wrapper does for ad-hoc sessions.
+  #
+  # It gets a private D-Bus session bus. Sharing the desktop's bus lets the two
+  # sessions steal each other's single-instance apps (Firefox's D-Bus remote)
+  # and xdg-desktop-portal, of which there is only one per bus: whichever
+  # session activates it first decides which compositor it serves.
   #
   # The headless backend is used; with WLR_RENDERER=gles2 + WLR_RENDER_DRM_DEVICE
   # it still advertises zwp_linux_dmabuf_v1, so clients get GPU buffers.
@@ -35,17 +61,23 @@ let
         ss -xl 2>/dev/null | grep -qF " $s" || rm -f "$s" "$s.lock"
       done
 
+      # The NixOS session.conf lists the service dirs of services.dbus.packages
+      # (portals, dconf, ...) on top of the XDG_DATA_DIRS ones.
+      privateBus=(${pkgs.dbus}/bin/dbus-run-session --config-file /etc/dbus-1/session.conf --)
+
       src="''${XDG_CONFIG_HOME:-$HOME/.config}/sway/config"
       out="$XDG_RUNTIME_DIR/remote-session-sway.config"
       if [ -f "$src" ]; then
+        # First exec, so D-Bus-activated services (portals) see this compositor.
+        printf 'exec ${pkgs.dbus}/bin/dbus-update-activation-environment WAYLAND_DISPLAY SWAYSOCK I3SOCK XDG_CURRENT_DESKTOP XDG_SESSION_TYPE\n' > "$out"
         grep -vE '^[[:space:]]*(exec|exec_always)[[:space:]].*(dbus-update-activation-environment|systemctl --user|polkit-gnome-authentication-agent)' "$src" \
           | sed -E "s#(/bin/ghostty)(['[:space:]\"])#\1 --gtk-single-instance=false\2#g" \
-          > "$out"
+          >> "$out"
         printf '\nexec waybar\n' >> "$out"
         ${optionalString (cfg.outputMode != null) ''printf 'output * mode ${cfg.outputMode}\n' >> "$out"''}
-        exec ${pkgs.sway}/bin/sway --unsupported-gpu -c "$out"
+        exec "''${privateBus[@]}" ${pkgs.sway}/bin/sway --unsupported-gpu -c "$out"
       fi
-      exec ${pkgs.sway}/bin/sway --unsupported-gpu
+      exec "''${privateBus[@]}" ${pkgs.sway}/bin/sway --unsupported-gpu
     '';
   };
 
@@ -184,6 +216,18 @@ in
       description = "PULSE_SINK: default sink for session apps (e.g. a streaming null sink)";
     };
 
+    firefoxProfile = mkOption {
+      type = types.nullOr types.str;
+      default = "/home/${cfg.user}/.config/mozilla/firefox/remote-session";
+      defaultText = lib.literalExpression ''"/home/''${user}/.config/mozilla/firefox/remote-session"'';
+      description = ''
+        Profile directory for Firefox launched inside the session (created on
+        first use). A profile can only be open in one Firefox at a time, so a
+        dedicated one lets Firefox run here and on the physical desktop at once.
+        null uses the default profile; Firefox then only runs in one of them.
+      '';
+    };
+
     outputMode = mkOption {
       type = types.nullOr types.str;
       default = null;
@@ -301,13 +345,17 @@ in
         Environment = [
           "XDG_RUNTIME_DIR=${cfg.runtimeDir}"
           "WLR_LIBINPUT_NO_DEVICES=1"
-          "DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus"
           "HOME=/home/${cfg.user}"
           "TMUX_TMPDIR=${cfg.tmuxTmpDir}"
+          # Selects sway-portals.conf (wlr ScreenCast) on the private bus.
+          "XDG_CURRENT_DESKTOP=sway"
+          "XDG_SESSION_TYPE=wayland"
+          # Also where the private bus finds user-installed D-Bus services.
+          "XDG_DATA_DIRS=${userDataDirs}"
+          "NIX_XDG_DESKTOP_PORTAL_DIR=/run/current-system/sw/share/xdg-desktop-portal/portals"
           # sway's exec'd children (waybar, ghostty, scripts) need the user's
           # profile on PATH; a system service otherwise only sees the system one.
-          # Home-manager standalone installs to ~/.nix-profile, not /etc/profiles.
-          "PATH=/home/${cfg.user}/.nix-profile/bin:/etc/profiles/per-user/${cfg.user}/bin:/run/current-system/sw/bin:/usr/bin:/bin"
+          "PATH=${optionalString (cfg.firefoxProfile != null) "${firefoxWrapper}/bin:"}${userPath}"
         ] ++ backendEnv ++ renderEnv
           ++ lib.optional (cfg.pipewireRuntimeDir != null) "PIPEWIRE_RUNTIME_DIR=${cfg.pipewireRuntimeDir}"
           ++ lib.optional (cfg.pulseServer != null) "PULSE_SERVER=${cfg.pulseServer}"
