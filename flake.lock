@@ -542,6 +542,26 @@
         "type": "github"
       }
     },
+    "infra": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs-unstable"
+        ]
+      },
+      "locked": {
+        "lastModified": 1790422036,
+        "narHash": "sha256-pF6BaW2vsWjrp10HfwGMBWeKezGAEv6UDAENuznFFA0=",
+        "owner": "peasant-labs",
+        "repo": "infra",
+        "rev": "bb9f08285ead10d7871790a580b2ff6535bae7b8",
+        "type": "github"
+      },
+      "original": {
+        "owner": "peasant-labs",
+        "repo": "infra",
+        "type": "github"
+      }
+    },
     "llm-agents": {
       "inputs": {
         "bun2nix": "bun2nix",
@@ -1169,6 +1189,7 @@
         "flake-registry": "flake-registry",
         "home-manager": "home-manager",
         "home-manager-wsl": "home-manager-wsl",
+        "infra": "infra",
         "llm-agents": "llm-agents",
         "microvm": "microvm",
         "niri": "niri",

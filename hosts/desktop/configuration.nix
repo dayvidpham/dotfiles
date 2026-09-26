@@ -170,6 +170,14 @@ in
     labels = [ "container" ];
     runnerGroup = "minttea--desktop";
     tokenFile = config.sops.secrets."github-runner/token".path;
+    # The module now lives in peasant-labs/infra and defaults to that repo's
+    # workflow identity, but the DEPLOYED digest below was signed by the old
+    # dotfiles workflow. Both values must move together: the digest and the
+    # signer are a pair, and pointing the signer at a workflow that never signed
+    # this digest fails closed at pull time, leaving no runner online.
+    # Drop these two lines once an image published from infra is pinned.
+    imageRef = "quay.io/peasant-labs/github-runner@sha256:2c9ff917c0fd87c9d9ebefba2ab181e7f8bf65d10d53ec5d507639d6d7e52ec8";
+    imageSigner = "https://github.com/dayvidpham/dotfiles/.github/workflows/runner-image.yml@refs/heads/main";
     # Bound the pool on a 32-core / 61 GB host. The parent slice is the
     # host-protection ceiling (hard memory cap with a soft high water mark, and
     # a CPU bandwidth cap that reserves ~8 cores for the desktop); each runner
