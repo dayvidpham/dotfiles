@@ -11,11 +11,11 @@ runner list).
 - Four **rootless podman containers** (`desktop-container-1..4`) in the
   organization runner group `minttea--desktop`, labels `self-hosted`, `linux`,
   `x64`, `container`. The image is built from
-  `container/Containerfile` (digest-pinned Ubuntu 26.04 + actions/runner +
-  build-essential + docker CLI + gh + podman; apt installs from a dated
-  archive snapshot; both downloaded tarballs SHA-256 verified) and tagged
-  `localhost/peasant-github-runner:<runner
-  version>`. A content stamp skips the rebuild when nothing changed.
+  `peasant-labs/infra`'s `runner-image/Containerfile` (digest-pinned Ubuntu
+  26.04 + actions/runner + build-essential + docker CLI + gh + podman + unzip;
+  apt installs from a dated archive snapshot; both downloaded tarballs
+  SHA-256 verified) and pulled here by digest, so no local build happens on
+  this host. See "Publishing the runner image" below.
 - The module's state tree (`stateDir`, default
   `~/.local/share/github-runner-containers`) is mounted into every container at
   the same path it has on the host, and holds three subtrees:
@@ -69,13 +69,12 @@ runner list).
 
 ## Pin freshness and checksums
 
-`container/Containerfile` pins every build input: the Ubuntu base digest, the
+The image recipe and its dependency tracking live in `peasant-labs/infra` now:
+`runner-image/Containerfile` pins every build input (the Ubuntu base digest, the
 dated archive snapshot the apt versions resolve from, the exact apt versions,
-and the two downloaded tarballs with their SHA-256 digests. The build verifies
-each download with `sha256sum -c` and fails closed on a mismatch.
-
-`renovate.json5` (repo root) asks Renovate to track the pins that have an
-upstream feed:
+and the downloaded tarballs with their SHA-256 digests), the build verifies each
+download with `sha256sum -c` and fails closed on a mismatch, and infra's
+`renovate.json5` tracks the pins that have an upstream feed:
 
 - the mirrored base `quay.io/peasant-labs/ubuntu:26.04` — digest updates only;
   a release-line change re-resolves the apt snapshot and version set, so it
@@ -83,20 +82,9 @@ upstream feed:
 - `RUNNER_VERSION` — `actions/runner` GitHub releases;
 - `DOCKER_VERSION` — the static-tarball directory listing.
 
-The base image is mirrored into `quay.io/peasant-labs/ubuntu` (public, free
-tier) so builds never consume Docker Hub's anonymous pull limits. The same
-mirrors serve the pool's test images: `quay.io/peasant-labs/postgres` and
-`quay.io/peasant-labs/caddy`.
-
-The pins come as one grouped PR ("runner image pins"). Renovate only moves
-versions; the matching `*_SHA256` args (and, for a base change,
-`UBUNTU_SNAPSHOT` plus the apt version list) must move in the same change, as
-the PR note says. `UBUNTU_SNAPSHOT` itself has no upstream index — the
-snapshot service accepts any timestamp after 2023-03-01 and publishes no
-listing — so Renovate never proposes it; bump it by hand together with the
-digest and the apt pins.
-
-Recompute a digest manually when bumping a version:
+**Renovate is not enabled on `peasant-labs/infra` yet**, so those pins do not
+update automatically. Until the app is installed there, bump them by hand
+against infra's Containerfile and re-verify:
 
 ```sh
 # actions/runner (the release asset digest is also visible in the GitHub API)
@@ -106,21 +94,30 @@ curl -fsSL "https://github.com/actions/runner/releases/download/v${RUNNER_VERSIO
 curl -fsSL "https://download.docker.com/linux/static/stable/x86_64/docker-${DOCKER_VERSION}.tgz" | sha256sum
 ```
 
-Renovate must be enabled for this repository (the Mend Renovate app, or a
-self-hosted run against `renovate.json5`) before it can open update PRs.
+`UBUNTU_SNAPSHOT` has no upstream index — the snapshot service accepts any
+timestamp after 2023-03-01 and publishes no listing — so Renovate never proposes
+it; bump it by hand together with the digest and the apt pins.
+
+The base image is mirrored into `quay.io/peasant-labs/ubuntu` (public, free
+tier) so builds never consume Docker Hub's anonymous pull limits. The same
+mirrors serve the pool's test images: `quay.io/peasant-labs/postgres` and
+`quay.io/peasant-labs/caddy`.
 
 ## Publishing the runner image
 
 The module does not build the image. It pulls
 `quay.io/peasant-labs/github-runner@sha256:…`, verifies the image's Sigstore
 signature against the publishing workflow's identity, and only then starts
-containers. The Containerfile stays in the repository as the recipe.
+containers. The Containerfile lives in `peasant-labs/infra` as the recipe, and
+the pool module itself is imported from that same repository as
+`infra.nixosModules.default` — this repository only pins the digest and
+supplies the host's token, paths, and resource limits.
 
-Publishing runs in GitHub Actions: **Actions → Runner image → Run workflow**.
-The workflow builds the Containerfile, pushes
-`quay.io/peasant-labs/github-runner:<RUNNER_VERSION>`, and keylessly signs the
-stored digest with cosign. The signature names
-`https://github.com/dayvidpham/dotfiles/.github/workflows/runner-image.yml@refs/heads/main`
+Publishing runs in `peasant-labs/infra`:
+**Actions → Runner image → Run workflow**. The workflow builds the Containerfile,
+pushes `quay.io/peasant-labs/github-runner:<RUNNER_VERSION>`, and keylessly
+signs the stored digest with cosign. The signature names
+`https://github.com/peasant-labs/infra/.github/workflows/runner-image.yml@refs/heads/main`
 and is recorded in the Sigstore transparency log. It authenticates to Quay with
 the `QUAY_ROBOT_TOKEN` repository secret (the `peasant-labs+builder` robot,
 write on the `github-runner` repository).

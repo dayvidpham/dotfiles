@@ -27,6 +27,14 @@
     determinate-nix.url = "https://flakehub.com/f/DeterminateSystems/nix-src/*";
     determinate-nixd.url = "https://flakehub.com/f/DeterminateSystems/determinate/*";
 
+    # The organisation's shared infrastructure: the reusable runner router and
+    # the runner-pool NixOS module now live in peasant-labs/infra, not here. The
+    # pool module is a base module so every standard host can enable it.
+    infra = {
+      url = "github:peasant-labs/infra";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+    };
+
     home-manager = {
       url = "github:nix-community/home-manager/master";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
@@ -114,6 +122,7 @@
     inputs@{ self
       # NixOS-related
     , nixpkgs
+    , infra
     , nixpkgs-unstable
     , nixpkgs-stable
     , nixos-hardware
@@ -245,6 +254,10 @@
         microvm.nixosModules.host
         sops-nix.nixosModules.sops
         openclaw-modules.nixosModules.default
+        # The runner pool module is org-owned infrastructure. See
+        # peasant-labs/infra AGENTS.md; the Containerfile and the publishing
+        # workflow that signs the image moved there with it.
+        infra.nixosModules.default
 
         # Custom modules
         ./modules/nixos
