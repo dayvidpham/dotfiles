@@ -191,6 +191,11 @@ in
     };
   };
 
+  # Runner per-job microVMs (spike branch). The module is wired and builds;
+  # enable it together with the dispatcher service that writes JIT configs and
+  # boots slots.
+  CUSTOM.virtualisation.runner-vm.enable = false;
+
   #####################################################
   # Package management
   nixpkgs.config.cudaSupport = true;
