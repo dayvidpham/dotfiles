@@ -191,9 +191,10 @@ in
     };
   };
 
-  # Runner per-job microVMs (spike branch). The module is wired and builds;
-  # enable it together with the dispatcher service that writes JIT configs and
-  # boots slots.
+  # Runner per-job microVMs (spike branch). Enable together with the dispatcher
+  # once the infra package lands; the dispatcher needs the GitHub App
+  # credentials from sops. Eval-tested from this branch with an infra input
+  # override.
   CUSTOM.virtualisation.runner-vm.enable = false;
 
   #####################################################

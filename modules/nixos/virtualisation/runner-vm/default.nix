@@ -8,6 +8,7 @@
 , options
 , pkgs
 , lib ? pkgs.lib
+, infra ? null
 , ...
 }:
 let
@@ -95,6 +96,50 @@ in
         description = "Upstream interface used for NAT.";
       };
     };
+
+    dispatcher = {
+      enable = lib.mkEnableOption "the scale-set dispatcher driving the VM slots";
+
+      scaleSetName = lib.mkOption {
+        type = lib.types.str;
+        default = "desktop-microvm";
+        description = "Runner scale set name; also the workflow label.";
+      };
+      runnerGroup = lib.mkOption {
+        type = lib.types.str;
+        default = "default";
+        description = "Runner group the scale set registers in.";
+      };
+      labels = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [ "self-hosted" "container" ];
+        description = "Extra labels carried by the scale set.";
+      };
+      heartbeatRepo = lib.mkOption {
+        type = lib.types.str;
+        default = "peasant-labs/infra";
+        description = "Repository holding the pool-health variable the router reads.";
+      };
+      heartbeatVariable = lib.mkOption {
+        type = lib.types.str;
+        default = "RUNNER_POOL_HEALTH";
+        description = "Repository variable for the pool-health record.";
+      };
+      app = {
+        clientId = lib.mkOption {
+          type = lib.types.str;
+          description = "GitHub App client id used for scale sets, JIT and the heartbeat.";
+        };
+        installationId = lib.mkOption {
+          type = lib.types.int;
+          description = "GitHub App installation id on the organization.";
+        };
+        privateKeyFile = lib.mkOption {
+          type = lib.types.path;
+          description = "PEM private key (root-readable, e.g. a sops secret path).";
+        };
+      };
+    };
   };
 
   config = lib.mkIf cfg.enable (lib.mkMerge [
@@ -146,6 +191,42 @@ in
         enable = true;
         internalInterfaces = [ cfg.network.bridge ];
         externalInterface = cfg.network.externalInterface;
+      };
+    })
+
+    (lib.mkIf cfg.dispatcher.enable {
+      assertions = [
+        {
+          assertion = infra != null;
+          message = "CUSTOM.virtualisation.runner-vm.dispatcher requires the infra flake input";
+        }
+      ];
+
+      systemd.services.runner-dispatcher = {
+        description = "GitHub runner pool dispatcher (scale set to per-job VMs)";
+        wantedBy = [ "multi-user.target" ];
+        wants = [ "network-online.target" ];
+        after = [ "network-online.target" ];
+        serviceConfig = {
+          ExecStart = lib.escapeShellArgs (
+            [ "${infra.packages.${pkgs.stdenv.hostPlatform.system}.runner-dispatcher}/bin/runner-dispatcher" ]
+            ++ [
+              "-scale-set-name" cfg.dispatcher.scaleSetName
+              "-runner-group" cfg.dispatcher.runnerGroup
+              "-labels" (lib.concatStringsSep "," cfg.dispatcher.labels)
+              "-max-capacity" (toString cfg.count)
+              "-vm-driver" "systemd"
+              "-vm-jit-dir" cfg.jitHostPath
+              "-heartbeat-repo" cfg.dispatcher.heartbeatRepo
+              "-heartbeat-variable" cfg.dispatcher.heartbeatVariable
+              "-app-client-id" cfg.dispatcher.app.clientId
+              "-app-installation-id" (toString cfg.dispatcher.app.installationId)
+              "-app-private-key-file" (toString cfg.dispatcher.app.privateKeyFile)
+            ]
+          );
+          Restart = "always";
+          RestartSec = "5s";
+        };
       };
     })
   ]);
