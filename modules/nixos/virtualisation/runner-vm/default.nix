@@ -108,7 +108,11 @@ in
       systemd.tmpfiles.rules = [
         "d ${cfg.cacheHostPath} 0755 root root -"
         "d ${cfg.jitHostPath} 0700 root root -"
-        "d ${cfg.disksHostPath} 0700 root root -"
+        # The VM service runs as microvm:kvm (constants in microvm.nix) and
+        # creates and opens its own volume image, so this directory must be
+        # writable by that user. microvm.nix adjusts share sources itself;
+        # volumes are outside that mechanism.
+        "d ${cfg.disksHostPath} 0700 microvm kvm -"
       ] ++ map (i: "d ${cfg.jitHostPath}/runner-vm-${toString i} 0700 root root -") slots;
     }
 
