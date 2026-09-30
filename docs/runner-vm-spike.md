@@ -19,17 +19,60 @@ instead, because a scale set has no registered runners while idle.
 
 ## Enabling
 
-1. Merge the infra branch and update the input:
-   `nix flake update infra` in the dotfiles repo.
-2. Create a GitHub App on the organization with **Actions: read and write**
-   (scale sets, JIT configs) and **Variables: read and write** (heartbeat),
-   install it, and store the PEM as a sops secret owned by root, mode 0400
-   (for example `github-runner/app-key`).
-3. Configure the host:
+### GitHub App
+
+No existing organization app fits. The installed apps are Renovate, Claude,
+Cursor, Blacksmith, Railway, and the peasant-labs apps (gofetch, releaser,
+reviewer, ui); none carries the self-hosted-runner or variables permissions,
+and reusing one would either over-grant or entangle the dispatcher with other
+automation. Create a dedicated, organization-owned app
+(Settings → Developer settings → GitHub Apps → New GitHub App):
+
+- **Name:** `peasant-labs-runner-dispatcher` (the scale set name is separate).
+- **Webhook:** uncheck **Active**. The dispatcher polls; nothing calls back.
+- **Repository permissions:** `Metadata: Read-only` (always on) and
+  `Variables: Read and write` — the heartbeat is the repository variable
+  `RUNNER_POOL_HEALTH` on `peasant-labs/infra`.
+- **Organization permissions:** `Self-hosted runners: Read and write` —
+  scale-set registration and JIT configs.
+- Nothing else.
+
+Then **Install App** on the organization with access to at least
+`peasant-labs/infra` (all repositories is fine). Note the **App ID** (or Client
+ID; the SDK accepts either) from the app page, and the **installation ID** from
+the install URL
+(`https://github.com/organizations/peasant-labs/settings/installations/<id>`).
+Both can also be read back with:
+
+```bash
+gh api /orgs/peasant-labs/installations \
+  --jq '.installations[] | select(.app_slug=="<app-slug>") | {app_id, id}'
+```
+
+Generate a private key on the app page (a `.pem` download) and store it in
+sops. The `secrets/github-runner/` creation rule already lists the desktop and
+user age keys, so only the value needs adding:
+
+```bash
+sops set --value-file secrets/github-runner/secrets.yaml \
+  '["github_app_private_key"]' /path/to/<app>.private-key.pem
+```
+
+or `sops secrets/github-runner/secrets.yaml` and paste the PEM under
+`github_app_private_key` (see `secrets.yaml.example`). Keep the original PEM:
+the systemd-creds copy below is machine-bound, and so is the downloaded key —
+GitHub only shows it once.
+
+### Host
+
+1. Merge the infra branch and update the input: `nix flake update infra` in
+   the dotfiles repo.
+2. Configure the host:
 
    ```nix
    sops.secrets."github-runner/app-key" = {
-     sopsFile = ...;
+     sopsFile = ../../secrets/github-runner/secrets.yaml;
+     key = "github_app_private_key";
      owner = "root";
      mode = "0400";
    };
@@ -37,21 +80,23 @@ instead, because a scale set has no registered runners while idle.
    CUSTOM.services.runner-dispatcher = {
      enable = true;
      app = {
-       clientId = "<app client id>";
-       installationId = 0;
+       clientId = "<app id or client id>";
+       installationId = <installation id>;
        privateKeyFile = config.sops.secrets."github-runner/app-key".path;
      };
    };
    ```
 
-4. Make sure the router token can read repository variables on
+3. Make sure the router token can read repository variables on
    `peasant-labs/infra` (otherwise the router falls back with
    `query-failed`).
-5. Drain the container pool and rebuild (`./switch.sh` drains first).
+4. Drain the container pool and rebuild (`./switch.sh` drains first).
 
-The dispatcher's first start provisions the systemd-creds encrypted copy of the
-App key (`/var/lib/runner-dispatcher/app-private-key.cred`). Reinstalling the
-host requires the original PEM again; the encrypted blob is machine-bound.
+The dispatcher's first start runs `runner-dispatcher-credential.service`, which
+encrypts the PEM with systemd-creds into
+`/var/lib/runner-dispatcher/app-private-key.cred`; the dispatcher reads only the
+encrypted copy (`LoadCredentialEncrypted`) and cannot reach the plaintext
+secret. To rotate the key, delete the `.cred` file, update sops, and rebuild.
 
 ## Verifying
 
