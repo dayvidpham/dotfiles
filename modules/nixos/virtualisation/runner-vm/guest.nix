@@ -78,6 +78,9 @@ in
           source = cfg.jitHostPath;
           mountPoint = "/run/jit";
           proto = "virtiofs";
+          # Read-only at the server: even guest root cannot write back into the
+          # host directory through a remount.
+          readOnly = true;
         }
       ];
       # Boot as fast as possible; no console, no graphics.
