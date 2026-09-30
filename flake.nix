@@ -258,6 +258,7 @@
         # peasant-labs/infra AGENTS.md; the Containerfile and the publishing
         # workflow that signs the image moved there with it.
         infra.nixosModules.default
+        infra.nixosModules.runner-dispatcher
 
         # Custom modules
         ./modules/nixos

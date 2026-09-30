@@ -191,6 +191,24 @@ in
     };
   };
 
+  # Runner per-job microVMs. The dispatcher below drives a runner scale set.
+  # While the container pool keeps serving, the VM pool carries its own
+  # "microvm" label so it never competes for container jobs, and the router's
+  # v1 tag stays on the container path until cutover.
+  CUSTOM.virtualisation.runner-vm.enable = true;
+
+  CUSTOM.services.runner-dispatcher = {
+    enable = true;
+    labels = [ "self-hosted" "linux" "x64" "microvm" ];
+    runnerGroup = "minttea--desktop";
+    maxCapacity = 4;
+    app = {
+      clientId = "5132510";
+      installationId = 166429667;
+      privateKeyFile = config.sops.secrets."github-runner/app-key".path;
+    };
+  };
+
   #####################################################
   # Package management
   nixpkgs.config.cudaSupport = true;
@@ -318,6 +336,17 @@ in
     sopsFile = ../../secrets/github-runner/secrets.yaml;
     key = "github_runner_pat";
     owner = "minttea";
+  };
+
+  # GitHub App private key for the scale-set dispatcher (app
+  # peasant-labs-ci-runner). The one-shot provisioning unit re-encrypts it
+  # with systemd-creds; the running dispatcher only receives the encrypted
+  # copy, so this plaintext path is root-only.
+  sops.secrets."github-runner/app-key" = {
+    sopsFile = ../../secrets/github-runner/secrets.yaml;
+    key = "github_app_private_key";
+    owner = "root";
+    mode = "0400";
   };
 
   # Try getting AMD iGPU to work @_@
