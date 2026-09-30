@@ -204,5 +204,11 @@ in
     services.openssh.enable = false;
     systemd.services.systemd-udev-settle.enable = false;
     systemd.services.NetworkManager-wait-online.enable = false;
+
+    # The host captures this machine's serial console in the unit journal.
+    # Forwarding the guest journal to the console is the only debugging channel
+    # into a VM with no ssh, and it is what makes a wedged job diagnosable from
+    # the host.
+    services.journald.extraConfig = "ForwardToConsole=yes";
   };
 }
