@@ -142,6 +142,15 @@ in
         };
       }) slots);
 
+      # Slots are per-job: when the guest powers off, the unit must stay
+      # inactive so the dispatcher can reclaim it. The microvm.nix template
+      # restarts always — right for long-lived VMs, a boot loop for one-shot
+      # slots.
+      systemd.services = lib.listToAttrs (map (i: {
+        name = "microvm@runner-vm-${toString i}";
+        value.serviceConfig.Restart = lib.mkForce "no";
+      }) slots);
+
       # Outbound-only networking: one bridge, a DHCP server for guests, and
       # NAT for everything behind it.
       systemd.network.netdevs."10-runner-vm-bridge".netdevConfig = {

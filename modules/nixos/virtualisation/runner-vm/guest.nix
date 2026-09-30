@@ -167,9 +167,11 @@ in
       requires = [ "runner-image-load.service" ];
       after = [ "runner-image-load.service" "network-online.target" "run-jit.mount" ];
       serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = false;
-        TimeoutStartSec = "infinity";
+        # exec, not oneshot: a oneshot wanted by multi-user holds boot
+        # completion — and with it the host unit's Type=notify READY — until
+        # the job finishes, so a start could never observe a ready VM. exec
+        # reports started at spawn and the job keeps running.
+        Type = "exec";
         # The JIT blob is read by systemd from the read-only share and handed
         # to this unit alone; it is single-use and consumed before any job
         # step runs.
