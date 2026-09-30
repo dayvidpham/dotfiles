@@ -49,6 +49,15 @@ in
       programs.niri.package = niri.packages.${pkgs.stdenv.hostPlatform.system}.niri-stable;
       programs.niri.config = null;
       programs.niri.settings = null;
+
+      # niri-flake enables services.gnome-keyring (home), whose unit starts a
+      # daemon at every graphical session. A daemon from an earlier session
+      # keeps the D-Bus names and the unlock state, so the new one only piles
+      # up and the stale owner ends up serving — and eventually wedging — GUI
+      # passphrase prompts (plabs-mzn). Skip the unit while a daemon is already
+      # running: PAM (greetd, pam_gnome_keyring auto_start) starts one at the
+      # first login and unlocks it on every login.
+      systemd.user.services.gnome-keyring.Unit.ConditionPathExists = [ "!%t/keyring/control" ];
       xdg.configFile."niri/config.kdl".source = config.lib.file.mkOutOfStoreSymlink /home/minttea/dotfiles/modules/home-manager/desktops/wayland/niri/config.kdl;
 
       home.packages = [
