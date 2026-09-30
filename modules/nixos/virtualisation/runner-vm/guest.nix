@@ -41,6 +41,10 @@ in
       type = types.str;
       description = "Host directory holding this slot's JIT config.";
     };
+    disksHostPath = mkOption {
+      type = types.str;
+      description = "Host directory holding this slot's container-store disk image.";
+    };
     runnerImage = mkOption {
       type = types.package;
       description = "Docker-archive tarball loaded into podman at boot.";
@@ -88,6 +92,17 @@ in
           readOnly = true;
         }
       ];
+      # Container storage lives on its own ext4 volume, not the tmpfs root:
+      # the runner image is ~1.4 GiB uncompressed and overlay-on-tmpfs cannot
+      # hold it inside the guest's 50%-of-RAM root. The volume is scratch
+      # space; the image is loaded into a fresh store on every boot.
+      volumes = [
+        {
+          image = "${cfg.disksHostPath}/runner-vm-${toString cfg.slot}.img";
+          mountPoint = "/var/lib/containers";
+          size = 6144;
+        }
+      ];
       # Boot as fast as possible; no console, no graphics.
       graphics.enable = false;
     };
@@ -126,9 +141,20 @@ in
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
+        # Podman's output goes to the guest console, which the host captures in
+        # this machine's journal — a load failure is diagnosable from the host.
+        StandardOutput = "journal+console";
+        StandardError = "journal+console";
+        # A failure here means runner-job never starts (its dependency), so the
+        # job unit's poweroff cannot fire. Power the guest off directly; a slot
+        # must never wedge holding memory.
+        OnFailure = [ "poweroff.target" ];
       };
       script = ''
         set -euo pipefail
+        # The volume is scratch space; start from an empty store so a slot
+        # never inherits a previous job's state.
+        rm -rf /var/lib/containers/storage
         ${pkgs.podman}/bin/podman load -i ${cfg.runnerImage}
       '';
     };

@@ -53,6 +53,12 @@ in
       description = "Parent directory holding one JIT directory per slot.";
     };
 
+    disksHostPath = lib.mkOption {
+      type = lib.types.str;
+      default = "/var/lib/runner-vm/disks";
+      description = "Host directory holding one container-store disk image per slot.";
+    };
+
     runnerImageName = lib.mkOption {
       type = lib.types.str;
       default = "quay.io/peasant-labs/github-runner:pinned";
@@ -102,6 +108,7 @@ in
       systemd.tmpfiles.rules = [
         "d ${cfg.cacheHostPath} 0755 root root -"
         "d ${cfg.jitHostPath} 0700 root root -"
+        "d ${cfg.disksHostPath} 0700 root root -"
       ] ++ map (i: "d ${cfg.jitHostPath}/runner-vm-${toString i} 0700 root root -") slots;
     }
 
@@ -112,6 +119,10 @@ in
         name = "runner-vm-${toString i}";
         value = {
           inherit pkgs;
+          # Slots are demand-started by the dispatcher; without this, systemd
+          # boots all of them at boot and the pool holds four idle VMs (and
+          # their memory) until the first job.
+          autostart = false;
           config = { ... }: {
             imports = [ ./guest.nix ];
             CUSTOM.virtualisation.runner-vm.guest = {
@@ -119,6 +130,7 @@ in
               inherit (cfg.vm) vcpu mem;
               cacheHostPath = cfg.cacheHostPath;
               jitHostPath = "${cfg.jitHostPath}/runner-vm-${toString i}";
+              disksHostPath = cfg.disksHostPath;
               mac = macFor i;
               inherit (cfg) runnerImage runnerImageName;
             };
