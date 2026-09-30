@@ -191,10 +191,9 @@ in
     };
   };
 
-  # Runner per-job microVMs (spike branch). Enable together with the dispatcher
-  # once the infra package lands; the dispatcher needs the GitHub App
-  # credentials from sops. Eval-tested from this branch with an infra input
-  # override.
+  # Runner per-job microVMs (spike branch). Enable together with
+  # CUSTOM.services.runner-dispatcher (owned by the infra flake) once the infra
+  # branch lands; the dispatcher needs the GitHub App credentials from sops.
   CUSTOM.virtualisation.runner-vm.enable = false;
 
   #####################################################
