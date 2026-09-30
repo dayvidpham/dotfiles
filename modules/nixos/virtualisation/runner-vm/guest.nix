@@ -185,7 +185,12 @@ in
         mkdir -p /var/cache/runner/gomod /var/cache/runner/gobuild \
                  /var/cache/runner/tool /var/cache/runner/tmp
         if jit="$(cat "$CREDENTIALS_DIRECTORY/jit" 2>/dev/null)" && [ -n "$jit" ]; then
+          # Host networking, like the container pool: the guest's resolver is
+          # systemd-resolved's stub (127.0.0.53), which is unreachable from a
+          # container's own network namespace, while the guest's DHCP/NAT path
+          # already works.
           ${pkgs.podman}/bin/podman run --rm --name runner-job --user 0 \
+            --network=host \
             -e RUNNER_ALLOW_RUNASROOT=1 \
             -e GOMODCACHE=/var/cache/runner/gomod \
             -e GOCACHE=/var/cache/runner/gobuild \
