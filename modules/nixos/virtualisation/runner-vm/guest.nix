@@ -138,19 +138,22 @@ in
         TimeoutStartSec = "infinity";
       };
       script = ''
-        set -euo pipefail
-        jit="$(cat /run/jit/jit-config)"
+        set -u
         mkdir -p /var/cache/runner/gomod /var/cache/runner/gobuild \
                  /var/cache/runner/tool /var/cache/runner/tmp
-        ${pkgs.podman}/bin/podman run --rm --name runner-job --user 0 \
-          -e RUNNER_ALLOW_RUNASROOT=1 \
-          -e GOMODCACHE=/var/cache/runner/gomod \
-          -e GOCACHE=/var/cache/runner/gobuild \
-          -e AGENT_TOOLSDIRECTORY=/var/cache/runner/tool \
-          -e TMPDIR=/var/cache/runner/tmp \
-          -v /var/cache/runner:/var/cache/runner \
-          --entrypoint /home/runner/run.sh \
-          ${cfg.runnerImageName} --jitconfig "$jit" || true
+        if jit="$(cat /run/jit/jit-config 2>/dev/null)" && [ -n "$jit" ]; then
+          ${pkgs.podman}/bin/podman run --rm --name runner-job --user 0 \
+            -e RUNNER_ALLOW_RUNASROOT=1 \
+            -e GOMODCACHE=/var/cache/runner/gomod \
+            -e GOCACHE=/var/cache/runner/gobuild \
+            -e AGENT_TOOLSDIRECTORY=/var/cache/runner/tool \
+            -e TMPDIR=/var/cache/runner/tmp \
+            -v /var/cache/runner:/var/cache/runner \
+            --entrypoint /home/runner/run.sh \
+            ${cfg.runnerImageName} --jitconfig "$jit" || true
+        fi
+        # Power off even when the JIT config could not be read; an idle VM
+        # would otherwise hold a slot until an operator intervenes.
         ${pkgs.systemd}/bin/systemctl poweroff --no-block || true
       '';
     };
