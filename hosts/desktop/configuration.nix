@@ -219,6 +219,34 @@ in
     };
   };
 
+  # Rootless podman never garbage-collects on its own: the weekly auto-update
+  # prune removes only dangling images, so stopped job containers, anonymous
+  # volumes and unused images accumulate until a human intervenes. This timer
+  # reclaims them with age filters; the filters structurally protect running
+  # jobs, pod members (the compose dev stacks) and named volumes.
+  systemd.user.services.runner-store-gc = {
+    description = "Reclaim unused runner container resources";
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = pkgs.writeShellScript "runner-store-gc" ''
+        set -euo pipefail
+        podman=${pkgs.podman}/bin/podman
+        "$podman" container prune -f --filter until=48h
+        # Anonymous volumes only; named volumes (caches, dev data) are kept.
+        "$podman" volume prune -f --filter until=48h
+        "$podman" image prune -af --filter until=336h
+        "$podman" system df
+      '';
+    };
+  };
+  systemd.user.timers.runner-store-gc = {
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnCalendar = "Sun 04:30";
+      Persistent = true;
+    };
+  };
+
   # Runner per-job microVMs. The dispatcher below drives a runner scale set.
   # While the container pool keeps serving, the VM pool carries its own
   # "microvm" label so it never competes for container jobs, and the router's
