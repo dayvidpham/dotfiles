@@ -148,7 +148,18 @@ in
       # slots.
       systemd.services = lib.listToAttrs (map (i: {
         name = "microvm@runner-vm-${toString i}";
-        value.serviceConfig.Restart = lib.mkForce "no";
+        value = {
+          serviceConfig.Restart = lib.mkForce "no";
+          # The slot's virtiofsd children exit 0 when the VM stops and their
+          # supervisor never respawns them (an expected exit needs no
+          # restart), so the unit stays green while serving stale sockets and
+          # the next boot dies connecting to them. Restart the daemons on
+          # every boot; the `+` runs this as root because the VM unit itself
+          # runs as the microvm user.
+          serviceConfig.ExecStartPre = lib.mkBefore [
+            "+${pkgs.systemd}/bin/systemctl try-restart microvm-virtiofsd@runner-vm-${toString i}.service"
+          ];
+        };
       }) slots);
 
       # Outbound-only networking: one bridge, a DHCP server for guests, and
