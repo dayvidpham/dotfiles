@@ -59,6 +59,11 @@ in
       hypervisor = "cloud-hypervisor";
       vcpu = cfg.vcpu;
       mem = cfg.mem;
+      # AF_VSOCK enables the host unit's Type=notify: systemd in the guest
+      # signals boot-readiness over vmm.notify_socket, so starting the unit
+      # means the VM is actually usable, not just that the hypervisor was
+      # exec'd. CIDs are host-unique; 0/1/2 are reserved.
+      vsock.cid = 100 + cfg.slot;
       interfaces = [
         {
           type = "tap";
