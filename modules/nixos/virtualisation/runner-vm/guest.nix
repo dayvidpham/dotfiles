@@ -181,6 +181,17 @@ in
       "nft_compat"
     ];
 
+    # Route container traffic. The bridge network needs the kernel to forward
+    # between the container bridge and the NIC. Without it, published service
+    # ports answer "Host is unreachable" and bridge-network containers have no
+    # egress, although pulls still work because those happen on the guest
+    # itself. A normal host has forwarding on for other reasons; this guest
+    # has no other reason.
+    boot.kernel.sysctl = {
+      "net.ipv4.ip_forward" = 1;
+      "net.ipv4.conf.all.forwarding" = 1;
+    };
+
     virtualisation.podman.enable = true;
     virtualisation.containers.enable = true;
     # The guest's own podman API, for services: and container: jobs. It runs
