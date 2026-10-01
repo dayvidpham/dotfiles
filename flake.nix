@@ -419,6 +419,15 @@
           ];
         };
 
+        # Debug runner VM - standalone, started by the user, no host units.
+        runner-vm-debug = mkMinimalHost {
+          name = "runner-vm-debug";
+          modules = [
+            microvm.nixosModules.microvm
+            ./modules/nixos/virtualisation/runner-vm-debug/guest.nix
+          ];
+        };
+
         # OpenClaw microVM - runs openclaw gateway with network access to safemolt
         # Deprecated for now: unmaintained OpenClaw package evaluation breaks flake check.
         # Keep this standalone definition for restoration once package evaluation is fixed.
@@ -435,6 +444,12 @@
         #     openclaw-modules.nixosModules.openclaw-vm-guest
         #   ];
         # };
+      };
+
+      packages.${system} = {
+        runner-vm-debug = self.nixosConfigurations.runner-vm-debug.config.microvm.declaredRunner;
+        passt = pkgs.passt;
+        virtiofsd = pkgs.virtiofsd;
       };
 
       checks.${system}.flowX13-gpu-profiles =

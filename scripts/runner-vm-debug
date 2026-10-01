@@ -1,0 +1,154 @@
+#!/usr/bin/env bash
+# Debug runner VM: build and run it as a normal user, with no sudo.
+#
+#   runner-vm-debug build   rebuild the VM (nix build, user-level)
+#   runner-vm-debug run     start it (starts passt first, foreground)
+#   runner-vm-debug ssh     ssh into it as root
+#   runner-vm-debug stop    shut it down through the API socket
+#   runner-vm-debug passt   start only the passt backend
+#
+# The VM talks to the network through passt over vhost-user, so no tap, no
+# bridge and no host configuration are involved.
+set -euo pipefail
+
+here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+flake="$(cd "$here/.." && pwd)"
+state="${XDG_DATA_HOME:-$HOME/.local/share}/runner-vm-debug"
+runtime="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/runner-vm-debug"
+runner="$state/runner"
+passt_sock="$runtime/passt.sock"
+ssh_port="${RUNNER_VM_DEBUG_SSH_PORT:-2222}"
+
+build() {
+  mkdir -p "$state"
+  nix build --out-link "$runner" "$flake#packages.x86_64-linux.runner-vm-debug"
+}
+
+passt_bin() {
+  nix build --no-link --print-out-paths "$flake#packages.x86_64-linux.passt"
+}
+
+virtiofsd_bin() {
+  nix build --no-link --print-out-paths "$flake#packages.x86_64-linux.virtiofsd"
+}
+
+start_virtiofsd() {
+  local sock="${RUNNER_VM_DEBUG_VIRTIOFSD_SOCK:-$runtime/virtiofsd.sock}"
+  local share="${RUNNER_VM_DEBUG_SHARE:-$state/share}"
+  mkdir -p "$runtime" "$share"
+  rm -f "$sock"
+  "$(virtiofsd_bin)/bin/virtiofsd" --socket-path="$sock" --shared-dir="$share" \
+    >"$state/virtiofsd.log" 2>&1 &
+  echo $! >"$runtime/virtiofsd.pid"
+  for _ in $(seq 1 50); do
+    [ -S "$sock" ] && break
+    sleep 0.1
+  done
+  if [ ! -S "$sock" ]; then
+    echo "virtiofsd did not create $sock; see $state/virtiofsd.log" >&2
+    exit 1
+  fi
+  echo "virtiofsd sharing $share"
+}
+
+stop_virtiofsd() {
+  if [ -f "$runtime/virtiofsd.pid" ]; then
+    kill "$(cat "$runtime/virtiofsd.pid")" 2>/dev/null || true
+    rm -f "$runtime/virtiofsd.pid" "$runtime/virtiofsd.sock"
+  fi
+}
+
+start_passt() {
+  if [ -S "$passt_sock" ] && kill -0 "$(cat "$runtime/passt.pid" 2>/dev/null)" 2>/dev/null; then
+    echo "passt already running (pid $(cat "$runtime/passt.pid"))"
+    return
+  fi
+  mkdir -p "$runtime"
+  rm -f "$passt_sock"
+  "$(passt_bin)/bin/passt" \
+    --vhost-user \
+    --socket "$passt_sock" \
+    --foreground \
+    -t "127.0.0.1/${ssh_port}:22" \
+    >"$state/passt.log" 2>&1 &
+  echo $! >"$runtime/passt.pid"
+  for _ in $(seq 1 50); do
+    [ -S "$passt_sock" ] && break
+    sleep 0.1
+  done
+  if [ ! -S "$passt_sock" ]; then
+    echo "passt did not create $passt_sock; see $state/passt.log" >&2
+    exit 1
+  fi
+  echo "passt listening on $passt_sock (ssh forwarded to 127.0.0.1:${ssh_port})"
+}
+
+stop_passt() {
+  if [ -f "$runtime/passt.pid" ]; then
+    kill "$(cat "$runtime/passt.pid")" 2>/dev/null || true
+    rm -f "$runtime/passt.pid" "$passt_sock"
+  fi
+}
+
+vm_pid() {
+  pgrep -f "microvm@runner-vm-deb[u]g" | head -1 || true
+}
+
+stop_vm() {
+  # microvm-shutdown sends the power button and then waits on $MAINPID, which a
+  # shell that did not launch the VM does not have. If the VM is still alive
+  # after the API attempt, signal it directly.
+  [ -x "$runner/bin/microvm-shutdown" ] || build
+  "$runner/bin/microvm-shutdown" >/dev/null 2>&1 || true
+  local pid
+  pid="$(vm_pid)"
+  [ -n "$pid" ] || return 0
+  kill -TERM "$pid" 2>/dev/null || true
+  for _ in $(seq 1 40); do
+    kill -0 "$pid" 2>/dev/null || break
+    sleep 0.25
+  done
+  kill -KILL "$pid" 2>/dev/null || true
+}
+
+require_no_vm() {
+  local pid
+  pid="$(vm_pid)"
+  if [ -n "$pid" ]; then
+    echo "a runner-vm-debug VM is already running (pid $pid); stop it first" >&2
+    exit 1
+  fi
+}
+
+case "${1:-run}" in
+  build)
+    build
+    echo "built: $runner"
+    ;;
+  passt)
+    start_passt
+    ;;
+  run)
+    mkdir -p "$state"
+    [ -x "$runner/bin/microvm-run" ] || build
+    require_no_vm
+    start_passt
+    start_virtiofsd
+    trap 'stop_passt; stop_virtiofsd' EXIT
+    exec "$runner/bin/microvm-run"
+    ;;
+  ssh)
+    shift
+    exec ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+      -p "$ssh_port" root@127.0.0.1 "$@"
+    ;;
+  stop)
+    stop_vm
+    stop_passt
+    stop_virtiofsd
+    ;;
+  *)
+    echo "usage: $(basename "$0") [build|run|ssh|stop|passt]" >&2
+    exit 64
+    ;;
+esac
