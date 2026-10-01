@@ -146,8 +146,16 @@ in
 
     networking.useNetworkd = true;
     systemd.network.enable = true;
+    # Physical links only: a container veth carries a link kind ("veth") and
+    # must stay under podman/netavark's control. networkd detaches a link it
+    # manages from a master its .network file does not name
+    # (link_request_to_set_master() in networkd), which silently unplugs a
+    # container veth from its podman bridge.
     systemd.network.networks."10-ether" = {
-      matchConfig.Type = "ether";
+      matchConfig = {
+        Type = "ether";
+        Kind = "!*";
+      };
       networkConfig = {
         DHCP = "yes";
         DNS = [ "1.1.1.1" "9.9.9.9" ];
