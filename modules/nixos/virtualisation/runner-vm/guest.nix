@@ -166,6 +166,21 @@ in
       }
     ];
 
+    # The guest kernel ships netfilter as loadable modules and nothing inside
+    # the guest loads them on demand, unlike a normal NixOS host. Without
+    # nf_tables/nft_nat/nft_masq loaded, netavark cannot program container
+    # networking: published service ports are unreachable and bridge-network
+    # containers have no egress. The container pool never saw this because its
+    # host kernel autoloads the modules.
+    boot.kernelModules = [
+      "nf_tables"
+      "nf_nat"
+      "nft_nat"
+      "nft_masq"
+      "nft_chain_nat"
+      "nft_compat"
+    ];
+
     virtualisation.podman.enable = true;
     virtualisation.containers.enable = true;
     # The guest's own podman API, for services: and container: jobs. It runs
