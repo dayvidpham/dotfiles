@@ -39,6 +39,38 @@ in
         default = 4096;
         description = "Memory in MiB per runner VM.";
       };
+      diskSize = lib.mkOption {
+        type = lib.types.ints.positive;
+        default = 16384;
+        description = ''
+          Maximum size in MiB of each slot's sparse scratch disk. Takes effect
+          when a slot image is created; delete an idle slot's image to resize.
+        '';
+      };
+      idleTimeoutSec = lib.mkOption {
+        type = lib.types.ints.positive;
+        default = 600;
+        description = "Seconds a runner VM waits for its first job before powering off.";
+      };
+    };
+
+    limits = {
+      cpuQuota = lib.mkOption {
+        type = lib.types.str;
+        default = "${toString (cfg.count * cfg.vm.vcpu * 100)}%";
+        defaultText = lib.literalExpression ''"''${toString (count * vm.vcpu * 100)}%"'';
+        description = "CPUQuota for the slice holding every runner VM and its virtiofsd daemons.";
+      };
+      memoryMax = lib.mkOption {
+        type = lib.types.str;
+        default = "${toString (cfg.count * (cfg.vm.mem + 512))}M";
+        defaultText = lib.literalExpression ''"''${toString (count * (vm.mem + 512))}M"'';
+        description = ''
+          MemoryMax for the runner VM slice: every slot's guest memory plus
+          hypervisor and virtiofsd overhead. Below that, the kernel OOM-kills a
+          running VM.
+        '';
+      };
     };
 
     cacheHostPath = lib.mkOption {
@@ -131,7 +163,7 @@ in
             imports = [ ./guest.nix ];
             CUSTOM.virtualisation.runner-vm.guest = {
               slot = i;
-              inherit (cfg.vm) vcpu mem;
+              inherit (cfg.vm) vcpu mem diskSize idleTimeoutSec;
               cacheHostPath = cfg.cacheHostPath;
               jitHostPath = "${cfg.jitHostPath}/runner-vm-${toString i}";
               disksHostPath = cfg.disksHostPath;
@@ -146,10 +178,30 @@ in
       # inactive so the dispatcher can reclaim it. The microvm.nix template
       # restarts always — right for long-lived VMs, a boot loop for one-shot
       # slots.
-      systemd.services = lib.listToAttrs (map (i: {
-        name = "microvm@runner-vm-${toString i}";
-        value.serviceConfig.Restart = lib.mkForce "no";
-      }) slots);
+      #
+      # Every VM and its virtiofsd daemons share one slice, the host-protection
+      # ceiling for the pool (the container pool has the same kind of parent).
+      systemd.services = lib.listToAttrs (lib.concatMap (i: [
+        {
+          name = "microvm@runner-vm-${toString i}";
+          value.serviceConfig = {
+            Restart = lib.mkForce "no";
+            Slice = "runner-vm.slice";
+          };
+        }
+        {
+          name = "microvm-virtiofsd@runner-vm-${toString i}";
+          value.serviceConfig.Slice = "runner-vm.slice";
+        }
+      ]) slots);
+
+      systemd.slices.runner-vm = {
+        description = "Per-job GitHub runner VMs";
+        sliceConfig = {
+          CPUQuota = cfg.limits.cpuQuota;
+          MemoryMax = cfg.limits.memoryMax;
+        };
+      };
 
       # Outbound-only networking: one bridge, a DHCP server for guests, and
       # NAT for everything behind it.
