@@ -36,7 +36,7 @@ in
       };
       mem = lib.mkOption {
         type = lib.types.int;
-        default = 4096;
+        default = 8192;
         description = "Memory in MiB per runner VM.";
       };
       diskSize = lib.mkOption {
