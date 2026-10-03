@@ -65,8 +65,8 @@ in
     #godot
 
     # Audio Production
-    ardour
-    zrythm
+    # ardour
+    # zrythm
 
     # utilities
     gimp # photo editing/markup

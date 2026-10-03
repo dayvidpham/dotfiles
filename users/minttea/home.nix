@@ -170,16 +170,16 @@ rec {
     oci-cli
     openssl
 
-    # Utils
-    neovide # Rust-based native nvim text editor
-    nix-search # Fast, indexed replacement for awful builtin `nix search`
-  ])
-  ++ (with pkgs-unstable; [
     # Notes -----
     #anytype # proj management/knowledge base
     zotero # ref/citation/bib manager
     #lorien # infinite canvas notes
 
+    # Utils
+    neovide # Rust-based native nvim text editor
+    nix-search # Fast, indexed replacement for awful builtin `nix search`
+  ])
+  ++ (with pkgs-unstable; [
     # harnesses -------
     llm-agents.codex
     llm-agents.grok
@@ -188,7 +188,6 @@ rec {
     llm-agents.copilot-cli
     llm-agents.zcode
     llm-agents.dsh
-
   ]);
 
 
@@ -210,7 +209,8 @@ rec {
   CUSTOM.programs.vscode.enable = true;
 
   # LLM Agents
-  programs.bun.enable = true;  CUSTOM.programs.opencode.enable = false;
+  programs.bun.enable = true;
+  CUSTOM.programs.opencode.enable = false;
   CUSTOM.programs.claude-code.enable = true;
   CUSTOM.programs.aura-config-sync.enable = true;
   CUSTOM.programs.aura-config-sync.packages.enable = false; # no aura-swarm
