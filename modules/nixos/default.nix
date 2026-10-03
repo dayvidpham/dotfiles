@@ -27,6 +27,16 @@
       "https://cuda-maintainers.cachix.org?priority=3"
       "https://cache.numtide.com"
     ];
+    # trusted-substituters only lets (unprivileged) users *request* these
+    # caches; it does not enable them. Mirror the list here so the daemon
+    # actually queries them (nix-community, cuda-maintainers, and the
+    # llm-agents cache at cache.numtide.com were all inactive).
+    nix.settings.extra-substituters = [
+      "https://cache.nixos.org?priority=1"
+      "https://nix-community.cachix.org?priority=2"
+      "https://cuda-maintainers.cachix.org?priority=3"
+      "https://cache.numtide.com"
+    ];
     nix.settings.trusted-public-keys = [
       "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
