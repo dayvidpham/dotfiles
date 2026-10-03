@@ -450,6 +450,7 @@
         runner-vm-debug = self.nixosConfigurations.runner-vm-debug.config.microvm.declaredRunner;
         passt = pkgs.passt;
         virtiofsd = pkgs.virtiofsd;
+        pinentry-tmux = pkgs-unstable.callPackage ./packages/pinentry-tmux { };
       };
 
       checks.${system}.flowX13-gpu-profiles =
