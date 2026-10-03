@@ -229,7 +229,22 @@
       };
 
       pkgs = import nixpkgs nixpkgs-options;
-      pkgs-unstable = import nixpkgs-unstable nixpkgs-options;
+      pkgs-unstable = import nixpkgs-unstable (
+        nixpkgs-options
+        // {
+          # Temporary: nixos-unstable pairs zotero 10.x with firefox-esr-153,
+          # which Zotero 10.x does not support; feed it ESR 140 (see
+          # packages/zotero) until the channel carries the upstream fix
+          # (nixpkgs#569006).
+          overlays = nixpkgs-options.overlays ++ [
+            (final: prev: {
+              zotero = prev.callPackage ./packages/zotero {
+                firefox-esr-unwrapped = pkgs-stable.firefox-esr-140-unwrapped;
+              };
+            })
+          ];
+        }
+      );
       pkgs-stable = import nixpkgs-stable nixpkgs-options;
       pkgs-wsl = import nixpkgs-wsl nixpkgs-options;
 
