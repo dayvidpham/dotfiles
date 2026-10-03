@@ -82,6 +82,9 @@ in
   ;
 
   programs.obs-studio.enable = true;
+  # OBS reads cudaSupport only to add autoAddDriverRunpath; keep it scoped
+  # here instead of globally (see flake.nix nixpkgs-options).
+  programs.obs-studio.package = pkgs.obs-studio.override { cudaSupport = true; };
 
   CUSTOM.programs.nodejs.enable = false;
   CUSTOM.programs.vscode.enable = true;

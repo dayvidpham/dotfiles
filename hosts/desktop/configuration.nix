@@ -239,7 +239,7 @@ in
 
   #####################################################
   # Package management
-  nixpkgs.config.cudaSupport = true;
+  # cudaSupport is deliberately not global; see flake.nix nixpkgs-options.
 
   # Use desktop's /nix/ store as nix cache served over ssh
   nix.sshServe.enable = true;

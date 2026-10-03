@@ -157,7 +157,9 @@
 
         config = {
           allowUnfree = true;
-          cudaSupport = true;
+          # Deliberately not global: cudaSupport changes the hashes of
+          # unrelated packages (e.g. gimp via gegl/suitesparse), so they miss
+          # cache.nixos.org. Enable it per-package or per-project instead.
         };
 
         overlays = [
