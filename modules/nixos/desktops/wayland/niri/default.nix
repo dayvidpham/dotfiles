@@ -81,7 +81,6 @@ in
     programs.niri.package = niri-patched;
     security.polkit.enable = true;
 
-    CUSTOM.programs.hyprlock.enable = true;
     CUSTOM.programs.eww.enable = true;
 
     programs.xwayland.enable = true;

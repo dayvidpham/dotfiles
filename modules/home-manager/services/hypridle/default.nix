@@ -14,7 +14,7 @@ let
     getExe
     ;
 
-  hyprlockExe = getExe config.programs.hyprlock.package;
+  swaylockExe = getExe config.programs.swaylock.package;
 
 in
 {
@@ -27,7 +27,7 @@ in
       enable = true;
       settings = {
         general = {
-          lock_cmd = "pidof ${hyprlockExe} || ${hyprlockExe}"; # avoid starting multiple hyprlock instances.
+          lock_cmd = "pidof ${swaylockExe} || ${swaylockExe}"; # avoid starting multiple swaylock instances.
           unlock_cmd = "loginctl unlock-session"; # TODO: try to fix
 
           before_sleep_cmd = "loginctl lock-session"; # lock before suspend.

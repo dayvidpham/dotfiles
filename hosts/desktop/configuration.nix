@@ -265,7 +265,6 @@ in
   ######################################
   # Window manager & GPU
   #programs.hyprland.enable = false;
-  CUSTOM.programs.hyprlock.enable = true;
   CUSTOM.programs.eww.enable = true;
 
   # Sway for remote desktop & waypipe
