@@ -68,6 +68,30 @@ in
       CUSTOM.services.swww.enable = true;
       programs.swaylock.enable = true;
 
+      # Idle handling for the session: lock at five minutes, monitors off half
+      # a minute later, and lock before suspend. Commands run through `sh -c`,
+      # so they resolve from the session PATH.
+      services.swayidle = {
+        enable = true;
+        timeouts = [
+          {
+            timeout = 300;
+            command = "${getExe config.programs.swaylock.package} -f";
+          }
+          {
+            timeout = 330;
+            command = "${getExe config.programs.niri.package} msg action power-off-monitors";
+            resumeCommand = "${getExe config.programs.niri.package} msg action power-on-monitors";
+          }
+        ];
+        events = [
+          {
+            event = "before-sleep";
+            command = "${getExe config.programs.swaylock.package} -f";
+          }
+        ];
+      };
+
       xdg.portal.enable = true;
       xdg.portal.xdgOpenUsePortal = false;
       xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-gtk pkgs.xdg-desktop-portal-gnome ];

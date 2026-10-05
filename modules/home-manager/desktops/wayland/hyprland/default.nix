@@ -77,8 +77,7 @@ in
     CUSTOM.services.kanshi.enable = true;
 
     CUSTOM.services.swww.enable = true;
-    CUSTOM.services.hypridle.enable = true;
-    CUSTOM.programs.hyprlock.enable = true;
+    # Idle and lock are owned by the niri module (swayidle + swaylock).
 
     # GUI elements: widgets and status bars
     CUSTOM.theme = {
