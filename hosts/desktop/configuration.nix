@@ -220,14 +220,14 @@ in
   };
 
   # Runner per-job microVMs. The dispatcher below drives a runner scale set.
-  # While the container pool keeps serving, the VM pool carries its own
-  # "microvm" label so it never competes for container jobs, and the router's
-  # v1 tag stays on the container path until cutover.
+  # The VM pool also carries the "container" label, so it takes pool jobs
+  # alongside the container runners while the router's v1 tag keeps routing to
+  # that label set.
   CUSTOM.virtualisation.runner-vm.enable = true;
 
   CUSTOM.services.runner-dispatcher = {
     enable = true;
-    labels = [ "self-hosted" "linux" "x64" "microvm" ];
+    labels = [ "self-hosted" "linux" "x64" "microvm" "container" ];
     runnerGroup = "minttea--desktop";
     maxCapacity = 4;
     app = {
