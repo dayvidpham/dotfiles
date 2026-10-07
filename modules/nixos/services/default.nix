@@ -7,5 +7,6 @@
     ./tailscale
     ./powermode
     ./remote-session
+    ./sunshine
   ];
 }

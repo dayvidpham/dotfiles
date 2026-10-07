@@ -410,6 +410,15 @@ in
     pulseSink = "remote_audio";
   };
 
+  # SPIKE (plabs-crh): Sunshine on a dedicated headless compositor, rendering
+  # and NVENC-encoding on the RTX 4090. Additive; remote-session is untouched.
+  # Tailnet-only: no firewall ports are opened here.
+  CUSTOM.services.sunshine = {
+    enable = true;
+    user = "minttea";
+    renderDevice = "/dev/dri/by-path/pci-0000:01:00.0-render"; # RTX 4090
+  };
+
   # The pipewire unit belongs to NixOS, not home-manager, so a config change
   # otherwise waits for a manual restart/re-login. Declare the file here and
   # restart pipewire (and pipewire-pulse, which follows it) on change.
