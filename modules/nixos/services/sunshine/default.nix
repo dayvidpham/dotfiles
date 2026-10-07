@@ -53,7 +53,8 @@ let
   # evbridge re-emits Sunshine's uinput devices into the headless compositor via
   # wlr_virtual_pointer / virtual_keyboard (the path wayvnc uses), so the session
   # needs no libinput/seat and the host desktop never sees the devices.
-  evbridge = pkgs.callPackage ../../../../packages/evbridge.nix { };
+  # (pkgs-unstable: recent Rust for the edition-2024 build.)
+  evbridge = pkgs-unstable.callPackage ../../../../packages/evbridge.nix { };
 
   # Bare headless compositor config. No session-management execs: this must not
   # hijack the host's systemd user manager.
