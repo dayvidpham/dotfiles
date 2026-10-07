@@ -126,6 +126,13 @@ and a dedicated Firefox profile.
   (`PULSE_SINK=sink-sunshine-stereo`), and set `audio_sink = sink-sunshine-stereo`.
   Give the session `PULSE_SERVER=unix:/run/user/1000/pulse/native`.
 - remote-session instead routes apps to `remote_audio`, whose monitor `roc-send` streams.
+- **Same-machine client/host gotcha:** Sunshine moves the *default* sink, so a
+  Moonlight client running on the host has its own audio output follow the default
+  into the silent null sink (and be re-captured → feedback) → the client "has no
+  audio" even though it's transmitted. Only affects local testing; a client on
+  another machine outputs to its own device. Locally, pin the client's output:
+  `SDL_AUDIODRIVER=pulseaudio PULSE_SINK=<real host sink> moonlight-qt`, or
+  `pactl move-sink-input <id> <real host sink>`.
 
 ### Resolution matching (Sunshine)
 - `global_prep_cmd = [{"do":"<set>","undo":"<reset>"}]`; the set script runs
