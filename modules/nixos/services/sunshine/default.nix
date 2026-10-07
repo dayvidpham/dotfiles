@@ -56,6 +56,26 @@ let
   # (pkgs-unstable: recent Rust for the edition-2024 build.)
   evbridge = pkgs-unstable.callPackage ../../../../packages/evbridge.nix { };
 
+  # A `firefox` shim on the session's PATH that pins a dedicated profile. A
+  # profile can only be open in one Firefox at a time, so without this the
+  # session's Firefox collides with the host desktop's ("already open
+  # elsewhere"). Mirrors remote-session's firefoxWrapper. Explicit profile args
+  # are passed through untouched.
+  firefoxWrapper = pkgs.writeShellApplication {
+    name = "firefox";
+    runtimeInputs = [ pkgs.coreutils ];
+    text = ''
+      export PATH=/home/${cfg.user}/.nix-profile/bin:/etc/profiles/per-user/${cfg.user}/bin:/run/current-system/sw/bin
+      for arg in "$@"; do
+        case "$arg" in
+          -P | -p | --P | -profile | --profile | -ProfileManager | --ProfileManager) exec firefox "$@" ;;
+        esac
+      done
+      mkdir -p ${cfg.firefoxProfile}
+      exec firefox --profile ${cfg.firefoxProfile} "$@"
+    '';
+  };
+
   # Bare headless compositor config. No session-management execs: this must not
   # hijack the host's systemd user manager.
   # The compositor config is generated at runtime from the user's sway config
@@ -175,6 +195,16 @@ in
       default = 47989;
       description = "Sunshine base port";
     };
+
+    firefoxProfile = mkOption {
+      type = types.str;
+      default = "/home/${cfg.user}/.config/mozilla/firefox/sunshine";
+      description = ''
+        Dedicated Firefox profile launched inside the session. A profile can
+        only be open in one Firefox at a time, so a separate one lets Firefox
+        run here and on the physical desktop simultaneously.
+      '';
+    };
   };
 
   config = mkIf cfg.enable {
@@ -228,9 +258,9 @@ in
           "WLR_LIBINPUT_NO_DEVICES=1"
           "XDG_CURRENT_DESKTOP=sway"
           "XDG_SESSION_TYPE=wayland"
-          # User profile on PATH/DATA_DIRS so exec'd apps (ghostty, waybar,
-          # run-cwd, ...) resolve.
-          "PATH=/home/${cfg.user}/.nix-profile/bin:/etc/profiles/per-user/${cfg.user}/bin:/run/current-system/sw/bin"
+          # User profile on PATH (with the firefox shim first) so exec'd apps
+          # (ghostty, waybar, run-cwd, firefox, ...) resolve.
+          "PATH=${firefoxWrapper}/bin:/home/${cfg.user}/.nix-profile/bin:/etc/profiles/per-user/${cfg.user}/bin:/run/current-system/sw/bin"
           "XDG_DATA_DIRS=/home/${cfg.user}/.nix-profile/share:/etc/profiles/per-user/${cfg.user}/share:/run/current-system/sw/share"
         ];
         ExecStart = getExe compositor;
