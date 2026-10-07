@@ -12,17 +12,22 @@
 # virtual/headless outputs) and encodes with NVENC. Nothing here claims a DRM
 # card (niri owns card0/card1), so it cannot fight the physical desktop.
 #
-# KNOWN UNKNOWNS (what the spike is for):
-#   - input injection: Sunshine uses uinput; the compositor is started with
-#     WLR_LIBINPUT_NO_DEVICES=1 for now, so it cannot yet receive that input.
-#     Getting libinput + /dev/input access in a seatless system service is the
-#     next iteration.
+# INPUT: Sunshine injects via uinput (kernel devices on seat0), which the host
+# desktop (niri) would also receive. Instead of reading them via libinput, we
+# let `evbridge` read Sunshine's devices from evdev and re-emit them through the
+# compositor's wlr_virtual_pointer / virtual_keyboard protocols — the same path
+# wayvnc uses — so no seat is involved and niri never sees the devices.
+#
+# KNOWN UNKNOWNS:
 #   - adapter_name format for NVENC (render node path vs GPU index).
 #   - capture = wlr only works if Sunshine is in the same WAYLAND_DISPLAY.
 {
   config,
   lib,
   pkgs,
+  # nixpkgs-unstable carries the Sunshine build with the GHSA-fp6g-27w5-489j
+  # fix (v2026.914.233613+); the main pkgs is still on an affected version.
+  pkgs-unstable,
   ...
 }:
 let
@@ -40,17 +45,22 @@ let
   # silently disables NVENC — it surfaces as "Couldn't scale frame: Invalid
   # argument" and then falls back to software. Rebuild it with CUDA so
   # h264_nvenc is actually functional.
-  sunshinePkg = pkgs.sunshine.override {
+  sunshinePkg = pkgs-unstable.sunshine.override {
     cudaSupport = true;
-    cudaPackages = pkgs.cudaPackages;
+    cudaPackages = pkgs-unstable.cudaPackages;
   };
+
+  # evbridge re-emits Sunshine's uinput devices into the headless compositor via
+  # wlr_virtual_pointer / virtual_keyboard (the path wayvnc uses), so the session
+  # needs no libinput/seat and the host desktop never sees the devices.
+  evbridge = pkgs.callPackage ../../../../packages/evbridge.nix { };
 
   # Bare headless compositor config. No session-management execs: this must not
   # hijack the host's systemd user manager.
   swayConfig = pkgs.writeText "sunshine-sway.conf" ''
-    input "*" {
-      xkb_layout us
-    }
+    # Headless output. Input arrives via evbridge (wlr virtual pointer/keyboard),
+    # so the compositor itself reads no /dev/input devices.
+    output HEADLESS-1 resolution 1920x1080@60Hz
   '';
 
   compositor = pkgs.writeShellApplication {
@@ -159,6 +169,16 @@ in
     hardware.uinput.enable = true;
     services.udev.packages = [ sunshinePkg ];
 
+    # Hide Sunshine's virtual input devices (VID 0xbeef / PID 0xdead) from
+    # libinput, so the host desktop (niri) does not also receive Moonlight input.
+    # evbridge reads them straight from evdev, so it is unaffected.
+    services.udev.extraRules = ''
+      # Sunshine's virtual input devices (VID 0xbeef / PID 0xdead):
+      #  - LIBINPUT_IGNORE_DEVICE: keep the host desktop (niri) from receiving them
+      #  - SYMLINK into /dev/sunshine-evdev: a filtered input dir for evbridge
+      ACTION=="add|change", SUBSYSTEM=="input", KERNEL=="event[0-9]*", ENV{ID_VENDOR_ID}=="beef", ENV{ID_MODEL_ID}=="dead", ENV{LIBINPUT_IGNORE_DEVICE}="1", SYMLINK+="sunshine-evdev/%k"
+    '';
+
     # Deliberately no cap_sys_admin security wrapper: it's only needed for KMS
     # capture (we use `capture = wlr`), and a file-capability binary runs in
     # glibc secure-exec mode, which makes the loader ignore LD_LIBRARY_PATH —
@@ -206,6 +226,8 @@ in
         Type = "simple";
         User = cfg.user;
         Group = "users";
+        # Create the virtual input devices via /dev/uinput (group "uinput").
+        SupplementaryGroups = [ "uinput" ];
         WorkingDirectory = "/home/${cfg.user}";
         Environment = [
           "XDG_RUNTIME_DIR=${cfg.runtimeDir}"
@@ -217,6 +239,35 @@ in
           "LD_LIBRARY_PATH=/run/opengl-driver/lib"
         ];
         ExecStart = getExe sunshine;
+        Restart = "always";
+        RestartSec = 3;
+      };
+    };
+
+    # Bridges Sunshine's uinput devices into the headless compositor via the wlr
+    # virtual-input protocols. Needs the `input` group to read /dev/input/*.
+    systemd.services.sunshine-evbridge = {
+      description = "Bridge Sunshine's virtual input into the headless compositor (spike)";
+      wantedBy = [ "multi-user.target" ];
+      after = [ "sunshine-compositor.service" "sunshine-spike.service" ];
+      requires = [ "sunshine-compositor.service" ];
+      startLimitIntervalSec = 0;
+
+      serviceConfig = {
+        Type = "simple";
+        User = cfg.user;
+        Group = "users";
+        SupplementaryGroups = [ "input" ];
+        WorkingDirectory = "/home/${cfg.user}";
+        Environment = [
+          "XDG_RUNTIME_DIR=${cfg.runtimeDir}"
+          "WAYLAND_DISPLAY=${cfg.display}"
+          "HOME=/home/${cfg.user}"
+        ];
+        # /dev/sunshine-evdev holds only Sunshine's devices (populated by the udev
+        # rule above), so evbridge bridges exactly those and not the host's
+        # physical input. --phys-filter guards the periodic mknod scan.
+        ExecStart = "${getExe evbridge} --wayland-display ${cfg.display} --input-dir /dev/sunshine-evdev --phys-filter sunshine --log-level info";
         Restart = "always";
         RestartSec = 3;
       };
