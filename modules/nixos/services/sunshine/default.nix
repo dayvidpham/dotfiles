@@ -57,25 +57,15 @@ let
 
   # Bare headless compositor config. No session-management execs: this must not
   # hijack the host's systemd user manager.
-  swayConfig = pkgs.writeText "sunshine-sway.conf" ''
-    # Headless output.
-    output HEADLESS-1 resolution 1920x1080@60Hz
-
-    # Give the session something to actually display: Sunshine's "Desktop" app
-    # just streams this output, so with no clients it is a black screen. Real
-    # apps/games are normally launched via Sunshine's applications config.
-    exec swaybg -c '#1a1a2e'
-    exec foot
-
-    # Input arrives via evbridge (wlr virtual pointer/keyboard).
-  '';
+  # The compositor config is generated at runtime from the user's sway config
+  # (see the `compositor` wrapper) so the stream is a full interactive session.
 
   compositor = pkgs.writeShellApplication {
     name = "sunshine-compositor";
     # dbus is required: the nixpkgs sway wrapper falls back to running under
     # `dbus-run-session`, which execs `dbus-daemon` by name and needs it on PATH.
     # swaybg/foot are on PATH for the compositor's `exec` lines.
-    runtimeInputs = [ pkgs.coreutils pkgs.iproute2 pkgs.gnugrep pkgs.sway pkgs.dbus pkgs.swaybg pkgs.foot ];
+    runtimeInputs = [ pkgs.coreutils pkgs.iproute2 pkgs.gnugrep pkgs.sway pkgs.dbus pkgs.swaybg ];
     text = ''
       set -eu
       mkdir -p ${cfg.runtimeDir}
@@ -85,7 +75,22 @@ let
         [ -S "$s" ] || continue
         ss -xl 2>/dev/null | grep -qF " $s" || rm -f "$s" "$s.lock"
       done
-      sway --unsupported-gpu -c ${swayConfig} &
+      # Reuse the user's real sway config so the stream is a full interactive
+      # session (keybindings, bar, launchers). Strip the session-management execs
+      # that would hijack the host's systemd/D-Bus — same filtering remote-session
+      # uses. Input still arrives via evbridge, not libinput.
+      src="''${XDG_CONFIG_HOME:-$HOME/.config}/sway/config"
+      out="${cfg.runtimeDir}/sunshine-sway.config"
+      {
+        printf 'output HEADLESS-1 resolution 1920x1080@60Hz\n'
+        if [ -f "$src" ]; then
+          grep -vE '^[[:space:]]*(exec|exec_always)[[:space:]].*(dbus-update-activation-environment|systemctl --user|polkit-gnome-authentication-agent)' "$src" \
+            | sed -E "s#(/bin/ghostty)(['[:space:]\"])#\1 --gtk-single-instance=false\2#g"
+        fi
+        printf '\nexec swaybg -c "#1a1a2e"\nexec waybar\n'
+      } > "$out"
+
+      sway --unsupported-gpu -c "$out" &
       sway_pid=$!
       trap 'kill "$sway_pid" 2>/dev/null || true' TERM INT
 
@@ -181,11 +186,17 @@ in
     # libinput, so the host desktop (niri) does not also receive Moonlight input.
     # evbridge reads them straight from evdev, so it is unaffected.
     services.udev.extraRules = ''
-      # Sunshine's virtual input devices (VID 0xbeef / PID 0xdead):
+      # Sunshine's virtual input devices (libvirtualhid: "libvirtualhid Keyboard",
+      # "libvirtualhid Mouse", "libvirtualhid Mouse (Absolute)"). Virtual devices
+      # carry no ID_VENDOR_ID/ID_MODEL_ID, so match on the device name instead:
       #  - LIBINPUT_IGNORE_DEVICE: keep the host desktop (niri) from receiving them
       #  - SYMLINK into /dev/sunshine-evdev: a filtered input dir for evbridge
-      ACTION=="add|change", SUBSYSTEM=="input", KERNEL=="event[0-9]*", ENV{ID_VENDOR_ID}=="beef", ENV{ID_MODEL_ID}=="dead", ENV{LIBINPUT_IGNORE_DEVICE}="1", SYMLINK+="sunshine-evdev/%k"
+      ACTION=="add|change", SUBSYSTEM=="input", KERNEL=="event[0-9]*", ATTRS{name}=="libvirtualhid*", ENV{LIBINPUT_IGNORE_DEVICE}="1", SYMLINK+="sunshine-evdev/%k"
     '';
+
+    # evbridge scans this dir at startup; ensure it exists even before any device
+    # appears (udev only creates it alongside a matching device).
+    systemd.tmpfiles.rules = [ "d /dev/sunshine-evdev 0755 root root -" ];
 
     # Deliberately no cap_sys_admin security wrapper: it's only needed for KMS
     # capture (we use `capture = wlr`), and a file-capability binary runs in
@@ -216,6 +227,10 @@ in
           "WLR_LIBINPUT_NO_DEVICES=1"
           "XDG_CURRENT_DESKTOP=sway"
           "XDG_SESSION_TYPE=wayland"
+          # User profile on PATH/DATA_DIRS so exec'd apps (ghostty, waybar,
+          # run-cwd, ...) resolve.
+          "PATH=/home/${cfg.user}/.nix-profile/bin:/etc/profiles/per-user/${cfg.user}/bin:/run/current-system/sw/bin"
+          "XDG_DATA_DIRS=/home/${cfg.user}/.nix-profile/share:/etc/profiles/per-user/${cfg.user}/share:/run/current-system/sw/share"
         ];
         ExecStart = getExe compositor;
         Restart = "always";
