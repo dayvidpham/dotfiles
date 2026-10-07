@@ -11,6 +11,34 @@
 
 include "config.kdl"
 
+// Pin the three DP outputs to exactly what kanshi applies (see the
+// 'desktop-1-nvidia' profile in modules/home-manager/services/kanshi). niri
+// then starts in its final state, so kanshi's request is a no-op and the extra
+// startup modeset (niri preferred 60Hz -> kanshi 170Hz + adaptive sync, which
+// trips the NVIDIA startup corruption) doesn't happen. Keep in sync with kanshi.
+output "GIGA-BYTE TECHNOLOGY CO., LTD. M27Q 21330B007986" { // left
+    mode "2560x1440"
+    scale 1.0
+    transform "270"
+    position x=0 y=0
+    variable-refresh-rate
+}
+
+output "GIGA-BYTE TECHNOLOGY CO., LTD. M27Q 21330B008006" { // center
+    mode "2560x1440"
+    scale 1.0
+    position x=1440 y=374
+    variable-refresh-rate
+}
+
+output "GIGA-BYTE TECHNOLOGY CO., LTD. M27Q 21330B007981" { // right
+    mode "2560x1440"
+    scale 1.0
+    transform "270"
+    position x=4000 y=0
+    variable-refresh-rate
+}
+
 debug {
     render-drm-device "/dev/dri/by-path/pci-0000:01:00.0-render"
 }
