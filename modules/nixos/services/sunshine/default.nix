@@ -58,16 +58,24 @@ let
   # Bare headless compositor config. No session-management execs: this must not
   # hijack the host's systemd user manager.
   swayConfig = pkgs.writeText "sunshine-sway.conf" ''
-    # Headless output. Input arrives via evbridge (wlr virtual pointer/keyboard),
-    # so the compositor itself reads no /dev/input devices.
+    # Headless output.
     output HEADLESS-1 resolution 1920x1080@60Hz
+
+    # Give the session something to actually display: Sunshine's "Desktop" app
+    # just streams this output, so with no clients it is a black screen. Real
+    # apps/games are normally launched via Sunshine's applications config.
+    exec swaybg -c '#1a1a2e'
+    exec foot
+
+    # Input arrives via evbridge (wlr virtual pointer/keyboard).
   '';
 
   compositor = pkgs.writeShellApplication {
     name = "sunshine-compositor";
     # dbus is required: the nixpkgs sway wrapper falls back to running under
     # `dbus-run-session`, which execs `dbus-daemon` by name and needs it on PATH.
-    runtimeInputs = [ pkgs.coreutils pkgs.iproute2 pkgs.gnugrep pkgs.sway pkgs.dbus ];
+    # swaybg/foot are on PATH for the compositor's `exec` lines.
+    runtimeInputs = [ pkgs.coreutils pkgs.iproute2 pkgs.gnugrep pkgs.sway pkgs.dbus pkgs.swaybg pkgs.foot ];
     text = ''
       set -eu
       mkdir -p ${cfg.runtimeDir}
