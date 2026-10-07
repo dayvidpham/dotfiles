@@ -84,12 +84,9 @@ in
             resumeCommand = "${getExe config.programs.niri.package} msg action power-on-monitors";
           }
         ];
-        events = [
-          {
-            event = "before-sleep";
-            command = "${getExe config.programs.swaylock.package} -f";
-          }
-        ];
+        events = {
+          before-sleep = "${getExe config.programs.swaylock.package} -f";
+        };
       };
 
       xdg.portal.enable = true;
