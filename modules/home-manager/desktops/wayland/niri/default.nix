@@ -46,7 +46,7 @@ in
       # niri-flake derivation still hard-requires it (assert version == "0.2.0"),
       # so the default `programs.niri.package` (built from the consuming
       # unstable pkgs) fails to evaluate via xdg.portal.extraPortals.
-      programs.niri.package = niri.packages.${pkgs.stdenv.hostPlatform.system}.niri-stable;
+      programs.niri.package = niri.packages.${pkgs.stdenv.hostPlatform.system}.niri-unstable;
       programs.niri.config = null;
       programs.niri.settings = null;
 

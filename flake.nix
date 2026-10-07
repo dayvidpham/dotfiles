@@ -50,6 +50,11 @@
       url = "github:sodiboo/niri-flake";
       inputs.nixpkgs.follows = "nixpkgs-stable";
       inputs.nixpkgs-stable.follows = "nixpkgs-stable";
+      # niri-flake pins its own `niri-stable` to the v25.08 tag and never bumps
+      # it, so pin it to the current release ourselves. `niri-unstable` already
+      # tracks YaLTeR/niri main; declared explicitly for clarity.
+      inputs.niri-stable.url = "github:YaLTeR/niri/v26.04";
+      inputs.niri-unstable.url = "github:YaLTeR/niri";
     };
 
     llm-agents = {
@@ -533,7 +538,7 @@
         assert lib.assertMsg (builtins.attrNames base.specialisation == [ "nvidia-enabled" ]) "Flow X13 must expose only the nvidia-enabled specialization";
         pkgs.runCommand "flowX13-gpu-profiles"
           {
-            nativeBuildInputs = [ niri.packages.${system}.niri-stable ];
+            nativeBuildInputs = [ niri.packages.${system}.niri-unstable ];
           }
           ''
             grep -F 'render-drm-device "/dev/dri/by-path/pci-0000:01:00.0-render"' ${enabledNiriConfig}
