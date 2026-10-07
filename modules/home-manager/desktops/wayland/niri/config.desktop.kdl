@@ -13,13 +13,4 @@ include "config.kdl"
 
 debug {
     render-drm-device "/dev/dri/by-path/pci-0000:01:00.0-render"
-
-    // The 4090 reports early vblanks right after startup (niri logs
-    // "vblank_throttle: output DP-x running faster than expected ... got vblank
-    // after 575µs" -- see niri #4492). Without this, a frame can be handed to
-    // DRM before it finished rendering, corrupting the desktop with another
-    // output's contents until a modeset (e.g. power-cycling the monitors).
-    // Kanshi keeps VRR enabled on these outputs, so this is the remaining
-    // NVIDIA-sync workaround. Costs a little latency on the affected outputs.
-    wait-for-frame-completion-before-queueing
 }
