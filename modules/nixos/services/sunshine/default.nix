@@ -146,7 +146,46 @@ let
     port = ${toString cfg.port}
     min_log_level = info
     system_tray = disabled
+    # Resize HEADLESS-1 to the Moonlight client on connect; reset on disconnect.
+    global_prep_cmd = [{"do":"${getExe setResolution}","undo":"${getExe resetResolution}"}]
   '';
+
+  # Sunshine sets SUNSHINE_CLIENT_WIDTH/HEIGHT/FPS when a stream starts, so the
+  # headless output can match the client exactly. swaymsg needs the compositor
+  # socket (which is PID-named), hence the discovery.
+  swayMsg = pkgs.writeShellApplication {
+    name = "sunshine-swaymsg";
+    runtimeInputs = [ pkgs.coreutils pkgs.sway ];
+    text = ''
+      set -eu
+      sock=""
+      for s in "$XDG_RUNTIME_DIR"/sway-ipc.*.sock; do
+        [ -S "$s" ] && { sock="$s"; break; }
+      done
+      [ -n "$sock" ] || exit 0
+      SWAYSOCK="$sock" swaymsg "$@"
+    '';
+  };
+
+  setResolution = pkgs.writeShellApplication {
+    name = "sunshine-set-resolution";
+    runtimeInputs = [ pkgs.coreutils ];
+    text = ''
+      set -eu
+      ${getExe swayMsg} "output HEADLESS-1 mode ''${SUNSHINE_CLIENT_WIDTH}x''${SUNSHINE_CLIENT_HEIGHT}@''${SUNSHINE_CLIENT_FPS}Hz"
+      # let the mode settle before Sunshine starts capturing
+      sleep 1
+    '';
+  };
+
+  resetResolution = pkgs.writeShellApplication {
+    name = "sunshine-reset-resolution";
+    runtimeInputs = [ pkgs.coreutils ];
+    text = ''
+      set -eu
+      ${getExe swayMsg} "output HEADLESS-1 mode 1920x1080@60Hz"
+    '';
+  };
 
   # Sunshine needs a writable config dir for its pairing credentials; the
   # settings file itself lives in the store, so pass it explicitly (like the
