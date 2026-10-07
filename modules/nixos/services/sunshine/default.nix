@@ -282,6 +282,9 @@ in
         Group = "users";
         SupplementaryGroups = [ "input" ];
         WorkingDirectory = "/home/${cfg.user}";
+        # Ensure the input dir exists before evbridge's startup scan (it errors
+        # with ENOENT when missing); udev fills it via the SYMLINK rule.
+        ExecStartPre = "+${pkgs.coreutils}/bin/mkdir -p /dev/sunshine-evdev";
         Environment = [
           "XDG_RUNTIME_DIR=${cfg.runtimeDir}"
           "WAYLAND_DISPLAY=${cfg.display}"
