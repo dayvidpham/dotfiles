@@ -153,6 +153,7 @@ and a dedicated Firefox profile.
 | scroll inverted / too slow/fast | evdev↔wl axis sign and scale | negate vertical, scale ~×20 in evbridge |
 | "Firefox already open elsewhere" | shared profile lock | dedicated profile (or Sync) |
 | no audio | capturing a sink the apps don't play into | name the sink `sink-sunshine-stereo`, `PULSE_SINK` there |
+| client silent, but host audio works after disconnect (client runs on the host) | Sunshine moved the default sink; the local client's output follows it into the null sink | pin the client's output to a real sink, or test from another machine |
 | service fails on rebuild (`ENOENT` / `NoCompositor`) | startup race | `ExecStartPre` waits; see `systemd-services` skill |
 | `nix eval` "path does not exist" | module not git-tracked | `git add` it |
 | moonlight-qt ~10–25 s startup | SDL GPU/HDR probing + `xdg-desktop-portal` `NoReply` (pipewire restarts can strand the portal's PipeWire handle) | restart the portal; install moonlight-qt rather than `nix run` |
