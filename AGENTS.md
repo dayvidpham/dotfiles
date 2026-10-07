@@ -221,13 +221,9 @@ bd <command>
 1. **File issues for remaining work** - Create issues for anything that needs follow-up
 2. **Run quality gates** (if code changed) - Tests, linters, builds
 3. **Update issue status** - Close finished work, update in-progress items
-4. **COMMIT AND PUSH** - This is MANDATORY:
    ```bash
    git add <files>
    git agent-commit -m "feat(scope): description"  # Uses passwordless GPG key
-   bd sync
-   git push
-   git status  # MUST show "up to date with origin"
    ```
 5. **Clean up** - Clear stashes, prune remote branches
 6. **Verify** - All changes committed AND pushed
