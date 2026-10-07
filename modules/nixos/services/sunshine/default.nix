@@ -167,8 +167,27 @@ let
     port = ${toString cfg.port}
     min_log_level = info
     system_tray = disabled
+    # Capture the monitor of the session's audio sink (see sunshineAudioConf).
+    audio_sink = sunshine_audio
     # Resize HEADLESS-1 to the Moonlight client on connect; reset on disconnect.
     global_prep_cmd = [{"do":"${getExe setResolution}","undo":"${getExe resetResolution}"}]
+  '';
+
+  # PipeWire null sink the session's apps play into; Sunshine captures its
+  # monitor, so stream audio is isolated from the host (mirrors remote_audio).
+  sunshineAudioConf = pkgs.writeTextDir "share/pipewire/pipewire.conf.d/20-sunshine-audio.conf" ''
+    context.objects = [
+      { factory = adapter
+        args = {
+          factory.name = support.null-audio-sink
+          node.name = sunshine_audio
+          node.description = "Sunshine session audio"
+          media.class = Audio/Sink
+          object.linger = true
+          audio.position = [ FL FR ]
+        }
+      }
+    ]
   '';
 
   # Sunshine sets SUNSHINE_CLIENT_WIDTH/HEIGHT/FPS when a stream starts, so the
@@ -289,6 +308,16 @@ in
     # appears (udev only creates it alongside a matching device).
     systemd.tmpfiles.rules = [ "d /dev/sunshine-evdev 0755 root root -" ];
 
+    # Declare the session's audio sink on the NixOS side so the NixOS-owned
+    # pipewire unit restarts when it changes (mirrors remote_audio).
+    services.pipewire.configPackages = [ sunshineAudioConf ];
+    systemd.user.services.pipewire.restartTriggers = [
+      "${sunshineAudioConf}/share/pipewire/pipewire.conf.d/20-sunshine-audio.conf"
+    ];
+    systemd.user.services.pipewire-pulse.restartTriggers = [
+      "${sunshineAudioConf}/share/pipewire/pipewire.conf.d/20-sunshine-audio.conf"
+    ];
+
     # Deliberately no cap_sys_admin security wrapper: it's only needed for KMS
     # capture (we use `capture = wlr`), and a file-capability binary runs in
     # glibc secure-exec mode, which makes the loader ignore LD_LIBRARY_PATH —
@@ -318,6 +347,10 @@ in
           "WLR_LIBINPUT_NO_DEVICES=1"
           "XDG_CURRENT_DESKTOP=sway"
           "XDG_SESSION_TYPE=wayland"
+          # Session apps play into the sunshine_audio null sink (Sunshine
+          # captures its monitor), on the desktop's PipeWire.
+          "PULSE_SERVER=unix:/run/user/1000/pulse/native"
+          "PULSE_SINK=sunshine_audio"
           # User profile on PATH (with the firefox shim first) so exec'd apps
           # (ghostty, waybar, run-cwd, firefox, ...) resolve.
           "PATH=${firefoxWrapper}/bin:/home/${cfg.user}/.nix-profile/bin:/etc/profiles/per-user/${cfg.user}/bin:/run/current-system/sw/bin"
@@ -347,6 +380,8 @@ in
           "XDG_RUNTIME_DIR=${cfg.runtimeDir}"
           "WAYLAND_DISPLAY=${cfg.display}"
           "HOME=/home/${cfg.user}"
+          # Reach the desktop PipeWire so Sunshine can capture sunshine_audio.
+          "PULSE_SERVER=unix:/run/user/1000/pulse/native"
           # NVENC runs through CUDA, and ffmpeg dlopen()s libcuda.so.1 /
           # libnvidia-encode.so.1 at runtime. A systemd service has no graphical
           # session env, so point the loader at the driver runpath explicitly.
