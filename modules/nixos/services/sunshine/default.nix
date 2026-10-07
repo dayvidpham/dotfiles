@@ -76,6 +76,27 @@ let
     '';
   };
 
+  # evbridge connects to the compositor's Wayland socket at startup and fails
+  # with NoCompositor if it isn't listening yet (e.g. mid-rebuild); wait for it.
+  waitForWayland = pkgs.writeShellApplication {
+    name = "sunshine-wait-wayland";
+    runtimeInputs = [ pkgs.iproute2 pkgs.gnugrep pkgs.coreutils ];
+    text = ''
+      set -eu
+      sock="${cfg.runtimeDir}/${cfg.display}"
+      i=0
+      while [ "$i" -lt 300 ]; do
+        if [ -S "$sock" ] && ss -xl 2>/dev/null | grep -qF " $sock"; then
+          exit 0
+        fi
+        i=$((i + 1))
+        sleep 0.1
+      done
+      echo "sunshine-wait-wayland: timed out waiting for $sock" >&2
+      exit 1
+    '';
+  };
+
   # Bare headless compositor config. No session-management execs: this must not
   # hijack the host's systemd user manager.
   # The compositor config is generated at runtime from the user's sway config
@@ -354,7 +375,12 @@ in
         WorkingDirectory = "/home/${cfg.user}";
         # Ensure the input dir exists before evbridge's startup scan (it errors
         # with ENOENT when missing); udev fills it via the SYMLINK rule.
-        ExecStartPre = "+${pkgs.coreutils}/bin/mkdir -p /dev/sunshine-evdev";
+        ExecStartPre = [
+          "+${pkgs.coreutils}/bin/mkdir -p /dev/sunshine-evdev"
+          # ...and wait for the compositor's Wayland socket (evbridge errors with
+          # NoCompositor if it connects too early, e.g. during a rebuild).
+          (getExe waitForWayland)
+        ];
         Environment = [
           "XDG_RUNTIME_DIR=${cfg.runtimeDir}"
           "WAYLAND_DISPLAY=${cfg.display}"
