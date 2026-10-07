@@ -167,20 +167,23 @@ let
     port = ${toString cfg.port}
     min_log_level = info
     system_tray = disabled
-    # Capture the monitor of the session's audio sink (see sunshineAudioConf).
-    audio_sink = sunshine_audio
+    # Capture the session's audio sink (see sunshineAudioConf). The sink is named
+    # sink-sunshine-stereo to match Sunshine's own loopback sink, so apps and the
+    # capture target are the same node.
+    audio_sink = sink-sunshine-stereo
     # Resize HEADLESS-1 to the Moonlight client on connect; reset on disconnect.
     global_prep_cmd = [{"do":"${getExe setResolution}","undo":"${getExe resetResolution}"}]
   '';
 
   # PipeWire null sink the session's apps play into; Sunshine captures its
-  # monitor, so stream audio is isolated from the host (mirrors remote_audio).
+  # monitor. Named sink-sunshine-stereo to match Sunshine's own loopback sink
+  # (mirrors the daaaaan setup) so capture and app routing agree.
   sunshineAudioConf = pkgs.writeTextDir "share/pipewire/pipewire.conf.d/20-sunshine-audio.conf" ''
     context.objects = [
       { factory = adapter
         args = {
           factory.name = support.null-audio-sink
-          node.name = sunshine_audio
+          node.name = sink-sunshine-stereo
           node.description = "Sunshine session audio"
           media.class = Audio/Sink
           object.linger = true
@@ -350,7 +353,7 @@ in
           # Session apps play into the sunshine_audio null sink (Sunshine
           # captures its monitor), on the desktop's PipeWire.
           "PULSE_SERVER=unix:/run/user/1000/pulse/native"
-          "PULSE_SINK=sunshine_audio"
+          "PULSE_SINK=sink-sunshine-stereo"
           # User profile on PATH (with the firefox shim first) so exec'd apps
           # (ghostty, waybar, run-cwd, firefox, ...) resolve.
           "PATH=${firefoxWrapper}/bin:/home/${cfg.user}/.nix-profile/bin:/etc/profiles/per-user/${cfg.user}/bin:/run/current-system/sw/bin"
