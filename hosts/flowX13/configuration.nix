@@ -15,13 +15,11 @@ let
     mkDefault
     ;
 
-  enabledNiriConfig = pkgs.writeText "niri-flowX13-nvidia-enabled.kdl" ''
-    ${builtins.readFile ../../modules/home-manager/desktops/wayland/niri/config.kdl}
-
-    debug {
-        render-drm-device "/dev/dri/by-path/pci-0000:01:00.0-render"
-    }
-  '';
+  # Path to the nvidia-enabled niri overlay: a tiny file that includes the
+  # shared config and forces rendering onto the NVIDIA dGPU. Referenced as an
+  # out-of-store repo path so niri's relative `include` resolves and both files
+  # stay live-editable (editing either live-reloads the session).
+  niriNvidiaConfig = "/home/minttea/dotfiles/modules/home-manager/desktops/wayland/niri/config.flowX13-nvidia.kdl";
 in
 {
   imports =
@@ -229,7 +227,7 @@ in
     system.nixos.tags = [ "nvidia-enabled" ];
     CUSTOM.hardware.nvidia.enable = lib.mkForce true;
     CUSTOM.hardware.nvidia.proprietaryDrivers.enable = lib.mkForce true;
-    environment.sessionVariables.NIRI_CONFIG = enabledNiriConfig;
+    environment.sessionVariables.NIRI_CONFIG = niriNvidiaConfig;
   };
 
   services.supergfxd.enable = false;

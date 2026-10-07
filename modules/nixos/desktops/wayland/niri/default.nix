@@ -31,6 +31,11 @@ let
     "XDG_CONFIG_DIRS"
     "DBUS_SESSION_BUS_ADDRESS"
     "SSH_AUTH_SOCK"
+    # Host-selected niri config overlay (shared config + forced render device).
+    # Set by the desktop home config and by flowX13's nvidia-enabled
+    # specialisation; without importing it the restricted niri-session patch
+    # would drop it and niri would fall back to the home-manager config.kdl.
+    "NIRI_CONFIG"
     # Appearance
     "XCURSOR_THEME"
     "XCURSOR_SIZE"

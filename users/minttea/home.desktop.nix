@@ -56,6 +56,12 @@ in
     enable = true;
   };
 
+  # niri: render on the NVIDIA GPU that owns the outputs. config.desktop.kdl is
+  # a tiny overlay that includes the shared config and pins the render device.
+  # home-manager writes this to environment.d, so the niri systemd user service
+  # inherits it.
+  systemd.user.sessionVariables.NIRI_CONFIG =
+    "/home/minttea/dotfiles/modules/home-manager/desktops/wayland/niri/config.desktop.kdl";
 
   home.packages = (with pkgs; [
     # Gaming

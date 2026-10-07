@@ -1,0 +1,13 @@
+// Flow X13 nvidia-enabled overlay. Selected via $NIRI_CONFIG by the
+// nvidia-enabled specialisation (see hosts/flowX13/configuration.nix); the rest
+// of the config lives in config.kdl, which is included below and watched for
+// changes alongside this file.
+//
+// Force rendering onto the NVIDIA dGPU, which owns the outputs in PRIME sync
+// mode, instead of the AMD iGPU.
+
+include "config.kdl"
+
+debug {
+    render-drm-device "/dev/dri/by-path/pci-0000:01:00.0-render"
+}

@@ -1,0 +1,16 @@
+// Desktop host overlay. Selected via $NIRI_CONFIG (see
+// users/minttea/home.desktop.nix); the rest of the config lives in config.kdl,
+// which is included below and watched for changes alongside this file.
+//
+// niri picks its primary render node once at startup. On this host it selects
+// the AMD iGPU (renderD129, PCI 16:00.0) even though every monitor (DP-1/2/3) is
+// wired to the NVIDIA RTX 4090 (PCI 01:00.0). Rendering on the iGPU and scanning
+// out on the dGPU forces a PCIe cross-GPU copy whose explicit-sync fence NVIDIA
+// mishandles, so one output's buffer can briefly scan out on another (flicker).
+// Pin rendering to the GPU that owns the outputs.
+
+include "config.kdl"
+
+debug {
+    render-drm-device "/dev/dri/by-path/pci-0000:01:00.0-render"
+}

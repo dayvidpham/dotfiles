@@ -499,6 +499,11 @@
             render-igpu = "/dev/dri/by-path/pci-0000:08:00.0-render";
             render-dgpu = "/dev/dri/by-path/pci-0000:01:00.0-render";
           };
+          # niri config is split into a shared base plus tiny per-host overlays
+          # that `include` it. NIRI_CONFIG selects an overlay by (out-of-store)
+          # repo path, so the check copies the whole config directory into the
+          # store and validates the overlay there.
+          niriConfigDir = ./modules/home-manager/desktops/wayland/niri;
           enabledNiriConfig = enabled.environment.sessionVariables.NIRI_CONFIG;
           loaderConfig = base.boot.loader.systemd-boot.extraFiles."loader/loader.conf";
         in
@@ -531,7 +536,7 @@
         assert lib.assertMsg (hasAll cudaPackages enabled.environment.systemPackages) "Flow X13 nvidia-enabled must include the CUDA runtime closure";
         assert lib.assertMsg (hasAll (builtins.attrNames drmLinks) (builtins.attrNames enabled.environment.etc)) "Flow X13 nvidia-enabled must expose all card and render device links";
         assert lib.assertMsg (!(enabled.environment.variables ? WLR_DRM_DEVICES)) "Flow X13 nvidia-enabled must not set WLR_DRM_DEVICES";
-        assert lib.assertMsg (enabledNiriConfig != null) "Flow X13 nvidia-enabled must select its generated Niri config";
+        assert lib.assertMsg (lib.hasSuffix "modules/home-manager/desktops/wayland/niri/config.flowX13-nvidia.kdl" enabledNiriConfig) "Flow X13 nvidia-enabled must select the flowX13 niri overlay";
         assert lib.assertMsg (containsNo upstreamClasses enabledUdev) "Flow X13 nvidia-enabled inherited an upstream NVIDIA PCI removal rule";
         assert lib.assertMsg (hasNo disabledOnlyModules enabled.boot.blacklistedKernelModules) "Flow X13 nvidia-enabled inherited a disable-only NVIDIA kernel-module blacklist entry";
         assert lib.assertMsg (containsNo [ "blacklist nouveau" "options nouveau modeset=0" ] enabledModprobe) "Flow X13 nvidia-enabled inherited the upstream nouveau modprobe policy";
@@ -541,8 +546,9 @@
             nativeBuildInputs = [ niri.packages.${system}.niri-unstable ];
           }
           ''
-            grep -F 'render-drm-device "/dev/dri/by-path/pci-0000:01:00.0-render"' ${enabledNiriConfig}
-            niri validate --config ${enabledNiriConfig}
+            cp -r ${niriConfigDir} niri-config
+            grep -F 'render-drm-device "/dev/dri/by-path/pci-0000:01:00.0-render"' niri-config/config.flowX13-nvidia.kdl
+            niri validate --config niri-config/config.flowX13-nvidia.kdl
             grep -F 'default @saved' ${loaderConfig}
             test "$(readlink ${enabled.environment.etc.card-igpu.source})" = ${lib.escapeShellArg drmLinks.card-igpu}
             test "$(readlink ${enabled.environment.etc.card-dgpu.source})" = ${lib.escapeShellArg drmLinks.card-dgpu}
