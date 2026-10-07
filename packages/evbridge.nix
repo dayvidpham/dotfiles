@@ -25,6 +25,10 @@ rustPlatform.buildRustPackage (finalAttrs: {
 
   cargoHash = "sha256-efssejC15YLp4ppGL7Ow2ffkhVvdbWgpIQ0q7UhZI7o=";
 
+  # Re-scan the input dir on evbridge's periodic timer so devices that appear
+  # after startup (Sunshine creates its virtual devices lazily) get bridged too.
+  patches = [ ./evbridge-rescan.patch ];
+
   # Two fixes so the bridged pointer behaves like a normal mouse (and the user's
   # sway `input` config governs it, no override needed):
   #  - negate vertical: evdev REL_WHEEL (+1 = up) vs wl_pointer axis (+1 = down)

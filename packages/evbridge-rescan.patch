@@ -1,0 +1,32 @@
+--- a/src/main.rs
++++ b/src/main.rs
+@@ -147,11 +147,26 @@
+     //    We scan every 500ms and create any missing nodes; inotify then fires
+     //    the normal DeviceAdded path.
+     let watcher_for_timer = watcher_cell.clone();
++    let loop_handle_for_timer = loop_handle.clone();
+     loop_handle.insert_source(
+         calloop::timer::Timer::from_duration(std::time::Duration::from_millis(500)),
+-        move |_, _, _state| {
+-            let w = watcher_for_timer.borrow();
+-            w.ensure_device_nodes();
++        move |_, _, state| {
++            {
++                let w = watcher_for_timer.borrow();
++                w.ensure_device_nodes();
++            }
++            // Also re-scan the input dir and bridge any device that appeared
++            // after startup (Sunshine creates its virtual devices lazily, and
++            // inotify can miss symlink re-points). add_device is idempotent.
++            let paths = {
++                let w = watcher_for_timer.borrow();
++                w.scan_existing()
++            };
++            for path in paths {
++                if let Err(e) = add_device(&path, state, &loop_handle_for_timer) {
++                    debug!(err = %e, ?path, "periodic scan: add_device failed");
++                }
++            }
+             calloop::timer::TimeoutAction::ToDuration(std::time::Duration::from_millis(500))
+         },
+     )?;
