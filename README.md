@@ -148,6 +148,84 @@ Defined in `packages/` and exported through the flake's overlay:
 
 `packages/rofi-network-manager` is a Git submodule (upstream project, not mine).
 
+## Neovim, tmux, and remote desktop
+
+These three cut across hosts and are each split between a **Nix layer** (packages,
+services, and wiring, applied by a rebuild) and a **live-editable config layer**
+(symlinked out-of-store, so edits take effect without a rebuild).
+
+### Neovim
+
+Defined by the Home Manager module in `programs/neovim/default.nix`, imported
+into every `minttea@*` configuration. It has two halves:
+
+- **Nix side** — enables `programs.neovim`, pins the runtime toolchain (LSPs such
+  as `lua-language-server`, `nixd`, `clangd`, `rust-analyzer`, and the Python
+  stack, plus `ripgrep`/`fd`), and builds the tree-sitter grammars with
+  `nvim-treesitter.withPlugins`. The grammars and parsers are exposed at stable
+  paths under `~/.local/share/nvim/nix/` because `lazy.nvim` resets
+  `runtimepath` during setup.
+- **Lua side** — `programs/neovim/nvim/` is a kickstart.nvim-derived config
+  (`init.lua` plus `lua/`), symlinked into `~/.config/nvim/minttea`.
+
+Plugin management is deliberately split: most plugins are fetched by
+`lazy.nvim` at runtime, while parsers and language servers are Nix-provided (the
+config tells Mason to skip anything Nix already installs). `nixd` is wired to
+evaluate **this** flake using `$HOST`/`$USER`, so NixOS and Home Manager option
+completion follows whichever host you are on.
+
+### tmux
+
+Split between a Home Manager client half and a NixOS server half:
+
+- **Client** — `modules/home-manager/programs/tmux/` enables `programs.tmux`
+  (prefix `M-Space`, vi copy mode; `resurrect`, `continuum`, `logging`, and
+  `yank` plugins) and builds helper scripts: `tmux-sessionizer` (fzf + zoxide),
+  `tmux-move-window`, `tmux-client-size`, and `tmux-repo-theme` (tints a pane by
+  the git repo it sits in). Keybindings live in `keybindings.tmux`, symlinked
+  out-of-store for live editing, and Claude Code sessions are captured and
+  restored across `resurrect` saves.
+- **Server** — `modules/nixos/programs/tmux/` defines
+  `CUSTOM.programs.tmux.server`: a systemd system service that runs a tmux
+  server as the user with lingering enabled and `KillMode = none`, so it starts
+  at boot and survives rebuilds and session closures. `TMUX_TMPDIR` is pinned to
+  the login runtime dir so shells inside the remote session attach to the same
+  server.
+
+### Remote desktop
+
+A persistent, whole-session model (versus one-off `waypipe` app forwarding): a
+headless compositor runs on the desktop and you attach or detach with a VNC
+viewer at any time. It is a server module, a client helper, and an optional
+audio service.
+
+- **Server** — `modules/nixos/services/remote-session/` defines
+  `CUSTOM.services.remote-session`:
+  - `remote-session-compositor` runs a headless sway session with its own
+    `XDG_RUNTIME_DIR` and a **private D-Bus session bus**, so it cannot steal the
+    physical desktop's single-instance apps or its one portal per bus. It renders
+    on a DRM render node (`WLR_RENDERER=gles2`, software fallback) and runs the
+    user's sway config minus the session-management execs, plus `waybar`.
+  - `remote-session-vnc` runs `wayvnc`, bound **tailnet-only** by resolving the
+    `tailscale0` IPv4 at start. An assertion rejects wildcard binds and the
+    service refuses to start when Tailscale is down, so the listener never
+    exists off the tailnet.
+  - `clip-peer-sync` (optional) mirrors a peer clipboard into the session through
+    the bundled `clip` CLI.
+- **Client** — `modules/home-manager/programs/remote-desktop/` defines
+  `CUSTOM.programs.remote-desktop`, which provides the `remote-desktop` command:
+  it opens an `ssh -R` forward for the clipboard socket (multiplexed with
+  `ControlMaster`) for the viewer's lifetime, then launches the VNC viewer. It
+  disables the viewer's own clipboard because the ssh stack is the single
+  clipboard authority (no last-writer races).
+- **Audio** — `modules/home-manager/services/remote-audio/` streams the
+  session's PipeWire null sink to the client over RTP (roc) with Reed–Solomon
+  FEC, bound to the tailnet interface.
+
+See [`docs/remote-desktop.md`](./docs/remote-desktop.md) and
+[`docs/remote-clipboard.md`](./docs/remote-clipboard.md) for the full design,
+and `CUSTOM.services.sunshine` for the separate NVENC game-streaming path.
+
 ## Development workflow
 
 This repo is maintained with the **Aura Protocol**: work flows through Beads
