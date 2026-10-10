@@ -194,37 +194,70 @@ Split between a Home Manager client half and a NixOS server half:
 
 ### Remote desktop
 
-A persistent, whole-session model (versus one-off `waypipe` app forwarding): a
-headless compositor runs on the desktop and you attach or detach with a VNC
-viewer at any time. It is a server module, a client helper, and an optional
-audio service.
+There are two independent, additive remote-access paths. Both are **headless
+sway** compositors that never touch the physical GPU outputs (the physical
+desktop is **niri** on the tty), so neither fights it for DRM master.
 
-- **Server** — `modules/nixos/services/remote-session/` defines
-  `CUSTOM.services.remote-session`:
-  - `remote-session-compositor` runs a headless sway session with its own
-    `XDG_RUNTIME_DIR` and a **private D-Bus session bus**, so it cannot steal the
-    physical desktop's single-instance apps or its one portal per bus. It renders
-    on a DRM render node (`WLR_RENDERER=gles2`, software fallback) and runs the
-    user's sway config minus the session-management execs, plus `waybar`.
-  - `remote-session-vnc` runs `wayvnc`, bound **tailnet-only** by resolving the
-    `tailscale0` IPv4 at start. An assertion rejects wildcard binds and the
-    service refuses to start when Tailscale is down, so the listener never
-    exists off the tailnet.
-  - `clip-peer-sync` (optional) mirrors a peer clipboard into the session through
-    the bundled `clip` CLI.
-- **Client** — `modules/home-manager/programs/remote-desktop/` defines
-  `CUSTOM.programs.remote-desktop`, which provides the `remote-desktop` command:
-  it opens an `ssh -R` forward for the clipboard socket (multiplexed with
-  `ControlMaster`) for the viewer's lifetime, then launches the VNC viewer. It
-  disables the viewer's own clipboard because the ssh stack is the single
-  clipboard authority (no last-writer races).
-- **Audio** — `modules/home-manager/services/remote-audio/` streams the
-  session's PipeWire null sink to the client over RTP (roc) with Reed–Solomon
-  FEC, bound to the tailnet interface.
+**Persistent VNC session** — `modules/nixos/services/remote-session/`, option
+`CUSTOM.services.remote-session`. A whole-session model you attach to and detach
+from with any VNC viewer (`remote-desktop` on the client, below).
+
+- `remote-session-compositor` runs headless sway with its own `XDG_RUNTIME_DIR`
+  and a **private D-Bus session bus**, so it cannot steal the physical desktop's
+  single-instance apps or its one portal per bus. It renders on a DRM render node
+  (`WLR_RENDERER=gles2`, software fallback) and runs the user's sway config minus
+  the session-management execs, plus `waybar`.
+- `remote-session-vnc` runs `wayvnc`, bound **tailnet-only** by resolving the
+  `tailscale0` IPv4 at start. An assertion rejects wildcard binds and the service
+  refuses to start when Tailscale is down, so the listener never exists off the
+  tailnet. wayvnc hardware-encodes via **VA-API on the iGPU**.
+- `clip-peer-sync` (optional) mirrors a peer clipboard into the session through
+  the bundled `clip` CLI.
+
+**Sunshine + Moonlight game streaming** — `modules/nixos/services/sunshine/`,
+option `CUSTOM.services.sunshine` (enabled on `desktop`). This path exists because
+wayvnc/neatvnc can only hardware-encode through VA-API, and `nvidia-vaapi-driver`
+is decode-only, so the desktop's 4090 cannot H.264-encode in the VNC stack.
+Sunshine encodes with **NVENC** directly, so the stream gets the 4090 and a
+**Moonlight** client (`moonlight-qt`) connects to it. It is additive and does not
+touch `remote-session`.
+
+- A **second headless sway compositor** renders on the 4090's render node
+  (`WLR_BACKENDS=headless`, `WLR_RENDERER=gles2`,
+  `WLR_RENDER_DRM_DEVICE=<4090 render node>`). Sunshine captures it with
+  `capture = wlr` (wlr-screencopy) and encodes with `encoder = nvenc`. The
+  Sunshine package is rebuilt with `cudaSupport = true`, because nixpkgs ships it
+  with CUDA off, which silently disables NVENC.
+- **Input** goes through `evbridge` (built from source in `packages/evbridge.nix`,
+  carrying a re-scan patch). Sunshine injects via `uinput` devices that would
+  otherwise land on seat0 and reach niri, so a udev rule hides them from libinput
+  and symlinks them into `/dev/sunshine-evdev`; evbridge reads that filtered
+  directory from evdev and re-emits through the same wlr
+  virtual-pointer/keyboard protocols wayvnc uses — no seat involved.
+- **Resolution** follows the client: `global_prep_cmd` runs `swaymsg output
+  HEADLESS-1 mode ${SUNSHINE_CLIENT_WIDTH}x${SUNSHINE_CLIENT_HEIGHT}@…Hz` on
+  connect and resets to 1920x1080 on disconnect.
+- **Audio** is its own PipeWire null sink, `sink-sunshine-stereo`, named to match
+  Sunshine's own loopback sink; Sunshine captures that sink's monitor.
+- Services: `sunshine-compositor` (`Type=notify`; reports ready only once its
+  Wayland socket is listening), `sunshine-spike`, and `sunshine-evbridge`.
+
+**Client + clipboard (VNC path)** — `modules/home-manager/programs/remote-desktop/`,
+option `CUSTOM.programs.remote-desktop`, provides the `remote-desktop` command:
+it opens an `ssh -R` forward for the clipboard socket (multiplexed with
+`ControlMaster`) for the viewer's lifetime, then launches the VNC viewer with the
+viewer's own clipboard disabled, because the ssh stack is the single clipboard
+authority (no last-writer races).
+
+**Session audio (VNC path)** — `modules/home-manager/services/remote-audio/`
+streams the session's PipeWire null sink to the client over RTP (roc) with
+Reed–Solomon FEC, bound to the tailnet interface.
 
 See [`docs/remote-desktop.md`](./docs/remote-desktop.md) and
-[`docs/remote-clipboard.md`](./docs/remote-clipboard.md) for the full design,
-and `CUSTOM.services.sunshine` for the separate NVENC game-streaming path.
+[`docs/remote-clipboard.md`](./docs/remote-clipboard.md) for the VNC/clipboard
+design, and
+[`.claude/skills/remote-desktop/SKILL.md`](./.claude/skills/remote-desktop/SKILL.md)
+for the GPU, encode, input, and audio constraints shared by both paths.
 
 ## Development workflow
 
