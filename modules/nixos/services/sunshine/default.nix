@@ -370,6 +370,10 @@ in
       wantedBy = [ "multi-user.target" ];
       after = [ "sunshine-compositor.service" ];
       requires = [ "sunshine-compositor.service" ];
+      # Restart the spike whenever the compositor restarts. Requires=/After= only
+      # propagate stop and start ordering, so without this Sunshine keeps running
+      # against the compositor's dead Wayland socket after a crash-restart.
+      partOf = [ "sunshine-compositor.service" ];
       startLimitIntervalSec = 0;
 
       serviceConfig = {
@@ -390,6 +394,11 @@ in
           # session env, so point the loader at the driver runpath explicitly.
           "LD_LIBRARY_PATH=/run/opengl-driver/lib"
         ];
+        # Wait for the compositor's Wayland socket to actually be listening before
+        # exec'ing. After=/Requires= do not hold across a compositor crash-restart,
+        # so Sunshine can otherwise race the socket and fail video init; it logs a
+        # fatal but keeps running, so Restart=always never fires.
+        ExecStartPre = [ (getExe waitForWayland) ];
         ExecStart = getExe sunshine;
         Restart = "always";
         RestartSec = 3;
