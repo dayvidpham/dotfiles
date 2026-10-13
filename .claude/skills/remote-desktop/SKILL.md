@@ -157,6 +157,7 @@ and a dedicated Firefox profile.
 | service fails on rebuild (`ENOENT` / `NoCompositor`) | startup race | `ExecStartPre` waits; see `systemd-services` skill |
 | `nix eval` "path does not exist" | module not git-tracked | `git add` it |
 | moonlight-qt ~10–25 s startup | SDL GPU/HDR probing + `xdg-desktop-portal` `NoReply` (pipewire restarts can strand the portal's PipeWire handle) | restart the portal; install moonlight-qt rather than `nix run` |
+| Moonlight trackpad far too fast (external mouse fine) | moonlight-qt sends raw, unscaled relative motion; SDL3's `SDL_MOUSE_RELATIVE_SYSTEM_SCALE` defaults off, so the compositor's pointer-acceleration curve is bypassed. Upstream issue #1898 | run the client with `SDL_MOUSE_RELATIVE_SYSTEM_SCALE=1` (wrapped in `users/minttea/home.flowX13.nix`); nixpkgs `sdl2-compat` rides on SDL3 so the hint applies |
 
 ## Verifying a session
 

@@ -9,8 +9,29 @@ let
   inherit (lib)
     mkForce
     ;
+
+  # Moonlight sends raw, unscaled relative mouse motion, so the laptop trackpad
+  # (which relies on the compositor's pointer-acceleration curve) feels far too
+  # fast: it never enables SDL's system scaling, and SDL3's
+  # SDL_HINT_MOUSE_RELATIVE_SYSTEM_SCALE defaults to off. Export it so niri's
+  # acceleration applies, while keeping relative mode (game-friendly) instead of
+  # Moonlight's "optimize for remote desktop" absolute mode.
+  # nixpkgs' moonlight-qt links sdl2-compat (SDL3 underneath), so the SDL3 hint
+  # is read by the SDL core.
+  moonlightQt = pkgs-unstable.writeShellApplication {
+    name = "moonlight-qt";
+    runtimeInputs = [ pkgs-unstable.moonlight-qt ];
+    text = ''
+      export SDL_MOUSE_RELATIVE_SYSTEM_SCALE=1
+      exec moonlight-qt "$@"
+    '';
+  };
 in
 {
+  # Wrapped Moonlight (see moonlightQt above). It shadows the unwrapped binary on
+  # PATH, so launch with `moonlight-qt` rather than `nix run nixpkgs#moonlight-qt`.
+  home.packages = [ moonlightQt ];
+
   # NOTE: Hyprland
   CUSTOM.wayland.windowManager.hyprland = {
     enable = false;
