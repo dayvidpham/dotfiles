@@ -217,6 +217,12 @@ rec {
   CUSTOM.programs.aura-config-sync.harnesses.claude-code.agents.enable = false; # agents loaded via Claude Code plugin
   CUSTOM.programs.aura-config-sync.harnesses.opencode.agents.enable = false;
   CUSTOM.programs.aura-config-sync.harnesses.opencode.skills.enable = false;
+  # Deployment 2026-10-13: project the generated OpenCode hooks payload
+  # (pasture-hooks.ts with the [pasture:task-recovery] injection) into
+  # ~/.config/opencode/plugins. Agents and skills cells stay disabled so the
+  # existing ~/.config/opencode/agent files and skills symlink are preserved.
+  CUSTOM.programs.aura-config-sync.harnesses.opencode.enable = true;
+  CUSTOM.programs.aura-config-sync.harnesses.opencode.hooks.enable = true;
 
   programs.antigravity-cli.enable = true;
   programs.antigravity-cli.package = pkgs-unstable.llm-agents.antigravity-cli;
