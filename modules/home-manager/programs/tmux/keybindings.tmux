@@ -107,9 +107,14 @@ set -g focus-events on
 # ever stalling the event loop for other clients.
 set-hook -g pane-focus-in 'run-shell -b "tmux-repo-theme \"#{pane_current_path}\""'
 
-# Pane border labels: title first, then session:window.pane
-# Bold title text for worktree panes (when @repo-worktree is 1)
-set -g pane-border-status top
+# Pane border labels are DISABLED by default (2026-10-13): tmux 3.7c
+# pane-status right-edge clipping underflows unsigned when an oversized
+# window is rendered on a smaller attached client, triggering a billion-cell
+# redraw that hangs the server (see Beads plabs-jvh). pane-border-status off
+# prevents a reload of this file from restoring that hang.
+set -g pane-border-status off
+# pane-border-format below is retained for a future upstream/clipping fix but is
+# INACTIVE while pane-border-status is off (it only applies when status is top/bottom).
 set -g pane-border-format "#{?pane_title,#{?#{==:#{@repo-worktree},1}, #[bold]#{pane_title}#[nobold], #{pane_title}} - ,}#{session_name}:#{window_index}.#{pane_index} "
 
 # True color support
