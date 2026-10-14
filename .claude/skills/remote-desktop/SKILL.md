@@ -114,9 +114,11 @@ and a dedicated Firefox profile.
   3. `evbridge` (github `atassis/evbridge`; **not in nixpkgs**, build from source)
      reads that dir and re-emits via wlr virtual input. Needs the `input` group, a
      pre-created dir, and must wait for the compositor socket.
-  4. evbridge fixes (in `packages/evbridge.nix`): scroll is inverted and unscaled
-     (negate vertical, ~×20); it scans the input dir only once at startup (patch the
-     500 ms timer to re-scan, else lazily-created pointer devices are missed).
+  4. evbridge fixes (in `packages/evbridge.nix`, via `patches/`): it scans the input
+     dir only once at startup (the rescan patch re-scans on the 500 ms timer, else
+     lazily-created pointer devices are missed); and scroll is read from the
+     high-resolution codes and emitted as `axis_source(WHEEL)` + `axis_discrete`
+     (see the scroll patch below).
 
 ### Audio
 - Create a persistent PipeWire null sink (drop-in in `services.pipewire.configPackages`
@@ -150,7 +152,9 @@ and a dedicated Firefox profile.
 | `Cannot load libcuda.so.1` | cap wrapper → secure-exec ignores `LD_LIBRARY_PATH` | drop the cap wrapper; add `/run/opengl-driver/lib` |
 | `Failed to get backend DRM FD` | headless output has no KMS device | cosmetic (feedback scanout tranche) |
 | no mouse in stream | evbridge scanned before Sunshine created the pointer | patch evbridge to re-scan |
-| scroll inverted / too slow/fast | evdev↔wl axis sign and scale | negate vertical, scale ~×20 in evbridge |
+| scroll inverted / too slow/fast | evdev↔wl axis sign and scale | see `packages/evbridge-scroll.patch` (120 hi-res units == one detent == 15 wl units; negate vertical) |
+| Moonlight wheel scrolls in some apps but **not Firefox** | evbridge emitted a bare `axis()`; wlroots only forwards `wl_pointer.axis_discrete` when the discrete count is non-zero, and GTK apps (Firefox) key off it (non-GTK apps use the continuous value) | emit `axis_source(WHEEL)` + `axis_discrete` like wayvnc does (`packages/evbridge-scroll.patch`) |
+| Moonlight **trackpad** scroll does nothing (wheel partly works) | libvirtualhid reports scroll as `REL_WHEEL_HI_RES` (legacy `REL_WHEEL` only at whole 120-unit detents); evbridge read only the legacy codes, so sub-detent scroll was dropped | read the hi-res codes in evbridge (`packages/evbridge-scroll.patch`) |
 | "Firefox already open elsewhere" | shared profile lock | dedicated profile (or Sync) |
 | no audio | capturing a sink the apps don't play into | name the sink `sink-sunshine-stereo`, `PULSE_SINK` there |
 | client silent, but host audio works after disconnect (client runs on the host) | Sunshine moved the default sink; the local client's output follows it into the null sink | pin the client's output to a real sink, or test from another machine |

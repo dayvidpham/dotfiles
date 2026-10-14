@@ -1,0 +1,86 @@
+--- a/src/main.rs
++++ b/src/main.rs
+@@ -411,8 +411,8 @@
+                 match code {
+                     RelativeAxisCode::REL_X => tracked.frame.accumulate_rel_x(value),
+                     RelativeAxisCode::REL_Y => tracked.frame.accumulate_rel_y(value),
+-                    RelativeAxisCode::REL_WHEEL => tracked.frame.accumulate_scroll_vert(value),
+-                    RelativeAxisCode::REL_HWHEEL => tracked.frame.accumulate_scroll_horiz(value),
++                    RelativeAxisCode::REL_WHEEL_HI_RES => tracked.frame.accumulate_scroll_vert(value),
++                    RelativeAxisCode::REL_HWHEEL_HI_RES => tracked.frame.accumulate_scroll_horiz(value),
+                     _ => {}
+                 }
+             }
+--- a/src/mouse.rs
++++ b/src/mouse.rs
+@@ -1,5 +1,5 @@
+ use tracing::debug;
+-use wayland_client::protocol::wl_pointer::{Axis, ButtonState};
++use wayland_client::protocol::wl_pointer::{Axis, AxisSource, ButtonState};
+ use wayland_protocols_wlr::virtual_pointer::v1::client::zwlr_virtual_pointer_v1::ZwlrVirtualPointerV1;
+ 
+ /// Accumulated mouse events within a single frame (between SYN_REPORTs).
+@@ -11,6 +11,8 @@
+     buttons: Vec<(u32, bool)>,
+     scroll_vert: f64,
+     scroll_horiz: f64,
++    scroll_vert_rem: f64,
++    scroll_horiz_rem: f64,
+     abs: Option<(u32, u32)>,
+     has_data: bool,
+ }
+@@ -29,6 +31,8 @@
+             buttons: Vec::new(),
+             scroll_vert: 0.0,
+             scroll_horiz: 0.0,
++            scroll_vert_rem: 0.0,
++            scroll_horiz_rem: 0.0,
+             abs: None,
+             has_data: false,
+         }
+@@ -90,16 +94,41 @@
+             vptr.motion_absolute(time_ms, x, y, ext_w, ext_h);
+         }
+ 
+-        // 3. Vertical scroll
++        // 3. Vertical scroll. Sunshine's libvirtualhid reports scroll in
++        // high-resolution units (120 == one wheel detent); emit
++        // axis_source(WHEEL) + axis_discrete so wlroots forwards
++        // wl_pointer.axis_discrete, which GTK apps (Firefox) require. Other
++        // toolkits use the continuous value. The sub-detent remainder is carried
++        // across frames so fractional trackpad scroll is not lost, and vertical
++        // is negated (evdev +1 = up vs wl_pointer +1 = down). One detent is 15
++        // wl units.
+         if self.scroll_vert != 0.0 {
++            self.scroll_vert += self.scroll_vert_rem;
++            let detents = (self.scroll_vert / 120.0).trunc();
++            self.scroll_vert_rem = self.scroll_vert - detents * 120.0;
+             debug!(value = self.scroll_vert, "mouse: vertical scroll");
+-            vptr.axis(time_ms, Axis::VerticalScroll, self.scroll_vert);
++            vptr.axis_source(AxisSource::Wheel);
++            vptr.axis_discrete(
++                time_ms,
++                Axis::VerticalScroll,
++                -self.scroll_vert / 8.0,
++                -(detents as i32),
++            );
+         }
+ 
+-        // 4. Horizontal scroll
++        // 4. Horizontal scroll (same scheme; +1 = right in both).
+         if self.scroll_horiz != 0.0 {
++            self.scroll_horiz += self.scroll_horiz_rem;
++            let detents = (self.scroll_horiz / 120.0).trunc();
++            self.scroll_horiz_rem = self.scroll_horiz - detents * 120.0;
+             debug!(value = self.scroll_horiz, "mouse: horizontal scroll");
+-            vptr.axis(time_ms, Axis::HorizontalScroll, self.scroll_horiz);
++            vptr.axis_source(AxisSource::Wheel);
++            vptr.axis_discrete(
++                time_ms,
++                Axis::HorizontalScroll,
++                self.scroll_horiz / 8.0,
++                detents as i32,
++            );
+         }
+ 
+         // 5. Buttons — replayed in order, not coalesced
