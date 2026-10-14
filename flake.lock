@@ -1156,11 +1156,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1791922891,
-        "narHash": "sha256-NrfeOgNRBJ4stKi3TPHhst8N8WSnn+vwpEkUtLdrA8Q=",
+        "lastModified": 1791970780,
+        "narHash": "sha256-F0ubH7K6XO3naz8501e6V+tEMpnaYncFeVG1+Pk6MiU=",
         "owner": "dayvidpham",
         "repo": "pasture",
-        "rev": "3df5de0e7de525b25a3ffd54d23d71647e19394c",
+        "rev": "cecdb598200099e48cee2b3dca6c2e212f31f254",
         "type": "github"
       },
       "original": {
