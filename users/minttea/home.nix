@@ -222,7 +222,7 @@ rec {
   # ~/.config/opencode/plugins. Agents and skills cells stay disabled so the
   # existing ~/.config/opencode/agent files and skills symlink are preserved.
   CUSTOM.programs.aura-config-sync.harnesses.opencode.enable = true;
-  CUSTOM.programs.aura-config-sync.harnesses.opencode.hooks.enable = true;
+  CUSTOM.programs.aura-config-sync.harnesses.opencode.hooks.enable = false;
 
   programs.antigravity-cli.enable = true;
   programs.antigravity-cli.package = pkgs-unstable.llm-agents.antigravity-cli;
