@@ -132,6 +132,7 @@ rec {
     dolt
     strike.packages.${pkgs.stdenv.hostPlatform.system}.default
     pasture.packages.${pkgs.stdenv.hostPlatform.system}.pasture
+    pasture.packages.${pkgs.stdenv.hostPlatform.system}.pastured
     llm-agents.cursor-agent
     code-cursor-fhs
 
@@ -331,4 +332,34 @@ rec {
 
   home.file.".ssh/config".source = config.lib.file.mkOutOfStoreSymlink
     /home/minttea/dotfiles/users/minttea/ssh/config;
+
+  # pastured refuses to fall back to defaults ("not safe for a daemon"), so this
+  # file must exist. An empty file is valid: every key defaults, including
+  # db_path (~/.local/share/pasture/pasture.db).
+  home.file.".config/pasture/config.yaml".text = ''
+    # Pasture configuration. Defaults apply for anything not set here.
+    # db_path defaults to ~/.local/share/pasture/pasture.db.
+  '';
+
+  # Pasture's durable engine, and the single writer in front of pasture.db.
+  # The lifecycle hooks push their writes to it, so the store sees one serial
+  # batched writer instead of many contending hook processes. With no service
+  # running, hooks fall back to writing the store directly: correct, and the
+  # fault record says writer=direct, but with the write contention the lane
+  # exists to remove.
+  systemd.user.services.pastured = {
+    Unit = {
+      Description = "Pasture DBOS durable engine and lifecycle write lane";
+      After = [ "default.target" ];
+    };
+
+    Service = {
+      Type = "simple";
+      ExecStart = "${pasture.packages.${pkgs.stdenv.hostPlatform.system}.pastured}/bin/pastured";
+      Restart = "on-failure";
+      RestartSec = 5;
+    };
+
+    Install.WantedBy = [ "default.target" ];
+  };
 }
