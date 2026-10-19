@@ -39,6 +39,10 @@ Replaced insecure 9p file share with microvm.credentialFiles for secrets:
 
 **When uncertain, ask.** If requirements are ambiguous, scope is unclear, or multiple valid approaches exist—stop and ask before proceeding. Wrong assumptions compound.
 
+**Given** research artifacts **when** saving reports or supporting notes **then** store them under `llm/research/` **should never** create top-level `reports/` or `research_notes/` directories.
+
+**Given** new files **when** naming them **then** use lowercase filenames with hyphens separating words (for example, `headless-and-graphical-credential-management.md`) **should never** use spaces or uppercase letters, except for mandated filenames such as `AGENTS.md`. This is a filename rule, not a rule for document titles or body text.
+
 **For coding standards, documentation standards, and Beads naming conventions, see [CONSTRAINTS.md](CONSTRAINTS.md).**
 
 ### Self-Validation Model
