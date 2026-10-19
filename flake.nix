@@ -74,11 +74,6 @@
     #----------------------------------------
     # My stuff
 
-    pasture = {
-      url = "github:dayvidpham/pasture";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     aura-plugins = {
       url = "github:dayvidpham/aura-plugins";
       inputs.nixpkgs.follows = "nixpkgs-stable";
@@ -150,7 +145,6 @@
     , openclaw-modules
     , aura-plugins
     , beads
-    , pasture
     , strike
     , ...
     }:
@@ -352,7 +346,6 @@
           nix-openclaw
           beads
           strike
-          pasture
           sops-nix
           ;
       };
