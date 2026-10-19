@@ -48,7 +48,10 @@ in
   # Wayland Desktop Envs
 
   CUSTOM.wayland.windowManager.hyprland = {
-    enable = true;
+    # Not used on this host: greetd starts niri. Enabling this pulled the
+    # Hyprland package/config in and exported XDG_CURRENT_DESKTOP=hyprland
+    # into every login shell, which confused xdg-desktop-portal.
+    enable = false;
   };
 
   # NOTE: Sway, for remote desktop & waypipe

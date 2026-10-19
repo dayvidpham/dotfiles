@@ -68,6 +68,13 @@ in
       CUSTOM.services.swww.enable = true;
       programs.swaylock.enable = true;
 
+      # Wayland notification daemon. This used to come from the Hyprland module
+      # (which is now disabled), but niri needs it just the same.
+      services.mako = {
+        enable = true;
+        settings.default-timeout = 5000;
+      };
+
       # Idle handling for the session: lock at five minutes, monitors off half
       # a minute later, and lock before suspend. Commands run through `sh -c`,
       # so they resolve from the session PATH.
@@ -88,6 +95,12 @@ in
           before-sleep = "${getExe config.programs.swaylock.package} -f";
         };
       };
+
+      # Pin the desktop for the systemd user manager, not just for niri's own
+      # children. D-Bus-activated services (xdg-desktop-portal in particular)
+      # can start before niri updates the environment; without this they
+      # resolve the wrong portals.conf and ScreenCast never appears.
+      systemd.user.sessionVariables.XDG_CURRENT_DESKTOP = "niri";
 
       xdg.portal.enable = true;
       xdg.portal.xdgOpenUsePortal = false;

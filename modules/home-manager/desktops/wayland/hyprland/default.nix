@@ -112,7 +112,12 @@ in
 
     home.sessionVariables = mkMerge [
       {
-        XDG_CURRENT_DESKTOP = "hyprland";
+        # Do NOT export XDG_CURRENT_DESKTOP here: home.sessionVariables is
+        # sourced by every login shell (hm-session-vars.sh), so it leaks into
+        # the greetd -> niri-session environment. xdg-desktop-portal then
+        # resolves the wrong (or no) portals.conf and loses ScreenCast. The
+        # compositor sets this for its own session; niri's module pins it for
+        # the systemd user manager so early D-Bus activation is correct too.
         NIXOS_OZONE_WL = "1"; # Tell electron apps to use Wayland
         MOZ_ENABLE_WAYLAND = "1"; # Run Firefox on Wayland
       }
