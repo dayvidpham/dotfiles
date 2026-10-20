@@ -81,6 +81,7 @@ in
     gimp # photo editing/markup
     nvtopPackages.full # htop but for GPUs
     brave
+    zenity # native folder picker (OpenDesign "Link local code")
   ])
   ++ (with pkgs-unstable; [
     # CAD viewer
