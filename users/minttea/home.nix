@@ -41,6 +41,7 @@ rec {
   home.sessionPath = [
     "$HOME/.local/share/pnpm/bin" # pnpm global binaries
     "$HOME/.bun/bin" # Bun global binaries (beads, etc.)
+    "$HOME/pkgs/npm-global/bin" # npm prefix from CUSTOM.programs.nodejs
     "$HOME/.local/bin"
   ];
 

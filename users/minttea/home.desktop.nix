@@ -96,7 +96,12 @@ in
   # here instead of globally (see flake.nix nixpkgs-options).
   programs.obs-studio.package = pkgs.obs-studio.override { cudaSupport = true; };
 
-  CUSTOM.programs.nodejs.enable = false;
+  # Node 24 is the global toolchain: OpenDesign's native modules are built for
+  # the Node 24 ABI, and the browser tooling (agent-browser, Playwright MCP)
+  # runs on it too. Node 26 is not a drop-in here — better-sqlite3 is compiled
+  # for NODE_MODULE_VERSION 137.
+  CUSTOM.programs.nodejs.enable = true;
+  CUSTOM.programs.nodejs.package = pkgs-unstable.nodejs_24;
   CUSTOM.programs.vscode.enable = true;
   CUSTOM.programs.btop.enable = true;
   CUSTOM.programs.unity.enable = false;

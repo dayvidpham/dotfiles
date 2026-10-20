@@ -14,19 +14,23 @@ let
     mkEnableOption
     ;
 
-  nodejs = pkgs-unstable.nodejs;
-  nodePkgs = pkgs-unstable.nodePackages;
   npmHomePkgs = "pkgs/npm-global";
   npmConfigFile = "npm/.npmrc";
 in
 {
   options.CUSTOM.programs.nodejs = {
     enable = mkEnableOption "global NodeJS installation with npm prefix in user home";
+    package = mkOption {
+      type = lib.types.package;
+      default = pkgs-unstable.nodejs;
+      defaultText = lib.literalExpression "pkgs-unstable.nodejs";
+      description = "NodeJS package to install as the global node/npm toolchain.";
+    };
   };
 
   config = mkIf cfg.enable {
     home.packages = [
-      nodejs
+      cfg.package
     ];
 
     home.file."${npmHomePkgs}/.empty" = {
