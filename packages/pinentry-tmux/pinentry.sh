@@ -24,6 +24,28 @@
 # gpg-agent invokes this, not the requester, so the tmux runtime dir and the
 # client to show the popup on are resolved here instead of from the
 # environment.
+#
+# Graphical requests that are not TUI panes get pinentry-qt instead: a window
+# has its own surface, so it needs no popup and no tty at all. TUI panes keep
+# the in-terminal popup, and display-less sessions fall back to it as before.
+#
+# The display check is deliberately conservative: pinentry-qt selects GUI mode
+# from WAYLAND_DISPLAY/XDG_SESSION_TYPE and does not retry curses if Qt init
+# fails, so require an actual display socket instead of trusting the variable.
+
+# Is a graphical session actually reachable from this process?
+have_display() {
+  if [ -n "${WAYLAND_DISPLAY:-}" ] &&
+    [ -S "${XDG_RUNTIME_DIR:-/nonexistent}/${WAYLAND_DISPLAY}" ]; then
+    return 0
+  fi
+  if [ -n "${DISPLAY:-}" ]; then
+    # DISPLAY is [host]:N[.screen]; only local servers have a socket here.
+    local n="${DISPLAY##*:}"
+    [ -S "/tmp/.X11-unix/X${n%%.*}" ] && return 0
+  fi
+  return 1
+}
 
 # gpg-agent runs under the systemd user manager, where TMUX_TMPDIR is unset.
 # Resolve the persistent server: an explicit TMUX_TMPDIR first, then the login
@@ -41,8 +63,32 @@ resolve_tmux() {
   return 1
 }
 
-# No server means no popup is possible: stay transparent.
-resolve_tmux || exec pinentry-curses "$@"
+# gpg-agent forwards the requesting client's GPG_TTY in the session env, so a
+# TUI-pane request can be recognised before pinentry starts. That matters
+# because pinentry has to start early: its Assuan greeting is what unblocks
+# the agent, so the backend cannot be chosen by waiting for OPTION ttyname.
+tty_is_tmux_pane() {
+  local tty="${GPG_TTY:-}" pane
+  [ -n "$tty" ] || return 1
+  while read -r pane; do
+    [ "$pane" = "$tty" ] && return 0
+  done < <(tmux list-panes -a -F '#{pane_tty}' 2> /dev/null)
+  return 1
+}
+
+# No server means no popup is possible: a graphical session still gets Qt,
+# everything else stays transparent on the requested tty.
+if ! resolve_tmux; then
+  if have_display; then
+    exec pinentry-qt "$@"
+  fi
+  exec pinentry-curses "$@"
+fi
+
+# Non-TUI graphical request: a Qt window needs neither a popup nor a tty.
+if have_display && ! tty_is_tmux_pane; then
+  exec pinentry-qt "$@"
+fi
 
 pane_rows() { tmux list-panes -a -F '#{pane_tty} #{session_name}' 2> /dev/null || true; }
 client_rows() { tmux list-clients -F '#{client_tty} #{client_session} #{client_activity}' 2> /dev/null || true; }

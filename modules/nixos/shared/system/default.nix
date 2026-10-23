@@ -121,9 +121,12 @@ in
     programs.gnupg.agent = {
       enable = true;
       enableSSHSupport = true;
-      # Prompt in a tmux popup when the requesting tty is a TUI pane
-      # (opencode/lazygit/nvim :terminal); those share a pty with pinentry
-      # otherwise, which breaks passphrase input. See packages/pinentry-tmux.
+      # Qt-first pinentry: a graphical session gets a pinentry-qt dialog, which
+      # has its own surface and therefore also works for prompts requested from
+      # a TUI pane (opencode/lazygit/nvim :terminal). Display-less sessions fall
+      # back to a tmux popup with pinentry-curses, since those panes otherwise
+      # share one pty with the prompt, which breaks passphrase input. See
+      # packages/pinentry-tmux.
       # pkgs-unstable so the popup's tmux client matches the persistent
       # server's and home-manager's tmux.
       pinentryPackage = pkgs-unstable.callPackage ../../../../packages/pinentry-tmux { };
