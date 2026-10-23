@@ -146,6 +146,15 @@ in
     environment.systemPackages = [
       # greeter
       pkgs.tuigreet
+      # gnome-keyring shows its unlock dialog through the D-Bus activatable
+      # org.gnome.keyring.SystemPrompter service, which gcr ships as
+      # libexec/gcr-prompter. Only packages in environment.systemPackages get
+      # their share/dbus-1/services linked into /run/current-system/sw, so
+      # without gcr here the keyring can never prompt and Secret Service
+      # clients (Chrome, Brave, Discord) block forever waiting for an unlock
+      # that can never be answered. `pkgs.gcr` is gcr 3, which still ships the
+      # prompter; `pkgs.gcr_4` does not.
+      pkgs.gcr
       # remote wayland
       pkgs-unstable.waypipe
     ];

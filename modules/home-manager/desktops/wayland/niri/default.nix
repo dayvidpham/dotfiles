@@ -13,6 +13,7 @@ let
     mkEnableOption
     mkPackageOption
     mkMerge
+    mkForce
     types
     getExe
     ;
@@ -57,7 +58,20 @@ in
       # passphrase prompts (plabs-mzn). Skip the unit while a daemon is already
       # running: PAM (greetd, pam_gnome_keyring auto_start) starts one at the
       # first login and unlocks it on every login.
-      systemd.user.services.gnome-keyring.Unit.ConditionPathExists = [ "!%t/keyring/control" ];
+      #
+      # Start it after niri rather than at graphical-session-pre: the unlock
+      # dialog (gcr-prompter) is D-Bus-activated by the systemd user manager,
+      # so it inherits that manager's environment. At graphical-session-pre
+      # WAYLAND_DISPLAY has not been imported yet and gcr-prompter dies with
+      # "cannot open display", permanently wedging the daemon's prompt path.
+      systemd.user.services.gnome-keyring = {
+        Install.WantedBy = mkForce [ "graphical-session.target" ];
+        Unit = {
+          ConditionPathExists = [ "!%t/keyring/control" ];
+          PartOf = mkForce [ "graphical-session.target" ];
+          After = [ "niri.service" ];
+        };
+      };
       xdg.configFile."niri/config.kdl".source = config.lib.file.mkOutOfStoreSymlink /home/minttea/dotfiles/modules/home-manager/desktops/wayland/niri/config.kdl;
 
       home.packages = [
