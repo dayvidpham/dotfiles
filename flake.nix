@@ -465,6 +465,7 @@
         passt = pkgs.passt;
         virtiofsd = pkgs.virtiofsd;
         pinentry-tmux = pkgs-unstable.callPackage ./packages/pinentry-tmux { };
+        tmux-env-diff = pkgs.callPackage ./packages/tmux-env-diff { };
       };
 
       checks.${system}.flowX13-gpu-profiles =

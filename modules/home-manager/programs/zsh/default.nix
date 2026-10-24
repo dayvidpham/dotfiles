@@ -159,10 +159,21 @@ in
               # Sway with its private runtime dir/bus, ...).
               if [[ -n "$TMUX" ]]; then
                 _tmux_client_env_sync() {
-                  local ctty file
+                  local ctty pinned target dir file ov
                   ctty=$(command tmux display -p '#{client_tty}' 2>/dev/null) || return 0
                   [[ -n "$ctty" ]] || return 0
-                  file="/run/user/$UID/tmux-client-env/''${ctty//\//_}.env"
+                  dir="/run/user/$UID/tmux-client-env"
+                  target="$ctty"
+                  # Prefix+D stores a per-client override; it wins while the
+                  # target still has a snapshot (the client is still attached).
+                  ov="$dir/overrides/''${ctty//\//_}"
+                  if [[ -r "$ov" ]]; then
+                    pinned=$(<"$ov")
+                    if [[ -n "$pinned" && -r "$dir/''${pinned//\//_}.env" ]]; then
+                      target="$pinned"
+                    fi
+                  fi
+                  file="$dir/''${target//\//_}.env"
                   [[ -r "$file" ]] && source "$file"
                   return 0
                 }

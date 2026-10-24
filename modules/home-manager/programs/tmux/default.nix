@@ -140,10 +140,10 @@ let
             tmux -S "$sock" show-environment -t "$sess" 2>/dev/null |
               while IFS= read -r line; do
                 case "$line" in
-                  DISPLAY=* | WAYLAND_DISPLAY=* | XDG_RUNTIME_DIR=* | DBUS_SESSION_BUS_ADDRESS=* | XAUTHORITY=*)
+                  DISPLAY=* | WAYLAND_DISPLAY=* | XDG_RUNTIME_DIR=* | DBUS_SESSION_BUS_ADDRESS=* | XAUTHORITY=* | XDG_CURRENT_DESKTOP=* | XDG_SESSION_TYPE=*)
                     printf 'export %s\n' "$line"
                     ;;
-                  -DISPLAY | -WAYLAND_DISPLAY | -XDG_RUNTIME_DIR | -DBUS_SESSION_BUS_ADDRESS | -XAUTHORITY)
+                  -DISPLAY | -WAYLAND_DISPLAY | -XDG_RUNTIME_DIR | -DBUS_SESSION_BUS_ADDRESS | -XAUTHORITY | -XDG_CURRENT_DESKTOP | -XDG_SESSION_TYPE)
                     printf 'unset %s\n' "''${line#-}"
                     ;;
                 esac
@@ -152,10 +152,28 @@ let
           mv "$file.tmp" "$file"
           ;;
         remove)
-          rm -f "$file"
+          rm -f "$file" "$dir/overrides/$(printf '%s' "$ctty" | tr '/' '_')"
           ;;
       esac
     '';
+  };
+
+  # Static, CGO-free env diff used by the display picker's preview.
+  envDiff = pkgs.callPackage ../../../../packages/tmux-env-diff { };
+
+  # Prefix+D: choose which client's display this client should follow, with an
+  # env diff in the preview. The choice is stored per client tty (not per pane:
+  # panes are shared by every client viewing them) and cleared on detach.
+  displayPicker = pkgs.writeShellApplication {
+    name = "tmux-display-picker";
+    runtimeInputs = [
+      pkgs.coreutils
+      pkgs.tmux
+      pkgs.gnugrep
+      pkgs.fzf
+      envDiff
+    ];
+    text = builtins.readFile ./display-picker.sh;
   };
 
   moveWindow = pkgs.writeShellScriptBin "tmux-move-window" ''
@@ -452,7 +470,7 @@ in
   };
 
   config = mkIf cfg.enable {
-    home.packages = [ sessionizer moveWindow repoTheme clientSize pkgs.sesh ]; # sesh: Prefix f picker in keybindings.tmux
+    home.packages = [ sessionizer moveWindow repoTheme clientSize displayPicker pkgs.sesh ]; # sesh: Prefix f picker in keybindings.tmux
     programs.zsh.shellAliases.tmux-help = cheatsheet;
 
     # Override HM's tmux-module default ($XDG_RUNTIME_DIR) so every session's
@@ -532,6 +550,10 @@ in
         set -g update-environment "DISPLAY KRB5CCNAME MSYSTEM SSH_ASKPASS SSH_AUTH_SOCK SSH_AGENT_PID SSH_CONNECTION WAYLAND_DISPLAY WINDOWID XAUTHORITY XDG_CURRENT_DESKTOP XDG_SESSION_DESKTOP XDG_SESSION_TYPE XDG_RUNTIME_DIR DBUS_SESSION_BUS_ADDRESS"
         set-hook -g client-attached 'run-shell -b "${tmuxClientEnv}/bin/tmux-client-env snapshot #{client_tty} #{session_name} #{socket_path}"'
         set-hook -g client-detached 'run-shell -b "${tmuxClientEnv}/bin/tmux-client-env remove #{client_tty}"'
+
+        # Pick which client's display this client follows (env diff preview).
+        # Overrides are per client, removed when the client detaches.
+        bind D display-popup -E -w 80% -h 60% '${displayPicker}/bin/tmux-display-picker #{client_tty}'
 
         source-file ~/.config/tmux/keybindings.tmux
       '';
