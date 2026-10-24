@@ -124,35 +124,76 @@ let
     runtimeInputs = [ pkgs.coreutils pkgs.tmux ];
     text = ''
       set -eu
-      cmd="$1"
-      ctty="''${2:-}"
-      sess="''${3:-}"
-      sock="''${4:-}"
-      [ -n "$ctty" ] || exit 0
       dir="/run/user/$(id -u)/tmux-client-env"
-      file="$dir/$(printf '%s' "$ctty" | tr '/' '_').env"
+
+      cmd="$1"
+      ctty=""
+      sess=""
+      sock=""
+      case "$cmd" in
+        snapshot)
+          ctty="''${2:-}"
+          sess="''${3:-}"
+          sock="''${4:-}"
+          ;;
+        remove)
+          ctty="''${2:-}"
+          ;;
+        backfill)
+          # Existing clients attached before the hooks were installed: their
+          # environment is still in /proc, which is exactly what they attached
+          # with. Only fills gaps; attach-time snapshots stay authoritative.
+          sock="''${2:-}"
+          ;;
+      esac
+
+      tmux_() {
+        if [ -n "$sock" ]; then
+          command tmux -S "$sock" "$@"
+        else
+          command tmux "$@"
+        fi
+      }
+
+      snapshot_file() {
+        printf '%s/%s.env' "$dir" "$(printf '%s' "$1" | tr '/' '_')"
+      }
+
+      write_snapshot() {
+        local out="$1"
+        mkdir -p "$dir"
+        chmod 700 "$dir"
+        while IFS= read -r line; do
+          case "$line" in
+            DISPLAY=* | WAYLAND_DISPLAY=* | XDG_RUNTIME_DIR=* | DBUS_SESSION_BUS_ADDRESS=* | XAUTHORITY=* | XDG_CURRENT_DESKTOP=* | XDG_SESSION_TYPE=*)
+              printf 'export %s\n' "$line"
+              ;;
+            -DISPLAY | -WAYLAND_DISPLAY | -XDG_RUNTIME_DIR | -DBUS_SESSION_BUS_ADDRESS | -XAUTHORITY | -XDG_CURRENT_DESKTOP | -XDG_SESSION_TYPE)
+              printf 'unset %s\n' "''${line#-}"
+              ;;
+          esac
+        done > "$out.tmp"
+        mv "$out.tmp" "$out"
+      }
 
       case "$cmd" in
         snapshot)
-          mkdir -p "$dir"
-          chmod 700 "$dir"
-          {
-            tmux -S "$sock" show-environment -t "$sess" 2>/dev/null |
-              while IFS= read -r line; do
-                case "$line" in
-                  DISPLAY=* | WAYLAND_DISPLAY=* | XDG_RUNTIME_DIR=* | DBUS_SESSION_BUS_ADDRESS=* | XAUTHORITY=* | XDG_CURRENT_DESKTOP=* | XDG_SESSION_TYPE=*)
-                    printf 'export %s\n' "$line"
-                    ;;
-                  -DISPLAY | -WAYLAND_DISPLAY | -XDG_RUNTIME_DIR | -DBUS_SESSION_BUS_ADDRESS | -XAUTHORITY | -XDG_CURRENT_DESKTOP | -XDG_SESSION_TYPE)
-                    printf 'unset %s\n' "''${line#-}"
-                    ;;
-                esac
-              done
-          } > "$file.tmp"
-          mv "$file.tmp" "$file"
+          [ -n "$ctty" ] || exit 0
+          tmux_ show-environment -t "$sess" 2>/dev/null | write_snapshot "$(snapshot_file "$ctty")"
           ;;
         remove)
-          rm -f "$file" "$dir/overrides/$(printf '%s' "$ctty" | tr '/' '_')"
+          [ -n "$ctty" ] || exit 0
+          rm -f "$(snapshot_file "$ctty")" "$dir/overrides/$(printf '%s' "$ctty" | tr '/' '_')"
+          ;;
+        backfill)
+          tmux_ list-clients -F '#{client_tty}|#{client_pid}' 2>/dev/null |
+            while IFS='|' read -r tty pid; do
+              [ -n "$tty" ] && [ -n "$pid" ] || continue
+              out="$(snapshot_file "$tty")"
+              [ -r "$out" ] && continue
+              [ -r "/proc/$pid/environ" ] || continue
+              tr '\0' '\n' < "/proc/$pid/environ" | write_snapshot "$out"
+            done
           ;;
       esac
     '';
@@ -172,6 +213,7 @@ let
       pkgs.gnugrep
       pkgs.fzf
       envDiff
+      tmuxClientEnv
     ];
     text = builtins.readFile ./display-picker.sh;
   };
@@ -470,7 +512,7 @@ in
   };
 
   config = mkIf cfg.enable {
-    home.packages = [ sessionizer moveWindow repoTheme clientSize displayPicker pkgs.sesh ]; # sesh: Prefix f picker in keybindings.tmux
+    home.packages = [ sessionizer moveWindow repoTheme clientSize displayPicker tmuxClientEnv pkgs.sesh ]; # sesh: Prefix f picker in keybindings.tmux
     programs.zsh.shellAliases.tmux-help = cheatsheet;
 
     # Override HM's tmux-module default ($XDG_RUNTIME_DIR) so every session's

@@ -135,6 +135,10 @@ if [ "$mode" = "preview" ]; then
   exit 0
 fi
 
+# Clients attached before the client-attached hook existed have no snapshot.
+# Their environment is still in /proc/<client_pid>/environ, so fill the gaps.
+tmux-client-env backfill "${TMUX_SOCK:-}" 2>/dev/null || true
+
 selection="$(
   {
     printf 'auto|this client (its own display)\n'
