@@ -1,26 +1,3 @@
-# SPIKE (plabs-crh): Sunshine on a dedicated headless compositor, rendered and
-# hard-encoded on the RTX 4090 (NVENC).
-#
-# Why this exists: wayvnc/neatvnc can only hardware-encode via VA-API, and
-# nvidia-vaapi-driver is decode-only, so the 4090 cannot H.264-encode with the
-# remote-session stack. Sunshine encodes with NVENC directly.
-#
-# This is additive: it does NOT touch CUSTOM.services.remote-session.
-#
-# Shape: a second, bare, headless sway compositor renders on the 4090's render
-# node; Sunshine captures it with `capture = wlr` (wlr-screencopy, which handles
-# virtual/headless outputs) and encodes with NVENC. Nothing here claims a DRM
-# card (niri owns card0/card1), so it cannot fight the physical desktop.
-#
-# INPUT: Sunshine injects via uinput (kernel devices on seat0), which the host
-# desktop (niri) would also receive. Instead of reading them via libinput, we
-# let `evbridge` read Sunshine's devices from evdev and re-emit them through the
-# compositor's wlr_virtual_pointer / virtual_keyboard protocols — the same path
-# wayvnc uses — so no seat is involved and niri never sees the devices.
-#
-# KNOWN UNKNOWNS:
-#   - adapter_name format for NVENC (render node path vs GPU index).
-#   - capture = wlr only works if Sunshine is in the same WAYLAND_DISPLAY.
 {
   config,
   lib,
@@ -32,6 +9,7 @@
 }:
 let
   cfg = config.CUSTOM.services.sunshine;
+  session = config.CUSTOM.services.remote-session;
 
   inherit (lib)
     mkIf
@@ -56,144 +34,22 @@ let
   # (pkgs-unstable: recent Rust for the edition-2024 build.)
   evbridge = pkgs-unstable.callPackage ../../../../packages/evbridge.nix { };
 
-  # A `firefox` shim on the session's PATH that pins a dedicated profile. A
-  # profile can only be open in one Firefox at a time, so without this the
-  # session's Firefox collides with the host desktop's ("already open
-  # elsewhere"). Mirrors remote-session's firefoxWrapper. Explicit profile args
-  # are passed through untouched.
-  firefoxWrapper = pkgs.writeShellApplication {
-    name = "firefox";
-    runtimeInputs = [ pkgs.coreutils ];
-    text = ''
-      export PATH=/home/${cfg.user}/.nix-profile/bin:/etc/profiles/per-user/${cfg.user}/bin:/run/current-system/sw/bin
-      for arg in "$@"; do
-        case "$arg" in
-          -P | -p | --P | -profile | --profile | -ProfileManager | --ProfileManager) exec firefox "$@" ;;
-        esac
-      done
-      mkdir -p ${cfg.firefoxProfile}
-      exec firefox --profile ${cfg.firefoxProfile} "$@"
-    '';
-  };
-
-  # evbridge connects to the compositor's Wayland socket at startup and fails
-  # with NoCompositor if it isn't listening yet (e.g. mid-rebuild); wait for it.
-  waitForWayland = pkgs.writeShellApplication {
-    name = "sunshine-wait-wayland";
-    runtimeInputs = [ pkgs.iproute2 pkgs.gnugrep pkgs.coreutils ];
-    text = ''
-      set -eu
-      sock="${cfg.runtimeDir}/${cfg.display}"
-      i=0
-      while [ "$i" -lt 300 ]; do
-        if [ -S "$sock" ] && ss -xl 2>/dev/null | grep -qF " $sock"; then
-          exit 0
-        fi
-        i=$((i + 1))
-        sleep 0.1
-      done
-      echo "sunshine-wait-wayland: timed out waiting for $sock" >&2
-      exit 1
-    '';
-  };
-
-  # Bare headless compositor config. No session-management execs: this must not
-  # hijack the host's systemd user manager.
-  # The compositor config is generated at runtime from the user's sway config
-  # (see the `compositor` wrapper) so the stream is a full interactive session.
-
-  compositor = pkgs.writeShellApplication {
-    name = "sunshine-compositor";
-    # dbus is required: the nixpkgs sway wrapper falls back to running under
-    # `dbus-run-session`, which execs `dbus-daemon` by name and needs it on PATH.
-    # swaybg/foot are on PATH for the compositor's `exec` lines.
-    runtimeInputs = [ pkgs.coreutils pkgs.iproute2 pkgs.gnugrep pkgs.sway pkgs.dbus pkgs.swaybg ];
-    text = ''
-      set -eu
-      mkdir -p ${cfg.runtimeDir}
-      # Clear sockets left by a previous crash so the socket name stays stable.
-      for s in "${cfg.runtimeDir}"/wayland-* "${cfg.runtimeDir}"/sway-ipc.*.sock; do
-        case "$s" in *.lock) continue ;; esac
-        [ -S "$s" ] || continue
-        ss -xl 2>/dev/null | grep -qF " $s" || rm -f "$s" "$s.lock"
-      done
-      # Reuse the user's real sway config so the stream is a full interactive
-      # session (keybindings, bar, launchers). Strip the session-management execs
-      # that would hijack the host's systemd/D-Bus — same filtering remote-session
-      # uses. Input still arrives via evbridge, not libinput.
-      src="''${XDG_CONFIG_HOME:-$HOME/.config}/sway/config"
-      out="${cfg.runtimeDir}/sunshine-sway.config"
-      {
-        printf 'output HEADLESS-1 resolution 1920x1080@60Hz\n'
-        if [ -f "$src" ]; then
-          grep -vE '^[[:space:]]*(exec|exec_always)[[:space:]].*(dbus-update-activation-environment|systemctl --user|polkit-gnome-authentication-agent)' "$src" \
-            | sed -E "s#(/bin/ghostty)(['[:space:]\"])#\1 --gtk-single-instance=false\2#g"
-        fi
-        printf '\nexec swaybg -c "#1a1a2e"\nexec waybar\n'
-      } > "$out"
-
-      sway --unsupported-gpu -c "$out" &
-      sway_pid=$!
-      trap 'kill "$sway_pid" 2>/dev/null || true' TERM INT
-
-      # sway has no sd_notify support, so run it as a child and report readiness
-      # ourselves once its Wayland socket is genuinely listening. The unit is
-      # Type=notify, so anything ordered After= it starts only when ready.
-      sock="${cfg.runtimeDir}/${cfg.display}"
-      ready=0
-      for _ in $(seq 1 300); do
-        kill -0 "$sway_pid" 2>/dev/null || { echo "compositor exited before becoming ready" >&2; exit 1; }
-        if [ -S "$sock" ] && ss -xl 2>/dev/null | grep -qF " $sock"; then
-          ready=1
-          break
-        fi
-        sleep 0.1
-      done
-      if [ "$ready" -ne 1 ]; then
-        echo "compositor: wayland socket $sock never became ready" >&2
-        exit 1
-      fi
-
-      ${config.systemd.package}/bin/systemd-notify --ready
-      wait "$sway_pid"
-    '';
-  };
-
   sunshineConfig = pkgs.writeText "sunshine-spike.conf" ''
     capture = wlr
     encoder = nvenc
-    adapter_name = /dev/dri/renderD128
+    adapter_name = ${session.renderDevice}
     output_name = HEADLESS-1
     port = ${toString cfg.port}
     min_log_level = info
     system_tray = disabled
-    # Capture the session's audio sink (see sunshineAudioConf). The sink is named
-    # sink-sunshine-stereo to match Sunshine's own loopback sink, so apps and the
-    # capture target are the same node.
-    audio_sink = sink-sunshine-stereo
-    # Resize HEADLESS-1 to the Moonlight client on connect; reset on disconnect.
-    global_prep_cmd = [{"do":"${getExe setResolution}","undo":"${getExe resetResolution}"}]
+    # Explicit persistent app/ROC sink. Do not use Sunshine's reserved virtual
+    # sink names: Sunshine takes ownership and unloads those after capture.
+    audio_sink = ${session.pulseSink}
+    # Shared size persists: disconnect must not undo another viewer's mode.
+    global_prep_cmd = [{"do":"${getExe setResolution}"}]
   '';
 
-  # PipeWire null sink the session's apps play into; Sunshine captures its
-  # monitor. Named sink-sunshine-stereo to match Sunshine's own loopback sink
-  # (mirrors the daaaaan setup) so capture and app routing agree.
-  sunshineAudioConf = pkgs.writeTextDir "share/pipewire/pipewire.conf.d/20-sunshine-audio.conf" ''
-    context.objects = [
-      { factory = adapter
-        args = {
-          factory.name = support.null-audio-sink
-          node.name = sink-sunshine-stereo
-          node.description = "Sunshine session audio"
-          media.class = Audio/Sink
-          object.linger = true
-          audio.position = [ FL FR ]
-        }
-      }
-    ]
-  '';
-
-  # Sunshine sets SUNSHINE_CLIENT_WIDTH/HEIGHT/FPS when a stream starts, so the
+  # Sunshine exports SUNSHINE_CLIENT_WIDTH/HEIGHT/FPS for application prep, so the
   # headless output can match the client exactly. swaymsg needs the compositor
   # socket (which is PID-named), hence the discovery.
   swayMsg = pkgs.writeShellApplication {
@@ -205,7 +61,7 @@ let
       for s in "$XDG_RUNTIME_DIR"/sway-ipc.*.sock; do
         [ -S "$s" ] && { sock="$s"; break; }
       done
-      [ -n "$sock" ] || exit 0
+      [ -n "$sock" ] || { echo "sunshine-swaymsg: no shared compositor IPC socket in $XDG_RUNTIME_DIR" >&2; exit 1; }
       SWAYSOCK="$sock" swaymsg "$@"
     '';
   };
@@ -215,18 +71,10 @@ let
     runtimeInputs = [ pkgs.coreutils ];
     text = ''
       set -eu
+      for value in "''${SUNSHINE_CLIENT_WIDTH}" "''${SUNSHINE_CLIENT_HEIGHT}" "''${SUNSHINE_CLIENT_FPS}"; do
+        [[ "$value" =~ ^[1-9][0-9]*$ ]] || { echo "sunshine: invalid client mode component" >&2; exit 1; }
+      done
       ${getExe swayMsg} "output HEADLESS-1 mode ''${SUNSHINE_CLIENT_WIDTH}x''${SUNSHINE_CLIENT_HEIGHT}@''${SUNSHINE_CLIENT_FPS}Hz"
-      # let the mode settle before Sunshine starts capturing
-      sleep 1
-    '';
-  };
-
-  resetResolution = pkgs.writeShellApplication {
-    name = "sunshine-reset-resolution";
-    runtimeInputs = [ pkgs.coreutils ];
-    text = ''
-      set -eu
-      ${getExe swayMsg} "output HEADLESS-1 mode 1920x1080@60Hz"
     '';
   };
 
@@ -245,32 +93,7 @@ let
 in
 {
   options.CUSTOM.services.sunshine = {
-    enable = mkEnableOption "Sunshine headless stream on a dedicated compositor (SPIKE)";
-
-    user = mkOption {
-      type = types.str;
-      default = "minttea";
-      description = "User that owns the session";
-    };
-
-    runtimeDir = mkOption {
-      type = types.str;
-      default = "/run/user/1000/sunshine";
-      description = "Dedicated XDG_RUNTIME_DIR for this session (keeps its socket separate from the login and remote sessions)";
-    };
-
-    display = mkOption {
-      type = types.str;
-      default = "wayland-1";
-      description = "WAYLAND_DISPLAY of the headless compositor";
-    };
-
-    renderDevice = mkOption {
-      type = types.str;
-      default = "/dev/dri/by-path/pci-0000:01:00.0-render";
-      description = "DRM render node used for rendering; must be the NVIDIA GPU so NVENC can consume its buffers";
-      example = "/dev/dri/by-path/pci-0000:01:00.0-render";
-    };
+    enable = mkEnableOption "Sunshine NVENC capture of the persistent remote session";
 
     port = mkOption {
       type = types.port;
@@ -278,18 +101,17 @@ in
       description = "Sunshine base port";
     };
 
-    firefoxProfile = mkOption {
-      type = types.str;
-      default = "/home/${cfg.user}/.config/mozilla/firefox/sunshine";
-      description = ''
-        Dedicated Firefox profile launched inside the session. A profile can
-        only be open in one Firefox at a time, so a separate one lets Firefox
-        run here and on the physical desktop simultaneously.
-      '';
-    };
   };
 
   config = mkIf cfg.enable {
+    # Expose the actual production config for inspection and lightweight checks.
+    system.build.sunshine-session-config = sunshineConfig;
+    assertions = [
+      { assertion = session.enable; message = "Sunshine requires CUSTOM.services.remote-session.enable"; }
+      { assertion = session.renderDevice != null; message = "Sunshine NVENC requires the shared NVIDIA renderDevice"; }
+      { assertion = session.pulseSink != null && session.pulseSink != "sink-sunshine-stereo" && session.pulseServer != null;
+        message = "Sunshine requires a shared persistent pulseSink (not its reserved sink-sunshine-stereo) and pulseServer"; }
+    ];
     # Sunshine creates the virtual mouse/keyboard through uinput; the package
     # ships the matching udev rules.
     hardware.uinput.enable = true;
@@ -311,94 +133,41 @@ in
     # appears (udev only creates it alongside a matching device).
     systemd.tmpfiles.rules = [ "d /dev/sunshine-evdev 0755 root root -" ];
 
-    # Declare the session's audio sink on the NixOS side so the NixOS-owned
-    # pipewire unit restarts when it changes (mirrors remote_audio).
-    services.pipewire.configPackages = [ sunshineAudioConf ];
-    systemd.user.services.pipewire.restartTriggers = [
-      "${sunshineAudioConf}/share/pipewire/pipewire.conf.d/20-sunshine-audio.conf"
-    ];
-    systemd.user.services.pipewire-pulse.restartTriggers = [
-      "${sunshineAudioConf}/share/pipewire/pipewire.conf.d/20-sunshine-audio.conf"
-    ];
-
     # Deliberately no cap_sys_admin security wrapper: it's only needed for KMS
     # capture (we use `capture = wlr`), and a file-capability binary runs in
     # glibc secure-exec mode, which makes the loader ignore LD_LIBRARY_PATH —
     # breaking NVENC's dlopen of libcuda.so.1 / libnvidia-encode.so.1.
 
-    systemd.services.sunshine-compositor = {
-      description = "Headless sway compositor for Sunshine (spike)";
-      wantedBy = [ "multi-user.target" ];
-      after = [ "network.target" "user@1000.service" ];
-      startLimitIntervalSec = 0;
-
-      serviceConfig = {
-        # Readiness = the Wayland socket is listening (signalled by the wrapper).
-        Type = "notify";
-        NotifyAccess = "all";
-        User = cfg.user;
-        Group = "users";
-        WorkingDirectory = "/home/${cfg.user}";
-        ExecStartPre = "${pkgs.coreutils}/bin/mkdir -p -m 0700 ${cfg.runtimeDir}";
-        Environment = [
-          "XDG_RUNTIME_DIR=${cfg.runtimeDir}"
-          "HOME=/home/${cfg.user}"
-          "WLR_BACKENDS=headless"
-          "WLR_RENDERER=gles2"
-          "WLR_RENDER_DRM_DEVICE=${cfg.renderDevice}"
-          "WLR_RENDERER_ALLOW_SOFTWARE=1"
-          "WLR_LIBINPUT_NO_DEVICES=1"
-          "XDG_CURRENT_DESKTOP=sway"
-          "XDG_SESSION_TYPE=wayland"
-          # Session apps play into the sunshine_audio null sink (Sunshine
-          # captures its monitor), on the desktop's PipeWire.
-          "PULSE_SERVER=unix:/run/user/1000/pulse/native"
-          "PULSE_SINK=sink-sunshine-stereo"
-          # User profile on PATH (with the firefox shim first) so exec'd apps
-          # (ghostty, waybar, run-cwd, firefox, ...) resolve.
-          "PATH=${firefoxWrapper}/bin:/home/${cfg.user}/.nix-profile/bin:/etc/profiles/per-user/${cfg.user}/bin:/run/current-system/sw/bin"
-          "XDG_DATA_DIRS=/home/${cfg.user}/.nix-profile/share:/etc/profiles/per-user/${cfg.user}/share:/run/current-system/sw/share"
-        ];
-        ExecStart = getExe compositor;
-        Restart = "always";
-        RestartSec = 2;
-      };
-    };
-
     systemd.services.sunshine-spike = {
       description = "Sunshine headless stream (spike)";
-      wantedBy = [ "multi-user.target" ];
-      after = [ "sunshine-compositor.service" ];
-      requires = [ "sunshine-compositor.service" ];
+      wantedBy = [ "remote-session-compositor.service" ];
+      after = [ "remote-session-compositor.service" ];
+      requires = [ "remote-session-compositor.service" ];
       # Restart the spike whenever the compositor restarts. Requires=/After= only
       # propagate stop and start ordering, so without this Sunshine keeps running
       # against the compositor's dead Wayland socket after a crash-restart.
-      partOf = [ "sunshine-compositor.service" ];
+      partOf = [ "remote-session-compositor.service" ];
       startLimitIntervalSec = 0;
 
       serviceConfig = {
         Type = "simple";
-        User = cfg.user;
+        User = session.user;
         Group = "users";
         # Create the virtual input devices via /dev/uinput (group "uinput").
         SupplementaryGroups = [ "uinput" ];
-        WorkingDirectory = "/home/${cfg.user}";
+        WorkingDirectory = "/home/${session.user}";
         Environment = [
-          "XDG_RUNTIME_DIR=${cfg.runtimeDir}"
-          "WAYLAND_DISPLAY=${cfg.display}"
-          "HOME=/home/${cfg.user}"
-          # Reach the desktop PipeWire so Sunshine can capture sunshine_audio.
-          "PULSE_SERVER=unix:/run/user/1000/pulse/native"
+          "XDG_RUNTIME_DIR=${session.runtimeDir}"
+          "WAYLAND_DISPLAY=${session.display}"
+          "HOME=/home/${session.user}"
+          # Reach the desktop PipeWire so Sunshine can capture the shared sink.
+          "PULSE_SERVER=${session.pulseServer}"
           # NVENC runs through CUDA, and ffmpeg dlopen()s libcuda.so.1 /
           # libnvidia-encode.so.1 at runtime. A systemd service has no graphical
           # session env, so point the loader at the driver runpath explicitly.
           "LD_LIBRARY_PATH=/run/opengl-driver/lib"
         ];
-        # Wait for the compositor's Wayland socket to actually be listening before
-        # exec'ing. After=/Requires= do not hold across a compositor crash-restart,
-        # so Sunshine can otherwise race the socket and fail video init; it logs a
-        # fatal but keeps running, so Restart=always never fires.
-        ExecStartPre = [ (getExe waitForWayland) ];
+        # After= is gated by shared compositor notify readiness.
         ExecStart = getExe sunshine;
         Restart = "always";
         RestartSec = 3;
@@ -409,34 +178,32 @@ in
     # virtual-input protocols. Needs the `input` group to read /dev/input/*.
     systemd.services.sunshine-evbridge = {
       description = "Bridge Sunshine's virtual input into the headless compositor (spike)";
-      wantedBy = [ "multi-user.target" ];
-      after = [ "sunshine-compositor.service" "sunshine-spike.service" ];
-      requires = [ "sunshine-compositor.service" ];
+      wantedBy = [ "remote-session-compositor.service" ];
+      after = [ "remote-session-compositor.service" "sunshine-spike.service" ];
+      requires = [ "remote-session-compositor.service" ];
+      partOf = [ "remote-session-compositor.service" ];
       startLimitIntervalSec = 0;
 
       serviceConfig = {
         Type = "simple";
-        User = cfg.user;
+        User = session.user;
         Group = "users";
         SupplementaryGroups = [ "input" ];
-        WorkingDirectory = "/home/${cfg.user}";
+        WorkingDirectory = "/home/${session.user}";
         # Ensure the input dir exists before evbridge's startup scan (it errors
         # with ENOENT when missing); udev fills it via the SYMLINK rule.
         ExecStartPre = [
           "+${pkgs.coreutils}/bin/mkdir -p /dev/sunshine-evdev"
-          # ...and wait for the compositor's Wayland socket (evbridge errors with
-          # NoCompositor if it connects too early, e.g. during a rebuild).
-          (getExe waitForWayland)
         ];
         Environment = [
-          "XDG_RUNTIME_DIR=${cfg.runtimeDir}"
-          "WAYLAND_DISPLAY=${cfg.display}"
-          "HOME=/home/${cfg.user}"
+          "XDG_RUNTIME_DIR=${session.runtimeDir}"
+          "WAYLAND_DISPLAY=${session.display}"
+          "HOME=/home/${session.user}"
         ];
         # /dev/sunshine-evdev holds only Sunshine's devices (populated by the udev
         # rule above), so evbridge bridges exactly those and not the host's
         # physical input. --phys-filter guards the periodic mknod scan.
-        ExecStart = "${getExe evbridge} --wayland-display ${cfg.display} --input-dir /dev/sunshine-evdev --phys-filter sunshine --log-level info";
+        ExecStart = "${getExe evbridge} --wayland-display ${session.display} --input-dir /dev/sunshine-evdev --phys-filter sunshine --log-level info";
         Restart = "always";
         RestartSec = 3;
       };

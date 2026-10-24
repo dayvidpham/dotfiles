@@ -48,8 +48,19 @@ in
   };
 
   # Clipboard daemon: a user service, so it inherits WAYLAND_DISPLAY and
-  # XDG_RUNTIME_DIR from niri. The desktop reads it over an ssh RemoteForward.
+  # XDG_RUNTIME_DIR from niri. The desktop reads it over clip-tunnel.service.
   CUSTOM.services.clipd.enable = true;
+
+  # One graphical-session-owned forward, shared by VNC and Moonlight. Clipboard
+  # sharing with desktop continues with no viewers or while viewing ANOTHER host.
+  # Set enable = false to opt out; viewing another host does not retarget sharing.
+  # Pre-provision desktop's verified SSH host key and unlock the key/agent; missing
+  # trust/auth fails visibly in `journalctl --user -u clip-tunnel` and retries.
+  CUSTOM.services.clip-tunnel = {
+    enable = true;
+    host = "desktop";
+    remoteSocketPath = "/run/user/1000/clipd.sock";
+  };
 
   # Attach to the desktop's persistent sway session over VNC (tailnet-only).
   CUSTOM.programs.remote-desktop.enable = true;

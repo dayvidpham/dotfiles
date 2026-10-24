@@ -1,199 +1,204 @@
 ---
 name: remote-desktop
 description: >-
-  Running remote-desktop and game-streaming sessions on this NixOS host — the
-  persistent headless-sway + wayvnc "remote-session" and the headless-sway +
-  Sunshine/Moonlight setup: GPU render/encode selection, input injection, audio
-  routing, resolution matching, and the DRM/seat/profile constraints that shape
-  all of it. Use whenever you work on modules/nixos/services/remote-session or
-  modules/nixos/services/sunshine, add or modify a headless Wayland session,
-  wire input or audio into a remote session, pick a GPU for capture/encode, or
-  debug a stream (no video, no audio, no input, wrong resolution, latency, a
-  service that fails on rebuild). Erring toward using it is fine.
+  Work on the single persistent remote-session headless Sway shared by wayvnc
+  and Sunshine/Moonlight: NVIDIA rendering, software VNC capture, NVENC,
+  isolated input, shared audio, clipboard lifecycle, resolution and migration.
+  Use for remote-session/Sunshine modules, headless Wayland capture, audio/input
+  routing, client clipboard tunnels or remote-stream debugging.
 ---
 
-# Remote desktop & streaming sessions
+# Shared remote desktop
 
-Two independent, additive remote-access paths on one host. The physical desktop
-is **niri** (on the tty). The remote sessions are **headless sway** compositors
-that never touch the physical GPU outputs — so they can't fight niri for DRM
-master.
+## Status and architecture
 
-```
-Physical desktop (niri)  ── DRM master on card0 (RTX 4090) + card1 (AMD iGPU)
-                            monitors DP-1/2/3 on card0
+Repository implementation is **not activation**. Existing desktop services were
+reported active before this work; do not stop/restart/activate them without human
+approval. Client audio policy is **AWAITING HUMAN**. Do not invent a default or
+report final hardware/audio acceptance from a configuration check.
 
-remote-session (wayvnc)                       sunshine (Moonlight)
-  headless sway                                 headless sway
-  WLR_RENDER_DRM_DEVICE = renderD129 (iGPU)     WLR_RENDER_DRM_DEVICE = renderD128 (4090)
-  capture/encode: wayvnc (VA-API, iGPU)         capture: Sunshine (capture=wlr)
-  input: wayvnc virtual pointer/keyboard        encode: NVENC (4090)
-  audio: remote_audio null sink → roc-send      input: evbridge (evdev → wlr virtual)
-  XDG_RUNTIME_DIR=/run/user/1000/remote         audio: sink-sunshine-stereo null sink
-  tailnet-only (wayvnc binds the tailnet IP)    XDG_RUNTIME_DIR=/run/user/1000/sunshine
-```
+Given either viewer reconnects, when attaching to desktop, then it should see the
+same windows in **one** `remote-session-compositor`; it should not create its own
+compositor or close applications on disconnect.
 
-Both get: a private D-Bus bus, the user's real sway config (bar + keybindings),
-and a dedicated Firefox profile.
+```text
+physical niri ── physical displays/input (unchanged)
 
-## Hardware / GPU map
+remote-session-compositor ── headless Sway, NVIDIA gles2 render node
+  runtime /run/user/1000/remote, private D-Bus, shared Firefox profile
+  ├─ remote-session-vnc: software capture/encode baseline, tailnet-only
+  ├─ sunshine-spike: wlr capture + NVIDIA NVENC
+  ├─ sunshine-evbridge: isolated uinput → Wayland virtual input
+  └─ clip-peer-sync: ONE headless text/PNG clipboard reconciler
 
-- `card0` = RTX 4090 (nvidia, renderD128) — drives the physical monitors.
-- `card1` = AMD Raphael iGPU (amdgpu, renderD129) — no outputs; free for rendering.
-- **Card node** (`/dev/dri/cardN`) — display/scanout; can be DRM master; exclusive.
-- **Render node** (`/dev/dri/renderDN`) — render/compute only; shareable.
-- **VA-API encoder**: only the **iGPU** (Mesa radeonsi). `nvidia-vaapi-driver` is
-  **decode-only** → the 4090 cannot VA-API-encode.
-- **NVENC**: only if Sunshine is built with CUDA (see below).
-
-## The constraints that shape everything
-
-1. **DRM master is exclusive — one compositor per card.** niri owns card0/card1, so
-   a second compositor must use `WLR_BACKENDS=headless` (no card at all), never the
-   DRM backend. `sway --unsupported-gpu` is only a wlroots gate; it is **not**
-   software rendering — the renderer is still `gles2` on a render node.
-2. **Render on a render node; the dmabuf *feedback scanout* tranche needs a card.**
-   `WLR_RENDER_DRM_DEVICE=<render node>` gives GPU rendering with no card.
-   `zwp_linux_dmabuf_v1` is still advertised on headless; wlroots logs
-   `Failed to get backend DRM FD` when building per-surface feedback because a
-   headless output has no KMS device — **cosmetic** (there's nothing to scan out to).
-3. **Two encoder worlds.** wayvnc/neatvnc hardware-encode via **VA-API only**
-   (`h264_vaapi`) → the iGPU. Sunshine encodes via **NVENC** → the 4090, but only
-   with a CUDA-enabled build and without a capability wrapper.
-4. **Input injection differs.** wayvnc uses Wayland virtual-input protocols (no
-   kernel devices, no seat → clean, no host leak). Sunshine uses **uinput** (kernel
-   devices that land on seat0 → the host desktop would receive them) → needs udev
-   isolation plus a bridge.
-5. **Firefox locks a profile to one running instance** → concurrent sessions each
-   need their own profile (or Firefox Sync for shared data).
-6. **Seat0.** `LIBSEAT_BACKEND=noop` hardcodes the seat name to `"seat0"`, the same
-   seat as the host — a libinput-based headless compositor would see the host's
-   devices, and vice-versa. Prefer Wayland virtual-input protocols instead of libinput.
-
-## Per-layer recipe
-
-### Headless compositor
-- Env: `WLR_BACKENDS=headless`, `WLR_RENDERER=gles2`,
-  `WLR_RENDER_DRM_DEVICE=<render node>`, `WLR_RENDERER_ALLOW_SOFTWARE=1`,
-  `WLR_LIBINPUT_NO_DEVICES=1` (reads no `/dev/input`), a dedicated `XDG_RUNTIME_DIR`
-  (socket names collide otherwise).
-- **`Type=notify` readiness** (see the `systemd-services` skill): wrap sway,
-  background it, wait until the Wayland socket is *listening*, `systemd-notify --ready`,
-  then `wait`. Dependents use only `After=`/`Requires=` — no polling.
-- Reuse the user's sway config, filtered like `remote-session` does (strip `exec*`
-  lines touching `systemctl --user` / `dbus-update-activation-environment` / polkit;
-  `sed` ghostty to `--gtk-single-instance=false`), and append `exec waybar`. Put the
-  user profile on `PATH`/`XDG_DATA_DIRS` so exec'd apps resolve.
-- **`pkgs.dbus` must be on the compositor's PATH**: the nixpkgs sway wrapper runs
-  `dbus-run-session` when there's no bus env/`$XDG_RUNTIME_DIR/bus`, and that execs
-  `dbus-daemon` by name (otherwise it crash-loops). This also gives the session its
-  private bus.
-
-### Capture + encode
-- **wayvnc**: screencopy capture; `-g` for dmabuf; VA-API encode on the render node.
-- **Sunshine**: `capture = wlr`, `output_name = HEADLESS-1`, `encoder = nvenc`,
-  `adapter_name = /dev/dri/renderD128`.
-  - **nixpkgs `sunshine` is built with CUDA off** (`SUNSHINE_ENABLE_CUDA=false`), so
-    NVENC is absent and surfaces as `Couldn't scale frame: Invalid argument`. Override:
-    `pkgs-unstable.sunshine.override { cudaSupport = true; cudaPackages = pkgs-unstable.cudaPackages; }`
-    (pkgs-unstable also carries the GHSA-fp6g-27w5-489j fix).
-  - **No `cap_sys_admin` security wrapper.** `capture=wlr` doesn't need it, and a
-    file-capability binary runs in glibc **secure-exec** mode, which makes the loader
-    ignore `LD_LIBRARY_PATH` → `Cannot load libcuda.so.1`. NVENC also needs
-    `LD_LIBRARY_PATH=/run/opengl-driver/lib`.
-
-### Input
-- **Preferred (wayvnc model)**: the compositor advertises `zwlr_virtual_pointer_v1` /
-  `zwp_virtual_keyboard_v1`; the capture server injects through them. No seat, no leak.
-- **Sunshine (uinput) model**:
-  1. Sunshine creates `libvirtualhid Keyboard` / `Mouse` / `Mouse (Absolute)`
-     (vendor `1209`, **no `ID_VENDOR_ID`/`ID_MODEL_ID`**) → match in udev with
-     `ATTRS{name}=="libvirtualhid*"`.
-  2. udev: `ENV{LIBINPUT_IGNORE_DEVICE}="1"` (host desktop ignores them) **and**
-     `SYMLINK+="sunshine-evdev/%k"` into a filtered input dir.
-  3. `evbridge` (github `atassis/evbridge`; **not in nixpkgs**, build from source)
-     reads that dir and re-emits via wlr virtual input. Needs the `input` group, a
-     pre-created dir, and must wait for the compositor socket.
-  4. evbridge fixes (in `packages/evbridge.nix`, via `patches/`): it scans the input
-     dir only once at startup (the rescan patch re-scans on the 500 ms timer, else
-     lazily-created pointer devices are missed); and scroll is read from the
-     high-resolution codes and emitted as `axis_source(WHEEL)` + `axis_discrete`
-     (see the scroll patch below).
-
-### Audio
-- Create a persistent PipeWire null sink (drop-in in `services.pipewire.configPackages`
-  with `restartTriggers`, like `remote_audio`).
-- **Sunshine sets the default sink to its *own* sink (`sink-sunshine-stereo`) and
-  captures that.** So name your null sink `sink-sunshine-stereo`, route apps there
-  (`PULSE_SINK=sink-sunshine-stereo`), and set `audio_sink = sink-sunshine-stereo`.
-  Give the session `PULSE_SERVER=unix:/run/user/1000/pulse/native`.
-- remote-session instead routes apps to `remote_audio`, whose monitor `roc-send` streams.
-- **Same-machine client/host gotcha:** Sunshine moves the *default* sink, so a
-  Moonlight client running on the host has its own audio output follow the default
-  into the silent null sink (and be re-captured → feedback) → the client "has no
-  audio" even though it's transmitted. Only affects local testing; a client on
-  another machine outputs to its own device. Locally, pin the client's output:
-  `SDL_AUDIODRIVER=pulseaudio PULSE_SINK=<real host sink> moonlight-qt`, or
-  `pactl move-sink-input <id> <real host sink>`.
-
-### Resolution matching (Sunshine)
-- `global_prep_cmd = [{"do":"<set>","undo":"<reset>"}]`; the set script runs
-  `swaymsg output HEADLESS-1 mode ${SUNSHINE_CLIENT_WIDTH}x${SUNSHINE_CLIENT_HEIGHT}@${SUNSHINE_CLIENT_FPS}Hz`
-  (Sunshine exports `SUNSHINE_CLIENT_*`). `swaymsg` needs the **PID-named** socket →
-  discover `$XDG_RUNTIME_DIR/sway-ipc.*.sock`. Applied **per connection**, not on live
-  window resize.
-
-## Pitfalls quick table
-
-| Symptom | Cause | Fix |
-|---|---|---|
-| `dbus-run-session: failed to execute message bus daemon` | sway wrapper needs `dbus-daemon` on PATH | add `pkgs.dbus` to runtimeInputs |
-| `Couldn't scale frame: Invalid argument` | nixpkgs sunshine built without CUDA | `cudaSupport = true` |
-| `Cannot load libcuda.so.1` | cap wrapper → secure-exec ignores `LD_LIBRARY_PATH` | drop the cap wrapper; add `/run/opengl-driver/lib` |
-| `Failed to get backend DRM FD` | headless output has no KMS device | cosmetic (feedback scanout tranche) |
-| no mouse in stream | evbridge scanned before Sunshine created the pointer | patch evbridge to re-scan |
-| scroll inverted / too slow/fast | evdev↔wl axis sign and scale | see `packages/evbridge-scroll.patch` (120 hi-res units == one detent == 15 wl units; negate vertical) |
-| Moonlight wheel scrolls in some apps but **not Firefox** | evbridge emitted a bare `axis()`; wlroots only forwards `wl_pointer.axis_discrete` when the discrete count is non-zero, and GTK apps (Firefox) key off it (non-GTK apps use the continuous value) | emit `axis_source(WHEEL)` + `axis_discrete` like wayvnc does (`packages/evbridge-scroll.patch`) |
-| Moonlight **trackpad** scroll does nothing (wheel partly works) | libvirtualhid reports scroll as `REL_WHEEL_HI_RES` (legacy `REL_WHEEL` only at whole 120-unit detents); evbridge read only the legacy codes, so sub-detent scroll was dropped | read the hi-res codes in evbridge (`packages/evbridge-scroll.patch`) |
-| Wheel scrolls a fraction of a line per notch in **ghostty** (GTK4) | a sub-detent frame carries no discrete value, so GTK4 delivers it as a smooth surface-unit scroll and ghostty switches to its precision (pixel) path | gate evbridge's scroll on whole 120-unit detents so every event is a real wheel event (`packages/evbridge-scroll.patch`) |
-| "Firefox already open elsewhere" | shared profile lock | dedicated profile (or Sync) |
-| no audio | capturing a sink the apps don't play into | name the sink `sink-sunshine-stereo`, `PULSE_SINK` there |
-| client silent, but host audio works after disconnect (client runs on the host) | Sunshine moved the default sink; the local client's output follows it into the null sink | pin the client's output to a real sink, or test from another machine |
-| service fails on rebuild (`ENOENT` / `NoCompositor`) | startup race | `ExecStartPre` waits; see `systemd-services` skill |
-| `nix eval` "path does not exist" | module not git-tracked | `git add` it |
-| moonlight-qt ~10–25 s startup | SDL GPU/HDR probing + `xdg-desktop-portal` `NoReply` (pipewire restarts can strand the portal's PipeWire handle) | restart the portal; install moonlight-qt rather than `nix run` |
-| Moonlight trackpad far too fast (external mouse fine) | moonlight-qt sends raw, unscaled relative motion; SDL3's `SDL_MOUSE_RELATIVE_SYSTEM_SCALE` defaults off, so the compositor's pointer-acceleration curve is bypassed. Upstream issue #1898 | run the client with `SDL_MOUSE_RELATIVE_SYSTEM_SCALE=1` (wrapped in `users/minttea/home.flowX13.nix`); nixpkgs `sdl2-compat` rides on SDL3 so the hint applies |
-
-## Verifying a session
-
-```bash
-systemctl is-active sunshine-compositor sunshine-spike sunshine-evbridge   # or remote-session-*
-S=$(ls /run/user/1000/sunshine/sway-ipc.*.sock|head -1)
-SWAYSOCK=$S swaymsg -t get_inputs        # wlr_virtual_pointer_v1 AND wlr_virtual_keyboard_v1
-SWAYSOCK=$S swaymsg -t get_outputs       # HEADLESS-1 size
-pactl list short sinks | grep sunshine    # sink exists
-pactl list short source-outputs           # application.name="sunshine" capturing the monitor
-pactl list short sink-inputs              # the app is on the sink
-journalctl -u sunshine-spike | grep -iE 'nvenc|opus|encoder'
-nvidia-smi                                # C+G / NVE engine when encoding
+apps → remote_audio → explicit Sunshine capture AND ROC monitor sender
+flowX13 clipd ← singleton user clip-tunnel SSH forward ← desktop reconcilers
 ```
 
-Debugging order for "no X": **service active? → compositor socket + output → capture
-server connected → encoder chosen → input devices present → audio sink + capture.**
+Sunshine derives user/runtime/display from `CUSTOM.services.remote-session`.
+It owns **no compositor or sink**. Keep physical niri's existing clipboard sync;
+do not add a Sunshine reconciler. Detailed operator guides:
+[desktop](<../../../docs/remote-desktop.md>) and
+[clipboard](<../../../docs/remote-clipboard.md>).
 
-## Repo conventions & references
+## GPU and compositor constraints
 
-- Modules: `modules/nixos/services/<name>/default.nix`, options under `CUSTOM.services.*`,
-  imported in `modules/nixos/services/default.nix`; host wiring in
-  `hosts/desktop/configuration.nix`. Packages: `packages/*.nix` via `pkgs-unstable.callPackage`.
-- Commits: `git agent-commit` (signed, non-interactive). Track work in Beads.
-- For readiness/races/ordering, read the **`systemd-services`** skill.
-- Key files: `modules/nixos/services/remote-session/`, `modules/nixos/services/sunshine/`,
-  `packages/evbridge.nix`, `packages/evbridge-rescan.patch`.
+- Physical niri owns DRM outputs. Use `WLR_BACKENDS=headless` and a shareable
+  render node, not a DRM backend that competes for DRM master.
+- Shared desktop render node: RTX 4090,
+  `/dev/dri/by-path/pci-0000:01:00.0-render`; `WLR_RENDERER=gles2`,
+  `WLR_RENDERER_ALLOW_SOFTWARE=1`, `WLR_LIBINPUT_NO_DEVICES=1`.
+  `sway --unsupported-gpu` is a compatibility gate, not software rendering.
+- Headless dmabuf feedback can log `Failed to get backend DRM FD` because there
+  is no KMS scanout device; do not switch to DRM just to remove the message.
+- **wayvnc:** software capture/encoding baseline, no `-g` on shared NVIDIA Sway.
+  wayvnc/neatvnc hardware encoding uses VA-API; NVIDIA VA-API is decode-only.
+  NVIDIA rendering does not imply NVIDIA VNC hardware encoding. Measure real
+  capture compatibility and performance; do not claim checks prove it.
+- **Sunshine:** keep `capture=wlr`, `output_name=HEADLESS-1`, `encoder=nvenc` and
+  the CUDA-enabled unstable package. Default nixpkgs CUDA-off builds lack NVENC.
+  Preserve `LD_LIBRARY_PATH=/run/opengl-driver/lib`; no `cap_sys_admin` wrapper
+  (secure-exec would discard the loader path and break CUDA/NVENC).
+- The one compositor has a private D-Bus and filtered user Sway config: strip
+  session-management execs that hijack the physical user manager, preserve
+  application/bar configuration and Ghostty's single-instance override. Keep
+  `pkgs.dbus` available to the sway wrapper and child processes.
+- A separate shared-session Firefox profile avoids the physical session's lock;
+  VNC and Moonlight do not need separate profiles because they share one Sway.
+- Readiness means a **listening** Wayland socket, not just a pathname. Capture,
+  evbridge and clipboard dependents must reconnect after compositor replacement;
+  `After=` alone is not crash recovery. A compositor crash can lose windows.
 
-## Open / known
+## Input isolation
 
-- Sunshine's audio sink name collides with Sunshine's own (two `sink-sunshine-stereo`);
-  works but fragile.
-- Firefox profile *data* isn't shared across sessions (needs Sync or a seeded copy).
-- Desktop flicker on the physical niri session — separate issue, not the remote path.
+VNC uses Wayland virtual pointer/keyboard directly. Sunshine creates uinput
+`libvirtualhid*` devices which must have `LIBINPUT_IGNORE_DEVICE=1` and be exposed
+only through the filtered Sunshine evdev directory. evbridge reads that directory
+and emits virtual input into the shared Sway; it must not read physical devices.
+Preserve the rescan patch for lazily created devices and the hi-res scroll patch
+(whole wheel detents with discrete events, including GTK/Firefox/Ghostty behavior).
+`LIBSEAT_BACKEND=noop` does not create an isolated seat: it names seat0.
+
+Retain the installed laptop Moonlight wrapper's
+`SDL_MOUSE_RELATIVE_SYSTEM_SCALE=1`; launching unwrapped Moonlight loses trackpad
+system scaling. Remote keyboard/pointer events must never appear in physical niri.
+
+## Shared resolution
+
+Only one `HEADLESS-1` exists. Sunshine's `global_prep_cmd` applies Moonlight's
+`SUNSHINE_CLIENT_WIDTH/HEIGHT/FPS` on **application launch** (`proc.execute`), not
+on every connection/resume. VNC sees that same size. **No per-disconnect
+reset/undo**: it could resize another still-connected client. The applied mode
+persists across disconnect/resume until another launch/manual mode change or
+compositor restart (configured baseline `1920x1080@60Hz`). Additional viewers
+and resumes do not automatically resize. Do not claim a one-stream cap: pinned
+Sunshine source has no supported concurrency-limiting `channels` option.
+Overlapping clients share windows, input and size. Use the PID-named Sway IPC
+socket under the derived runtime, not the Wayland socket.
+
+## Audio policy — AWAITING HUMAN
+
+The sole persistent session sink remains **`remote_audio`**: apps use
+`PULSE_SINK=remote_audio`, Sunshine explicitly uses `audio_sink=remote_audio`, and
+ROC reads `remote_audio.monitor`. Sunshine owns no additional persistent session
+sink, though it may manage temporary internal virtual sinks/default routing as
+before. Pinned-source verification showed explicit capture prefers the configured
+sink. Do **not** rename the persistent sink to reserved `sink-sunshine-stereo`:
+Sunshine's own sink management can duplicate/unload that name. Inspect actual
+persistent sink uniqueness. The private Wayland runtime still needs the user's
+real PipeWire/Pulse runtime for audio clients.
+
+Human selection of always-on ROC versus native Moonlight versus explicit
+transport switching is outstanding. Do not implement a guessed client default,
+claim echo-free behavior, or mark audio UAT complete. After selection, test
+VNC/ROC and native Moonlight with expected policy, no duplicate audio, latency
+and reconnect. Same-machine testing must pin Moonlight playback to a real sink,
+not the captured null sink.
+
+## Clipboard service and security
+
+`CUSTOM.services.clip-tunnel` is a singleton graphical-session user service,
+wanting/starting after local clipd and forwarding its Unix socket to desktop's
+peer socket. Do not add a `Requires=` stop dependency that strands it when clipd
+restarts; both services stop with the owning graphical session.
+It remains active with no viewer **and while viewing another host**; retarget or
+disable it explicitly to change/revoke sharing. `remote-desktop` owns only the
+VNC attachment. Keep native VNC/primary clipboard disabled. One headless
+reconciler plus existing physical niri sync is sufficient for both viewers.
+
+SSH must explicitly use `-S none`, `ControlMaster=no`, `ControlPersist=no`,
+`ForkAfterAuthentication=no`, `BatchMode=yes`, `StrictHostKeyChecking=yes`,
+`ExitOnForwardFailure=yes`, bounded connect/keepalive timeouts and systemd retry.
+Pre-provision verified known-host trust and a usable unlocked key/agent in the
+user service environment. Missing credentials/trust should log and retry, never
+prompt or silently bypass verification. Desktop sshd `StreamLocalBindUnlink=yes`
+recovers stale remote forward sockets on reconnect.
+
+## Migration BEFORE activation
+
+- Warn the user **before** switching: old `sunshine-compositor` windows cannot
+  migrate into the surviving compositor and **will close**. Save work and obtain
+  approval; compositor configuration changes can restart other remote apps too.
+- Close old viewers. A legacy persistent master may remain at `~/.ssh/clip-%h`.
+  Inspect `ssh -G -o 'ControlPath=~/.ssh/clip-%h' desktop` without connecting.
+  `%h` is effective `HostName`, not original alias `%n`; verify `controlpath`.
+- Human-only retirement, **after verifying the exact old path**:
+  `ssh -S "$HOME/.ssh/clip-50.92.252.186" -O exit desktop` if the effective old
+  `HostName` is `50.92.252.186`. Substitute the verified path if different.
+  This example is not a universal path. Config changes since master startup
+  require original config/process inspection. Never blindly delete sockets or
+  kill the unrelated normal interactive master.
+- Check new SSH prerequisites, review changes and only then activate with human
+  approval. Do not execute migration/live commands as part of documentation work.
+
+## Verification
+
+Non-live configuration / mocked lifecycle checks:
+
+```sh
+nix eval .#checks.x86_64-linux.shared-remote-session.drvPath
+nix eval .#checks.x86_64-linux.clipboard-tunnel.drvPath
+nix build --no-link .#checks.x86_64-linux.shared-remote-session
+nix build --no-link .#checks.x86_64-linux.clipboard-tunnel
+nix flake check --no-build
+```
+
+These checks do **not** validate real GPU, input, audio, clipboard or network
+hardware. After approved activation, operator read-only diagnostics include:
+
+```sh
+systemctl is-active remote-session-compositor remote-session-vnc sunshine-spike sunshine-evbridge clip-peer-sync
+systemctl --user is-active clipd clip-tunnel   # laptop
+journalctl --user -u clip-tunnel -b            # laptop
+journalctl -u sunshine-spike -b
+nvidia-smi
+```
+
+Inspect the shared Sway `get_tree`, `get_outputs`, `get_inputs` with its PID-named
+IPC socket; inspect sink uniqueness, app sink inputs, Sunshine monitor capture,
+ROC source, NVENC logs and encoder engine activity. Debug in order: unit → socket
+and output → capture → encoder → isolated input → sink/capture → selected client.
+
+Hardware UAT must include: same terminal/browser windows and app PIDs in both
+viewers; detach/reconnect persistence; shared Moonlight resize and overlapping
+client disconnect; bidirectional text/PNG clipboard and dictation paste; singleton
+tunnel with no viewers/network recovery; approved capture/compositor crash
+recovery; physical niri input isolation; wheel/trackpad scaling; and VNC/native
+audio once the human chooses policy. Do not equate active services with success.
+
+## Pitfalls
+
+| Symptom | Investigate |
+|---|---|
+| NVENC missing / `Couldn't scale frame: Invalid argument` | CUDA-enabled package and actual encoder logs |
+| `Cannot load libcuda.so.1` | Driver loader path and accidental capability wrapper |
+| `dbus-daemon` missing | dbus in compositor runtime PATH |
+| Capture stays alive but no video after Sway crash | Dependency restart propagation and fresh socket readiness |
+| Mouse/scroll missing or host receives it | evbridge rescan/scroll patches, filtered device directory, udev isolation |
+| Duplicate/silent audio | Actual sink uniqueness, app/capture/ROC routing, unresolved client policy |
+| Clipboard forward bind failure | Legacy master, verified host/key prerequisites, server stale-socket recovery |
+| Flake path absent | New peer-owned file may not be Git tracked; ask its owner to stage it |
+
+Modules and host wiring are owned by their assigned workers; do not overwrite
+peer files while updating this skill. No commits or activation without the
+current task's permission.

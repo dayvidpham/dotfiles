@@ -125,6 +125,8 @@ in
   CUSTOM.services.remote-audio = {
     enable = true;
     role = "send";
+    # Same persistent sink as session apps and Sunshine's explicit capture.
+    sinkName = "remote_audio";
     peer = "flowx13";
   };
 

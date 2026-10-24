@@ -50,7 +50,7 @@ let
   # it still advertises zwp_linux_dmabuf_v1, so clients get GPU buffers.
   swayWrapper = pkgs.writeShellApplication {
     name = "remote-session-sway";
-    runtimeInputs = [ pkgs.iproute2 pkgs.gnugrep pkgs.coreutils ];
+    runtimeInputs = [ pkgs.iproute2 pkgs.gnugrep pkgs.gnused pkgs.coreutils pkgs.dbus pkgs.swaybg ];
     text = ''
       set -eu
       # Dedicated runtime dir: clear sockets left by a previous crash so the
@@ -74,10 +74,14 @@ let
           | sed -E "s#(/bin/ghostty)(['[:space:]\"])#\1 --gtk-single-instance=false\2#g" \
           >> "$out"
         printf '\nexec waybar\n' >> "$out"
-        ${optionalString (cfg.outputMode != null) ''printf 'output * mode ${cfg.outputMode}\n' >> "$out"''}
-        exec "''${privateBus[@]}" ${pkgs.sway}/bin/sway --unsupported-gpu -c "$out"
+      else
+        : > "$out"
       fi
-      exec "''${privateBus[@]}" ${pkgs.sway}/bin/sway --unsupported-gpu
+      printf '\noutput HEADLESS-1 mode %s\n' ${lib.escapeShellArg cfg.outputMode} >> "$out"
+      exec ${pkgs.python3}/bin/python3 ${./readiness.py} \
+        --socket ${lib.escapeShellArg "${cfg.runtimeDir}/${cfg.display}"} \
+        --timeout 30 --notify ${config.systemd.package}/bin/systemd-notify -- \
+        "''${privateBus[@]}" ${pkgs.sway}/bin/sway --unsupported-gpu -c "$out"
     '';
   };
 
@@ -100,28 +104,6 @@ let
     port=${toString cfg.port}
     enable_auth=false
   '';
-
-  # Wait for the compositor's socket to actually be listening. systemd's After=
-  # only orders the units; it does not guarantee the socket exists yet, so
-  # wayvnc otherwise races the compositor at startup.
-  waitForSocket = pkgs.writeShellApplication {
-    name = "remote-session-wait-socket";
-    runtimeInputs = [ pkgs.iproute2 pkgs.gnugrep pkgs.coreutils ];
-    text = ''
-      set -eu
-      sock="''${1:?socket path required}"
-      i=0
-      while [ "$i" -lt 300 ]; do
-        if [ -S "$sock" ] && ss -xl 2>/dev/null | grep -qF " $sock"; then
-          exit 0
-        fi
-        i=$((i + 1))
-        sleep 0.1
-      done
-      echo "remote-session-wait-socket: timed out waiting for $sock" >&2
-      exit 1
-    '';
-  };
 
   # clip CLI + peer-sync. Both Python files must share one store directory
   # because clip-sync.py imports clip.py from its own directory.
@@ -229,9 +211,9 @@ in
     };
 
     outputMode = mkOption {
-      type = types.nullOr types.str;
-      default = null;
-      description = "Optional forced output mode (e.g. 1920x1080) applied with `output * mode`";
+      type = types.str;
+      default = "1920x1080@60Hz";
+      description = "Startup baseline HEADLESS-1 mode; viewer-requested size persists until another mode request or compositor restart";
       example = "1920x1080";
     };
 
@@ -298,7 +280,7 @@ in
           session's clipboard, so apps in the VNC session can paste what was
           copied on the client machine (including images, which VNC's own
           text-only clipboard cannot carry). The peer socket is provided by the
-          client's `remote-desktop` helper over ssh -R.
+          client's independent singleton clipboard tunnel over ssh -R.
         '';
       };
 
@@ -335,7 +317,11 @@ in
       startLimitIntervalSec = 0;
 
       serviceConfig = {
-        Type = "simple";
+        Type = "notify";
+        NotifyAccess = "all";
+        TimeoutStartSec = 35;
+        TimeoutStopSec = 5;
+        KillMode = "control-group";
         User = cfg.user;
         Group = "users";
         # A system service's cwd defaults to /, which spawned terminals inherit
@@ -361,7 +347,6 @@ in
           ++ lib.optional (cfg.pulseServer != null) "PULSE_SERVER=${cfg.pulseServer}"
           ++ lib.optional (cfg.pulseSink != null) "PULSE_SINK=${cfg.pulseSink}";
         ExecStart = "${getExe swayWrapper}";
-        ExecStop = "-${pkgs.sway}/bin/swaymsg -s ${cfg.runtimeDir}/${cfg.display} exit";
         Restart = "always";
         RestartSec = 2;
       };
@@ -371,7 +356,8 @@ in
       description = "VNC server for the persistent remote session";
       documentation = [ "man:wayvnc(1)" ];
 
-      wantedBy = [ "multi-user.target" ];
+      wantedBy = [ "remote-session-compositor.service" ];
+      partOf = [ "remote-session-compositor.service" ];
       after = [ "remote-session-compositor.service" "tailscaled.service" ];
       requires = [ "remote-session-compositor.service" ];
       wants = [ "tailscaled.service" ];
@@ -386,7 +372,6 @@ in
           "WAYLAND_DISPLAY=${cfg.display}"
           "HOME=/home/${cfg.user}"
         ];
-        ExecStartPre = "${getExe waitForSocket} ${cfg.runtimeDir}/${cfg.display}";
         ExecStart = "${getExe wayvncWrapper}";
         Restart = "always";
         RestartSec = 3;
@@ -399,7 +384,8 @@ in
       description = "Keep the remote session clipboard in sync with the peer";
       after = [ "remote-session-compositor.service" ];
       requires = [ "remote-session-compositor.service" ];
-      wantedBy = [ "multi-user.target" ];
+      wantedBy = [ "remote-session-compositor.service" ];
+      partOf = [ "remote-session-compositor.service" ];
       startLimitIntervalSec = 0;
 
       serviceConfig = {

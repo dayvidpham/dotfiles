@@ -398,11 +398,11 @@ in
   CUSTOM.services.remote-session = {
     enable = true;
     user = "minttea";
-    # Software compositing is avoided by rendering on the AMD iGPU (Mesa):
-    # WLR_RENDERER=gles2 + WLR_RENDER_DRM_DEVICE. The headless backend still
-    # advertises zwp_linux_dmabuf_v1, so clients get GPU buffers and wayvnc can
-    # capture via dmabuf (-g).
-    renderDevice = "/dev/dri/by-path/pci-0000:16:00.0-render";
+    # Sole remote compositor: preserve the proven NVIDIA/NVENC render path.
+    # wayvnc uses software capture/encoding; NVIDIA VA-API is decode-only.
+    renderDevice = "/dev/dri/by-path/pci-0000:01:00.0-render";
+    wayvncGpu = false;
+    outputMode = "1920x1080@60Hz";
     # Audio: session apps talk to the desktop's PipeWire and play into the
     # remote_audio null sink, whose monitor roc-send captures and streams.
     pipewireRuntimeDir = "/run/user/1000";
@@ -410,18 +410,15 @@ in
     pulseSink = "remote_audio";
   };
 
-  # SPIKE (plabs-crh): Sunshine on a dedicated headless compositor, rendering
-  # and NVENC-encoding on the RTX 4090. Additive; remote-session is untouched.
+  # Sunshine captures the same persistent remote-session desktop as VNC.
+  # Identity, runtime directory and display are inherited; no second compositor.
   # Tailnet-only: no firewall ports are opened here.
-  CUSTOM.services.sunshine = {
-    enable = true;
-    user = "minttea";
-    renderDevice = "/dev/dri/by-path/pci-0000:01:00.0-render"; # RTX 4090
-  };
+  CUSTOM.services.sunshine.enable = true;
 
   # The pipewire unit belongs to NixOS, not home-manager, so a config change
   # otherwise waits for a manual restart/re-login. Declare the file here and
   # restart pipewire (and pipewire-pulse, which follows it) on change.
+  system.build.shared-session-audio = remoteAudioPipewireConf;
   services.pipewire.configPackages = [ remoteAudioPipewireConf ];
   systemd.user.services.pipewire.restartTriggers = [
     "${remoteAudioPipewireConf}/share/pipewire/pipewire.conf.d/10-remote-audio.conf"

@@ -17,10 +17,10 @@ Host *.alliancecan.ca
     User dhpham
     Port 22
 
-# NOTE: the clipd RemoteForward is intentionally NOT here. It is established
-# per viewer session by the `remote-desktop` helper (a dedicated, non-multiplexed
-# `ssh -R`), so it is not tied to a ControlMaster's lifetime and does not fight
-# with interactive sessions over the same remote socket.
+# NOTE: the clipd RemoteForward is intentionally NOT here. The graphical-session
+# clip-tunnel.service owns one foreground, non-multiplexed `ssh -R` independently
+# of VNC/Moonlight. It bypasses the interactive ControlMaster settings below.
+# Clipboard sharing with its configured host continues even with no viewer.
 
 Host *
     ControlPath ~/.ssh/socket.%r@%h:%p

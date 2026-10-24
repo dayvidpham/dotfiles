@@ -468,7 +468,19 @@
         tmux-env-diff = pkgs.callPackage ./packages/tmux-env-diff { };
       };
 
-      checks.${system}.flowX13-gpu-profiles =
+      checks.${system} = {
+        clipboard-tunnel = import ./checks/clipboard-tunnel.nix {
+          pkgs = pkgs-unstable;
+          inherit home-manager;
+        };
+
+        shared-remote-session = import ./checks/shared-remote-session.nix {
+          inherit pkgs;
+          config = self.nixosConfigurations.desktop.config;
+          homeConfig = self.homeConfigurations."minttea@desktop".config;
+        };
+
+        flowX13-gpu-profiles =
         let
           base = self.nixosConfigurations.flowX13.config;
           enabled = base.specialisation.nvidia-enabled.configuration;
@@ -552,6 +564,7 @@
             test -e ${enabledToplevel}
             touch $out
           '';
+      };
 
       homeConfigurations = {
         "minttea@flowX13" = home-manager.lib.homeManagerConfiguration {

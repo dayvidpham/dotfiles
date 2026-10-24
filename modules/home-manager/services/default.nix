@@ -13,6 +13,7 @@
     ./dolt-server
     ./openclaw
     ./clipd
+    ./clip-tunnel
     ./clip-sync
     ./clipse
     ./remote-audio
