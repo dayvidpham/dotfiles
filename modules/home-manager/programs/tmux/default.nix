@@ -552,8 +552,10 @@ in
         set-hook -g client-detached 'run-shell -b "${tmuxClientEnv}/bin/tmux-client-env remove #{client_tty}"'
 
         # Pick which client's display this client follows (env diff preview).
-        # Overrides are per client, removed when the client detaches.
-        bind D display-popup -E -w 80% -h 60% '${displayPicker}/bin/tmux-display-picker #{client_tty}'
+        # Overrides are per client, removed when the client detaches. No format
+        # argument: tmux does not expand #{...} inside a popup's shell command,
+        # so the picker resolves the client itself.
+        bind D display-popup -E -w 80% -h 60% '${displayPicker}/bin/tmux-display-picker'
 
         source-file ~/.config/tmux/keybindings.tmux
       '';

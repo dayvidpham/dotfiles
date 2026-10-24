@@ -20,18 +20,57 @@ if [ -n "$sock" ]; then
   tmux() { command tmux -S "$sock" "$@"; }
 fi
 
-# The client tty is passed by the key binding (#{client_tty}); a client, not a
-# pane, owns the display, and panes are shared between clients.
 mode="pick"
 target_arg=""
-client="${1:-${TMUX_CLIENT:-}}"
+
+# tmux does not expand formats in display-popup's shell-command, so the key
+# binding may pass the literal "#{client_tty}". Resolve the client here
+# instead: the most recently active client of this pane's session, then the
+# command's own client, then any attached client.
+resolve_client() {
+  local arg="${1:-}" ctty="" sess="" best=-1 t s a
+  case "$arg" in
+    "" | *'{client_tty}'*) ;;
+    *) printf '%s' "$arg"; return 0 ;;
+  esac
+  sess="$(tmux display-message -p -t "${TMUX_PANE:-}" '#{session_name}' 2>/dev/null || true)"
+  if [ -n "$sess" ]; then
+    while IFS='|' read -r t s a; do
+      [ "$s" = "$sess" ] || continue
+      [ "${a:-0}" -gt "$best" ] || continue
+      best="${a:-0}"
+      ctty="$t"
+    done < <(tmux list-clients -F '#{client_tty}|#{client_session}|#{client_activity}' 2>/dev/null)
+  fi
+  if [ -z "$ctty" ]; then
+    ctty="$(tmux display-message -p '#{client_tty}' 2>/dev/null || true)"
+  fi
+  if [ -z "$ctty" ]; then
+    ctty="$(tmux list-clients -F '#{client_tty}' 2>/dev/null | head -1 || true)"
+  fi
+  printf '%s' "$ctty"
+}
+
 if [ "${1:-}" = "--preview" ]; then
   mode="preview"
   target_arg="${2:-}"
-  client="${3:-${TMUX_CLIENT:-}}"
+  client="$(resolve_client "${3:-}")"
+else
+  client="$(resolve_client "${1:-${TMUX_CLIENT:-}}")"
 fi
+
+# A flashing popup is indistinguishable from a crash; keep a log of what the
+# picker resolved and how it exited (XDG_RUNTIME_DIR is tmpfs). Skip it in
+# preview mode, which runs once per highlighted entry.
+if [ "$mode" = "pick" ]; then
+  log="${XDG_RUNTIME_DIR:-/tmp}/tmux-display-picker.log"
+  exec 2>>"$log"
+  trap 'printf "exit=%s\n" "$?" >>"$log"' EXIT
+  printf 'start argv=[%s] TMUX_PANE=[%s] client=[%s]\n' "$*" "${TMUX_PANE:-}" "$client" >>"$log"
+fi
+
 [ -n "$client" ] || {
-  printf 'tmux-display-picker: missing client tty\n' >&2
+  printf 'tmux-display-picker: no attached client found\n' >&2
   exit 2
 }
 
