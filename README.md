@@ -277,8 +277,9 @@ text. The 652 MB int8 Parakeet TDT 0.6B model loads once when the service
 starts, so a press costs ~0.32 s of inference for 11 s of audio instead of a
 ~2.2 s model load every time. Recordings are capped at 64 MiB (~35 minutes).
 
-The recognizer runs on the CPU through the `sherpa-onnx` runtime that ships with
-the `dsh` package; that ONNX Runtime is a CPU build, so there is no GPU path.
+The daemon is Go, calling the `sherpa-onnx` C API through a small C bridge. It
+links the nixpkgs `sherpa-onnx` and `onnxruntime` builds, both CPU-only, so there
+is no GPU path.
 `CUSTOM.services.dictated` exposes `threads` and `maxBytes`; the client has no
 configuration.
 

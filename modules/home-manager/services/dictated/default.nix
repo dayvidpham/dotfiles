@@ -24,10 +24,21 @@ let
   # than building an ONNX Runtime binding of our own.
   runtime = "${pkgs.llm-agents.dsh}/lib/node_modules/@deepseek-ai/dsh/node_modules/sherpa-onnx-node";
 
-  daemon = pkgs.writeScriptBin "dictated" ''
-    #!${pkgs.nodejs}/bin/node
-    ${builtins.readFile ./dictated.js}
-  '';
+  daemon = pkgs.buildGoModule {
+    pname = "dictated";
+    version = "0.4.0";
+    src = ./.;
+    vendorHash = null;
+    doCheck = false;
+    env = {
+      CGO_ENABLED = "1";
+      CGO_CFLAGS = "-I${pkgs.sherpa-onnx}/include";
+      # Link the shared sherpa-onnx and record where to find it and ONNX
+      # Runtime at run time.
+      CGO_LDFLAGS = "-L${pkgs.sherpa-onnx}/lib -lsherpa-onnx-c-api -Wl,-rpath,${pkgs.sherpa-onnx}/lib -Wl,-rpath,${pkgs.onnxruntime}/lib";
+    };
+    buildInputs = [ pkgs.sherpa-onnx pkgs.onnxruntime ];
+  };
 in
 {
   options.CUSTOM.services.dictated = {

@@ -43,7 +43,8 @@ waybar (1 Hz) → dictate-status → reads pidfile/state → ○ / ● / ◌
 | `…/dictate-status.sh` | waybar poller, one JSON line per second |
 | `…/sounds/*.wav` | the three cues, shipped in `$out/share/dictate` |
 | `…/default.nix` | packages the client, wraps PATH, enables the option |
-| `modules/home-manager/services/dictated/dictated.js` | HTTP-over-Unix-socket daemon |
+| `…/services/dictated/main.go` | HTTP-over-Unix-socket daemon (Go) |
+| `…/services/dictated/bridge.c` | C shim over the sherpa-onnx C API, so cgo never mirrors a sherpa struct |
 | `…/default.nix` | model fetch, daemon package, systemd user unit |
 | `users/minttea/home.nix` | `CUSTOM.programs.dictate.enable`, `CUSTOM.services.dictated.enable` |
 
@@ -59,7 +60,7 @@ recording), `dictate.state` (`recording` / `transcribing` / empty), and
   aborted run. The client deletes that legacy path on start as a belt-and-braces.
 - **The client is model-agnostic.** It only knows “POST raw PCM to a socket, read
   text”. Swapping recognizers is a `dictated` change, not a client change.
-- **One daemon, ~2 GB RSS.** The model is 652 MB int8; ONNX Runtime arenas take
+- **One daemon, ~1.5 GB RSS.** The model is 652 MB int8; ONNX Runtime arenas take
   the rest. Never run two instances (check for leftovers after renames).
 - **Socket is `srw-------` inside a 0700 directory**, created by the daemon; the
   systemd unit passes `%t/dictated/socket` so it follows the uid.
@@ -82,11 +83,13 @@ pins in `services/dictated/default.nix`. Chosen over the bundle default
 The warm daemon is what makes Parakeet viable: cold, every press paid a 2.2 s
 model load. Warm, 11 s of audio decodes in **0.32 s**.
 
-Runtime: `sherpa-onnx-node` borrowed from `pkgs.llm-agents.dsh` (the package the
-Harness itself ships). That is the one non-obvious coupling in the feature — a
-host without `dsh` fails here first. The shipped `libonnxruntime.so` is a CPU
-build (no `libonnxruntime_providers_cuda.so`, no cuDNN), so `provider: 'cuda'`
-cannot work without building our own runtime.
+Runtime: `pkgs.sherpa-onnx` (Apache-2.0) reached through `bridge.c`, which builds
+the transducer config and calls the C API; cgo links `libsherpa-onnx-c-api.so`
+with an RPATH and the binary records `NEEDED libsherpa-onnx-c-api.so`. The
+library version follows the flake's nixpkgs, not `dsh` — that coupling is gone.
+nixpkgs builds it against `pkgs.onnxruntime` (MIT, `onnxruntime_USE_CUDA=FALSE`,
+`BUILD_SHARED_LIB=TRUE`), so there is no GPU path and no static archive: a static
+build needs both packages rebuilt with `BUILD_SHARED_LIBS=OFF`.
 
 ## Changing things
 
@@ -108,8 +111,9 @@ than raising the cap.
 ## Debugging playbook
 
 1. **Service**: `systemctl --user status dictated` and
-   `journalctl --user -u dictated -n 50`. A duplicate shebang in the generated
-   wrapper once produced `SyntaxError: Invalid or unexpected token` on line 2.
+   `journalctl --user -u dictated -n 50`. Startup logs are Go `log` lines
+   (`dictated: ready on … (6 threads)`). A cgo link failure shows up at build
+   time, not run time.
 2. **Socket**: `ls -l $XDG_RUNTIME_DIR/dictated/socket` — should be `srw-------`.
    Missing means the daemon died before `listen()`.
 3. **Daemon by hand**, no microphone needed:
@@ -140,7 +144,8 @@ than raising the cap.
 | Cue plays, no text, no done chime | daemon down or socket missing | `systemctl --user restart dictated` |
 | `curl: (56) … reset by peer` | recording exceeded `maxBytes` | raise the cap, or add VAD |
 | Text on clipboard but bar never changed | waybar config not reloaded | `systemctl --user restart waybar` |
-| Daemon crash-loops with `SyntaxError` | duplicate shebang in the generated wrapper | keep `dictated.js` shebang-free; nix adds one |
+| `error while loading shared libraries: libsherpa-onnx-c-api.so` | RUNPATH lost, or the flake's sherpa changed | rebuild; the RPATH is set in `CGO_LDFLAGS` |
+| `sherpa-onnx could not create the recognizer` | wrong `DICTATED_MODEL_DIR` or unreadable ONNX files | check the unit's `Environment` and the store path |
 | Two daemons after a rename | old user unit still running | `systemctl --user stop <old>`, check `pgrep -af dictated` |
 
 ## Checklist before changing
