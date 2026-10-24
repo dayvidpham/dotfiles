@@ -106,13 +106,19 @@ Decode is **superlinear** in clip length because each output token attends over
 every encoder frame: 11 s → 0.32 s, 30 s → 1.0 s, and 266 s took 20 s before
 segmentation existed.
 
-Recordings longer than `vadMinSeconds` (default 30) are split by Silero VAD and
-each speech segment is recognised separately. That makes long clips faster and
-more accurate — 266 s of silence went from 20.4 s to 0.98 s, and 55 s of speech
-transcribes in 1.9 s — at the cost of punctuation at each boundary: every
-segment is capitalised and closed as if it were its own utterance
-(`Americans. Ask not.` instead of `Americans, ask not`). Short clips therefore
-stay on the single-pass path.
+Silero VAD runs on **every** recording, in two modes:
+
+- **Under `vadMinSeconds` (default 30)**: VAD finds the speech span and the clip
+  is transcribed once, trimmed to that span plus 200 ms of padding. Silence is
+  skipped without splitting the sentence, so punctuation is preserved.
+- **Over the threshold**: the clip is cut at pauses and each segment recognised
+  separately. That makes long audio faster and more accurate — 266 s of silence
+  went from 20.4 s to 0.98 s, 55 s of speech transcribes in 1.9 s — at the cost
+  of punctuation at each boundary: every segment is capitalised and closed as
+  its own utterance (`Americans. Ask not.` instead of `Americans, ask not`).
+
+Running VAD on everything is nearly free: repeated 11 s requests stay at
+0.45–0.63 s.
 
 One C-API trap: `SherpaOnnxVoiceActivityDetectorAcceptWaveform` advances one
 window per call. Feeding it a whole clip at once yields only the tail segment;

@@ -81,9 +81,7 @@ func (r *recognizer) decode(samples []float32) string {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	// Short utterances are decoded whole: splitting them costs punctuation and
-	// capitalisation at every boundary, and they are fast anyway.
-	if r.vadModel == "" || float64(len(samples))/16000 < r.minSeconds {
+	if r.vadModel == "" {
 		return r.transcribe(samples)
 	}
 
@@ -103,6 +101,23 @@ func (r *recognizer) decode(samples []float32) string {
 		(*C.int32_t)(unsafe.Pointer(&pairs[0])), C.int32_t(maxSegments)))
 	if found <= 0 {
 		return ""
+	}
+
+	// Short clips are decoded as one utterance spanning the speech, so the
+	// silence at either end is skipped without splitting the sentence (which
+	// would capitalise and close every phrase). A little padding keeps the
+	// first and last phoneme intact.
+	if float64(len(samples))/16000 < r.minSeconds {
+		const pad = int(0.2 * 16000)
+		start := int(pairs[0]) - pad
+		if start < 0 {
+			start = 0
+		}
+		lastEnd := int(pairs[(found-1)*2]) + int(pairs[(found-1)*2+1]) + pad
+		if lastEnd > len(samples) {
+			lastEnd = len(samples)
+		}
+		return r.transcribe(samples[start:lastEnd])
 	}
 
 	parts := make([]string, 0, found)
