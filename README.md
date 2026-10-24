@@ -259,6 +259,33 @@ design, and
 [`.claude/skills/remote-desktop/SKILL.md`](./.claude/skills/remote-desktop/SKILL.md)
 for the GPU, encode, input, and audio constraints shared by both paths.
 
+## Voice dictation
+
+`Mod+Ctrl+Space` starts a push-to-talk recording; pressing it again transcribes
+the clip and copies it to the Wayland clipboard. A rising cue marks the start, a
+falling cue the stop, and a two-tone chime means the text has been copied.
+Waybar shows `○ / ● / ◌` immediately left of the tray.
+
+| Piece | Module | Role |
+|-------|--------|------|
+| `dictate` | `modules/home-manager/programs/dictate/` | client: capture, cues, clipboard, waybar feed |
+| `dictated` | `modules/home-manager/services/dictated/` | user service: warm recognizer behind a Unix socket |
+
+Audio never reaches the filesystem: `pw-record` streams raw s16le into a FIFO
+that `curl` forwards to the daemon, which decodes in memory and answers with
+text. The 652 MB int8 Parakeet TDT 0.6B model loads once when the service
+starts, so a press costs ~0.32 s of inference for 11 s of audio instead of a
+~2.2 s model load every time. Recordings are capped at 64 MiB (~35 minutes).
+
+The recognizer runs on the CPU through the `sherpa-onnx` runtime that ships with
+the `dsh` package; that ONNX Runtime is a CPU build, so there is no GPU path.
+`CUSTOM.services.dictated` exposes `threads` and `maxBytes`; the client has no
+configuration.
+
+See
+[`.claude/skills/voice-dictation/SKILL.md`](./.claude/skills/voice-dictation/SKILL.md)
+for the architecture, the debugging playbook, and the inference tradeoffs.
+
 ## Development workflow
 
 This repo is maintained with the **Aura Protocol**: work flows through Beads
