@@ -56,6 +56,15 @@ in
       default = 6;
       description = "CPU threads the recognizer may use";
     };
+    vad = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = ''
+        Trim every recording to its speech with Silero VAD, and split clips
+        longer than vadMinSeconds at pauses. Costs roughly 0.15-0.3 s per short
+        clip, so turn it off when latency matters more than skipping silence.
+      '';
+    };
     vadMinSeconds = lib.mkOption {
       type = lib.types.float;
       default = 30.0;
@@ -92,6 +101,7 @@ in
           "DICTATED_RUNTIME=${runtime}"
           "DICTATED_THREADS=${toString cfg.threads}"
           "DICTATED_MAX_BYTES=${toString cfg.maxBytes}"
+        ] ++ lib.optionals cfg.vad [
           "DICTATED_VAD_MODEL=${vadModel}"
           "DICTATED_VAD_MIN_SECONDS=${toString cfg.vadMinSeconds}"
         ];

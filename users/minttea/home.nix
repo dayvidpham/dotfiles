@@ -233,6 +233,8 @@ rec {
   CUSTOM.programs.tmux.enable = true;
   CUSTOM.programs.dictate.enable = true;
   CUSTOM.services.dictated.enable = true;
+  # VAD trims silence but costs ~0.2s per clip; latency wins for dictation.
+  CUSTOM.services.dictated.vad = false;
 
   # NOTE: Zsh setup
   # Manual setup: don't like how home-manager currently sets up zsh

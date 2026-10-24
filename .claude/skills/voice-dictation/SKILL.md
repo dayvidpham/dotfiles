@@ -106,7 +106,10 @@ Decode is **superlinear** in clip length because each output token attends over
 every encoder frame: 11 s → 0.32 s, 30 s → 1.0 s, and 266 s took 20 s before
 segmentation existed.
 
-Silero VAD runs on **every** recording, in two modes:
+Silero VAD is **off by default in this config** (`CUSTOM.services.dictated.vad =
+false`): it cost 0.45–0.63 s per short clip against 0.32–0.36 s without, and for
+push-to-talk latency wins. Set `vad = true` to get silence trimming and
+segmentation back; it then runs on **every** recording, in two modes:
 
 - **Under `vadMinSeconds` (default 30)**: VAD finds the speech span and the clip
   is transcribed once, trimmed to that span plus 200 ms of padding. Silence is
@@ -117,8 +120,8 @@ Silero VAD runs on **every** recording, in two modes:
   of punctuation at each boundary: every segment is capitalised and closed as
   its own utterance (`Americans. Ask not.` instead of `Americans, ask not`).
 
-Running VAD on everything is nearly free: repeated 11 s requests stay at
-0.45–0.63 s.
+The cost is per request, not per second of audio: it is the detector run over
+the clip, which is why short dictation pays it most.
 
 One C-API trap: `SherpaOnnxVoiceActivityDetectorAcceptWaveform` advances one
 window per call. Feeding it a whole clip at once yields only the tail segment;
