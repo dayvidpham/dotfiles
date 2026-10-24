@@ -14,8 +14,9 @@ description: >-
 
 Repository implementation is **not activation**. Existing desktop services were
 reported active before this work; do not stop/restart/activate them without human
-approval. Client audio policy is **AWAITING HUMAN**. Do not invent a default or
-report final hardware/audio acceptance from a configuration check.
+approval. User selected **native Moonlight default, manual mutually exclusive
+VNC/ROC audio**, and **DO NOT ACTIVATE YET**. Do not report final hardware/audio
+acceptance from a configuration or inert synthetic manager check.
 
 Given either viewer reconnects, when attaching to desktop, then it should see the
 same windows in **one** `remote-session-compositor`; it should not create its own
@@ -96,7 +97,7 @@ Sunshine source has no supported concurrency-limiting `channels` option.
 Overlapping clients share windows, input and size. Use the PID-named Sway IPC
 socket under the derived runtime, not the Wayland socket.
 
-## Audio policy — AWAITING HUMAN
+## Audio policy — native default, manual VNC/ROC
 
 The sole persistent session sink remains **`remote_audio`**: apps use
 `PULSE_SINK=remote_audio`, Sunshine explicitly uses `audio_sink=remote_audio`, and
@@ -108,12 +109,31 @@ Sunshine's own sink management can duplicate/unload that name. Inspect actual
 persistent sink uniqueness. The private Wayland runtime still needs the user's
 real PipeWire/Pulse runtime for audio clients.
 
-Human selection of always-on ROC versus native Moonlight versus explicit
-transport switching is outstanding. Do not implement a guessed client default,
-claim echo-free behavior, or mark audio UAT complete. After selection, test
-VNC/ROC and native Moonlight with expected policy, no duplicate audio, latency
-and reconnect. Same-machine testing must pin Moonlight playback to a real sink,
-not the captured null sink.
+User chose native Moonlight by default and manually selected VNC/ROC. FlowX13
+sets receiver `autostart=false` (generic module default remains true). The installed
+`moonlight-qt` and overridden normal desktop entry use fixed
+`moonlight-client.scope`, with `Conflicts=remote-audio-recv.service` and
+`After=remote-audio-recv.service`; receiver conflicts with that scope without a
+reverse ordering edge. The scope preserves caller environment/argv and SDL
+scaling; `--expand-environment=no` and `--` preserve literal command arguments.
+Duplicate managed launches fail rather than start a second audible client.
+
+`remote-audio-mode native` stops ROC, without launching Moonlight. A managed
+Moonlight launch stops ROC before starting. `remote-audio-mode vnc` warns and
+**deliberately closes managed Moonlight** before starting ROC; the remote desktop
+windows/session and clipboard tunnel remain running. `status` reports actual unit
+states, not playback readiness. VNC attachment alone does not select audio.
+There is **no restore-on-exit**: selected audio persists until explicit selection
+or managed Moonlight launch; a fresh user-manager login defaults to native. ROC
+can keep playing with no viewer. Unwrapped `moonlight`, absolute binaries and
+`nix run` bypass this policy and must be closed before ROC testing. Direct
+receiver starts also close managed Moonlight; use the selector for its warning.
+Do not mistake `--audio-on-host` for a local-audio mute flag.
+
+Activation and hardware UAT are explicitly deferred. Do not claim echo-free
+behavior or mark audio UAT complete. Test VNC/ROC and native Moonlight for one
+audible path, latency and reconnect after approved activation. Same-machine tests
+must pin playback to a real sink, not the captured null sink.
 
 ## Clipboard service and security
 
@@ -149,13 +169,18 @@ recovers stale remote forward sockets on reconnect.
   require original config/process inspection. Never blindly delete sockets or
   kill the unrelated normal interactive master.
 - Check new SSH prerequisites, review changes and only then activate with human
-  approval. Do not execute migration/live commands as part of documentation work.
+  approval. Disabling receiver autostart alone does not stop legacy running ROC:
+  explicitly select `remote-audio-mode native` after approved client activation,
+  and close any unwrapped Moonlight clients before audio testing. Do not execute
+  migration/live commands as part of documentation work.
 
 ## Verification
 
 Non-live configuration / mocked lifecycle checks:
 
 ```sh
+nix eval .#checks.x86_64-linux.remote-audio-client.drvPath
+nix build --no-link .#checks.x86_64-linux.remote-audio-client
 nix eval .#checks.x86_64-linux.shared-remote-session.drvPath
 nix eval .#checks.x86_64-linux.clipboard-tunnel.drvPath
 nix build --no-link .#checks.x86_64-linux.shared-remote-session
@@ -163,8 +188,12 @@ nix build --no-link .#checks.x86_64-linux.clipboard-tunnel
 nix flake check --no-build
 ```
 
-These checks do **not** validate real GPU, input, audio, clipboard or network
-hardware. After approved activation, operator read-only diagnostics include:
+The opt-in `python3 checks/remote-audio-client/inert-lifecycle.py` tests the real
+user manager with uniquely named inert units only: simultaneous transitions,
+duplicates, parent restart, receiver crash/retry and client failure/exit, with
+exclusive sound-lock holders and bounded cleanup. It never targets production
+units. These checks do **not** validate real GPU, input, audible audio, clipboard
+or network hardware. After approved activation, operator read-only diagnostics include:
 
 ```sh
 systemctl is-active remote-session-compositor remote-session-vnc sunshine-spike sunshine-evbridge clip-peer-sync
@@ -184,7 +213,7 @@ viewers; detach/reconnect persistence; shared Moonlight resize and overlapping
 client disconnect; bidirectional text/PNG clipboard and dictation paste; singleton
 tunnel with no viewers/network recovery; approved capture/compositor crash
 recovery; physical niri input isolation; wheel/trackpad scaling; and VNC/native
-audio once the human chooses policy. Do not equate active services with success.
+audio under the selected exclusive policy. Do not equate active services with success.
 
 ## Pitfalls
 
@@ -195,7 +224,7 @@ audio once the human chooses policy. Do not equate active services with success.
 | `dbus-daemon` missing | dbus in compositor runtime PATH |
 | Capture stays alive but no video after Sway crash | Dependency restart propagation and fresh socket readiness |
 | Mouse/scroll missing or host receives it | evbridge rescan/scroll patches, filtered device directory, udev isolation |
-| Duplicate/silent audio | Actual sink uniqueness, app/capture/ROC routing, unresolved client policy |
+| Duplicate/silent audio | Actual sink uniqueness, app/capture/ROC routing, selected native/VNC mode, unwrapped clients bypassing managed scope |
 | Clipboard forward bind failure | Legacy master, verified host/key prerequisites, server stale-socket recovery |
 | Flake path absent | New peer-owned file may not be Git tracked; ask its owner to stage it |
 

@@ -125,5 +125,8 @@ nix flake check --no-build
 The mock transport check cannot establish real SSH authentication, Wayland
 clipboard interoperability or hardware dictation behavior. Record hardware UAT
 separately, including recovery after a network interruption and absence of
-forward-bind races with multiple viewers. Audio client policy remains **AWAITING
-HUMAN**; clipboard results do not imply audio validation.
+forward-bind races with multiple viewers. The selected audio policy is native
+Moonlight by default, with explicit mutually exclusive VNC/ROC selection; switching
+to VNC audio deliberately closes managed Moonlight, not the remote desktop or
+clipboard tunnel. No automatic restore-on-exit. Activation and hardware UAT remain
+user-deferred; clipboard results do not imply audio validation.

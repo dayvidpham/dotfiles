@@ -65,6 +65,12 @@ in
   options.CUSTOM.services.remote-audio = {
     enable = mkEnableOption "stream the remote session's audio over RTP (roc)";
 
+    autostart = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Start at user login. Disable for manually selected receiver audio; this does not stop an already running receiver during migration.";
+    };
+
     role = mkOption {
       type = types.enum [ "send" "recv" ];
       description = "send = capture and stream; recv = receive and play out";
@@ -134,7 +140,7 @@ in
           Restart = "always";
           RestartSec = 3;
         };
-        Install.WantedBy = [ "default.target" ];
+        Install.WantedBy = lib.optionals cfg.autostart [ "default.target" ];
       };
 
       remote-audio-recv = mkIf (cfg.role == "recv") {
@@ -148,7 +154,7 @@ in
           Restart = "always";
           RestartSec = 3;
         };
-        Install.WantedBy = [ "default.target" ];
+        Install.WantedBy = lib.optionals cfg.autostart [ "default.target" ];
       };
     };
   };

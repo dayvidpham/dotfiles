@@ -16,11 +16,21 @@ let
   ssh = commandStub "ssh";
   viewer = commandStub "vncviewer";
   moonlight = commandStub "moonlight-qt";
+  scopeRunner = pkgs.writeShellApplication {
+    name = "systemd-run";
+    text = ''
+      while [ "$1" != -- ]; do shift; done
+      shift
+      exec "$@"
+    '';
+  };
   base = {
     imports = [
       ../modules/home-manager/services/clipd
       ../modules/home-manager/services/clip-tunnel
       ../modules/home-manager/programs/remote-desktop
+      ../modules/home-manager/programs/remote-audio-client
+      ../modules/home-manager/services/remote-audio
     ];
     home.username = "fixture";
     home.homeDirectory = "/home/fixture";
@@ -39,12 +49,12 @@ let
   enabled = (evaluate [
     ../users/minttea/home.flowX13.nix
     ({ lib, ... }: {
+      config.CUSTOM.programs.remote-audio-client.systemdPackage = scopeRunner;
       # Unrelated host options are inert in this isolated client fixture. The
       # real Flow X13 file still generates its actual Moonlight wrapper here.
       options.CUSTOM = {
         wayland = lib.mkOption { type = lib.types.attrs; default = { }; };
         services.syncthing = lib.mkOption { type = lib.types.attrs; default = { }; };
-        services.remote-audio = lib.mkOption { type = lib.types.attrs; default = { }; };
       };
     })
   ]).config;

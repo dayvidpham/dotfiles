@@ -469,6 +469,11 @@
       };
 
       checks.${system} = {
+        remote-audio-client = import ./checks/remote-audio-client.nix {
+          pkgs = pkgs-unstable;
+          inherit home-manager;
+        };
+
         clipboard-tunnel = import ./checks/clipboard-tunnel.nix {
           pkgs = pkgs-unstable;
           inherit home-manager;

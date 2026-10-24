@@ -5,32 +5,14 @@
 , osConfig
 , ...
 }:
-let
-  inherit (lib)
-    mkForce
-    ;
-
-  # Moonlight sends raw, unscaled relative mouse motion, so the laptop trackpad
-  # (which relies on the compositor's pointer-acceleration curve) feels far too
-  # fast: it never enables SDL's system scaling, and SDL3's
-  # SDL_HINT_MOUSE_RELATIVE_SYSTEM_SCALE defaults to off. Export it so niri's
-  # acceleration applies, while keeping relative mode (game-friendly) instead of
-  # Moonlight's "optimize for remote desktop" absolute mode.
-  # nixpkgs' moonlight-qt links sdl2-compat (SDL3 underneath), so the SDL3 hint
-  # is read by the SDL core.
-  moonlightQt = pkgs-unstable.writeShellApplication {
-    name = "moonlight-qt";
-    runtimeInputs = [ pkgs-unstable.moonlight-qt ];
-    text = ''
-      export SDL_MOUSE_RELATIVE_SYSTEM_SCALE=1
-      exec moonlight-qt "$@"
-    '';
-  };
-in
 {
-  # Wrapped Moonlight (see moonlightQt above). It shadows the unwrapped binary on
-  # PATH, so launch with `moonlight-qt` rather than `nix run nixpkgs#moonlight-qt`.
-  home.packages = [ moonlightQt ];
+  # Native Moonlight is the default. Both the desktop launcher and moonlight-qt
+  # enter a singleton user scope, stop ROC, and preserve caller environment plus
+  # SDL_MOUSE_RELATIVE_SYSTEM_SCALE=1 (SDL3 via sdl2-compat) for trackpad scaling.
+  CUSTOM.programs.remote-audio-client = {
+    enable = true;
+    moonlightPackage = pkgs-unstable.moonlight-qt;
+  };
 
   # NOTE: Hyprland
   CUSTOM.wayland.windowManager.hyprland = {
@@ -65,9 +47,11 @@ in
   # Attach to the desktop's persistent sway session over VNC (tailnet-only).
   CUSTOM.programs.remote-desktop.enable = true;
 
-  # Receive the desktop's remote-session audio over RTP (roc) on the tailnet.
+  # VNC attachment alone is silent. Explicit `remote-audio-mode vnc` selects
+  # ROC, deliberately closing managed Moonlight; viewer exit never restores it.
   CUSTOM.services.remote-audio = {
     enable = true;
     role = "recv";
+    autostart = false;
   };
 }

@@ -20,6 +20,7 @@
     ./unity
     ./btop
     ./remote-desktop
+    ./remote-audio-client
     ./dictate
   ];
 }
