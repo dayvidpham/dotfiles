@@ -34,6 +34,14 @@ type recognizer struct {
 	handle unsafe.Pointer
 	// The C strings must outlive the recognizer; sherpa keeps the pointers.
 	keep []*C.char
+
+	// Silero VAD, when set, splits a recording into speech segments so silence
+	// is never decoded.
+	vadModel    string
+	threshold   float32
+	minSilence  float32
+	minSpeech   float32
+	minSeconds  float64
 }
 
 func newRecognizer(modelDir string, threads int) (*recognizer, error) {
@@ -52,6 +60,20 @@ func newRecognizer(modelDir string, threads int) (*recognizer, error) {
 	return &recognizer{handle: handle, keep: keep}, nil
 }
 
+// transcribe decodes one contiguous run of samples. The caller holds the lock.
+func (r *recognizer) transcribe(samples []float32) string {
+	if len(samples) == 0 {
+		return ""
+	}
+	text := C.dictated_transcribe(r.handle, (*C.float)(unsafe.Pointer(&samples[0])), C.int32_t(len(samples)))
+	if text == nil {
+		return ""
+	}
+	defer C.dictated_free_string(text)
+	return strings.TrimSpace(C.GoString(text))
+}
+
+// decode transcribes the recording, split into speech segments when VAD is on.
 func (r *recognizer) decode(samples []float32) string {
 	if len(samples) == 0 {
 		return ""
@@ -59,12 +81,42 @@ func (r *recognizer) decode(samples []float32) string {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	text := C.dictated_transcribe(r.handle, (*C.float)(unsafe.Pointer(&samples[0])), C.int32_t(len(samples)))
-	if text == nil {
+	// Short utterances are decoded whole: splitting them costs punctuation and
+	// capitalisation at every boundary, and they are fast anyway.
+	if r.vadModel == "" || float64(len(samples))/16000 < r.minSeconds {
+		return r.transcribe(samples)
+	}
+
+	model := C.CString(r.vadModel)
+	defer C.free(unsafe.Pointer(model))
+	vad := C.dictated_vad_create(model, C.float(r.threshold), C.float(r.minSilence), C.float(r.minSpeech))
+	if vad == nil {
+		// Never lose the recording because the detector failed to load.
+		return r.transcribe(samples)
+	}
+	defer C.dictated_vad_destroy(vad)
+
+	const maxSegments = 4096
+	pairs := make([]int32, maxSegments*2)
+	found := int(C.dictated_vad_split(vad,
+		(*C.float)(unsafe.Pointer(&samples[0])), C.int32_t(len(samples)),
+		(*C.int32_t)(unsafe.Pointer(&pairs[0])), C.int32_t(maxSegments)))
+	if found <= 0 {
 		return ""
 	}
-	defer C.dictated_free_string(text)
-	return strings.TrimSpace(C.GoString(text))
+
+	parts := make([]string, 0, found)
+	for i := 0; i < found; i++ {
+		start := int(pairs[i*2])
+		n := int(pairs[i*2+1])
+		if start < 0 || n <= 0 || start+n > len(samples) {
+			continue
+		}
+		if text := r.transcribe(samples[start : start+n]); text != "" {
+			parts = append(parts, text)
+		}
+	}
+	return strings.Join(parts, " ")
 }
 
 // raw16 converts s16le mono samples to floats.
@@ -139,6 +191,13 @@ func envInt(key string, fallback int) int {
 	return fallback
 }
 
+func envFloat(key string, fallback float64) float64 {
+	if value, err := strconv.ParseFloat(os.Getenv(key), 64); err == nil && value > 0 {
+		return value
+	}
+	return fallback
+}
+
 func main() {
 	socketPath := os.Getenv("DICTATED_SOCKET")
 	modelDir := os.Getenv("DICTATED_MODEL_DIR")
@@ -152,6 +211,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("dictated: %v", err)
 	}
+	rec.vadModel = os.Getenv("DICTATED_VAD_MODEL")
+	rec.threshold = float32(envFloat("DICTATED_VAD_THRESHOLD", 0.5))
+	rec.minSilence = float32(envFloat("DICTATED_VAD_MIN_SILENCE", 0.6))
+	rec.minSpeech = float32(envFloat("DICTATED_VAD_MIN_SPEECH", 0.25))
+	rec.minSeconds = envFloat("DICTATED_VAD_MIN_SECONDS", 30)
 
 	if err := os.MkdirAll(filepath.Dir(socketPath), 0o700); err != nil {
 		log.Fatalf("dictated: %v", err)
@@ -170,7 +234,7 @@ func main() {
 	mux.HandleFunc("/transcribe", d.handle)
 	mux.HandleFunc("/transcribe-raw", d.handle)
 
-	log.Printf("dictated: ready on %s (%d threads)", socketPath, threads)
+	log.Printf("dictated: ready on %s (%d threads, vad=%t)", socketPath, threads, rec.vadModel != "")
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)

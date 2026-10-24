@@ -275,7 +275,8 @@ Audio never reaches the filesystem: `pw-record` streams raw s16le into a FIFO
 that `curl` forwards to the daemon, which decodes in memory and answers with
 text. The 652 MB int8 Parakeet TDT 0.6B model loads once when the service
 starts, so a press costs ~0.32 s of inference for 11 s of audio instead of a
-~2.2 s model load every time. Recordings are capped at 64 MiB (~35 minutes).
+~2.2 s model load every time. Recordings are capped at 64 MiB (~35 minutes);
+past 30 s they are split at pauses by Silero VAD so silence is never decoded.
 
 The daemon is Go, calling the `sherpa-onnx` C API through a small C bridge. It
 links the nixpkgs `sherpa-onnx` and `onnxruntime` builds, both CPU-only, so there

@@ -20,6 +20,14 @@ let
     cp ${fetch "tokens.txt" "sha256-7BgrcN1CETr/bFNyx1ysWMlSRD6yIyL1e71/U5d9SX0="} $out/tokens.txt
   '';
 
+  # Silero VAD: 1.8 MB, used to split recordings at pauses so silence is never
+  # decoded and long clips are recognised as utterance-sized segments.
+  vadModel = pkgs.fetchurl {
+    url = "https://huggingface.co/csukuangfj/vad/resolve/fba88cd2e921609e7675c3aaf51e0b9b295da4bc/silero_vad.onnx";
+    hash = "sha256-o16/Uv085fFGmyo2FY26dhvEe5c+ozgrMYbKFbH1ryg=";
+    name = "silero_vad.onnx";
+  };
+
   # The sherpa runtime ships inside the dsh package; load it from there rather
   # than building an ONNX Runtime binding of our own.
   runtime = "${pkgs.llm-agents.dsh}/lib/node_modules/@deepseek-ai/dsh/node_modules/sherpa-onnx-node";
@@ -48,6 +56,16 @@ in
       default = 6;
       description = "CPU threads the recognizer may use";
     };
+    vadMinSeconds = lib.mkOption {
+      type = lib.types.float;
+      default = 30.0;
+      description = ''
+        Recordings shorter than this are decoded whole. Longer ones are split
+        at pauses by Silero VAD, so silence is skipped and each segment is
+        utterance-sized. Splitting costs punctuation and capitalisation at
+        every boundary, which is why the default leaves short clips alone.
+      '';
+    };
     maxBytes = lib.mkOption {
       type = lib.types.int;
       default = 64 * 1024 * 1024;
@@ -74,6 +92,8 @@ in
           "DICTATED_RUNTIME=${runtime}"
           "DICTATED_THREADS=${toString cfg.threads}"
           "DICTATED_MAX_BYTES=${toString cfg.maxBytes}"
+          "DICTATED_VAD_MODEL=${vadModel}"
+          "DICTATED_VAD_MIN_SECONDS=${toString cfg.vadMinSeconds}"
         ];
       };
       Install.WantedBy = [ "default.target" ];

@@ -103,10 +103,20 @@ After changing the model, threads, or the daemon source:
 The client needs no restart — it reconnects per press.
 
 Decode is **superlinear** in clip length because each output token attends over
-every encoder frame: 11 s → 0.32 s, 30 s → 1.0 s, 266 s → 20 s. There is no VAD;
-the whole clip goes in as one utterance. If long-form dictation becomes a use
-case, add sherpa-onnx `Vad` segmentation (30 s segments, join the texts) rather
-than raising the cap.
+every encoder frame: 11 s → 0.32 s, 30 s → 1.0 s, and 266 s took 20 s before
+segmentation existed.
+
+Recordings longer than `vadMinSeconds` (default 30) are split by Silero VAD and
+each speech segment is recognised separately. That makes long clips faster and
+more accurate — 266 s of silence went from 20.4 s to 0.98 s, and 55 s of speech
+transcribes in 1.9 s — at the cost of punctuation at each boundary: every
+segment is capitalised and closed as if it were its own utterance
+(`Americans. Ask not.` instead of `Americans, ask not`). Short clips therefore
+stay on the single-pass path.
+
+One C-API trap: `SherpaOnnxVoiceActivityDetectorAcceptWaveform` advances one
+window per call. Feeding it a whole clip at once yields only the tail segment;
+`bridge.c` feeds 512-sample windows in a loop.
 
 ## Debugging playbook
 
