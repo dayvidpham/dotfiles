@@ -110,6 +110,54 @@ let
     done < "$CLAUDE_FILE"
   '';
 
+  # Per-client display routing. A pane inherits the session environment when it
+  # is created, and the session environment is whatever the last attaching
+  # client carried — so a pane opened from one graphical session keeps that
+  # session's DISPLAY/WAYLAND_DISPLAY/XDG_RUNTIME_DIR even when a client from
+  # another session is now looking at it. tmux cannot give a process a
+  # per-client environment, but it can tell us which client is attached and
+  # update-environment can publish the attaching client's variables. Snapshot
+  # that per client tty on attach; the zsh precmd hook re-reads it so each
+  # pane follows the client actually viewing it.
+  tmuxClientEnv = pkgs.writeShellApplication {
+    name = "tmux-client-env";
+    runtimeInputs = [ pkgs.coreutils pkgs.tmux ];
+    text = ''
+      set -eu
+      cmd="$1"
+      ctty="''${2:-}"
+      sess="''${3:-}"
+      sock="''${4:-}"
+      [ -n "$ctty" ] || exit 0
+      dir="/run/user/$(id -u)/tmux-client-env"
+      file="$dir/$(printf '%s' "$ctty" | tr '/' '_').env"
+
+      case "$cmd" in
+        snapshot)
+          mkdir -p "$dir"
+          chmod 700 "$dir"
+          {
+            tmux -S "$sock" show-environment -t "$sess" 2>/dev/null |
+              while IFS= read -r line; do
+                case "$line" in
+                  DISPLAY=* | WAYLAND_DISPLAY=* | XDG_RUNTIME_DIR=* | DBUS_SESSION_BUS_ADDRESS=* | XAUTHORITY=*)
+                    printf 'export %s\n' "$line"
+                    ;;
+                  -DISPLAY | -WAYLAND_DISPLAY | -XDG_RUNTIME_DIR | -DBUS_SESSION_BUS_ADDRESS | -XAUTHORITY)
+                    printf 'unset %s\n' "''${line#-}"
+                    ;;
+                esac
+              done
+          } > "$file.tmp"
+          mv "$file.tmp" "$file"
+          ;;
+        remove)
+          rm -f "$file"
+          ;;
+      esac
+    '';
+  };
+
   moveWindow = pkgs.writeShellScriptBin "tmux-move-window" ''
     current_session=$(tmux display-message -p '#S')
 
@@ -475,6 +523,15 @@ in
         # tmux-sensible sets this to 5s; 15s cuts the status-right
         # #(continuum_save.sh) fork churn by 3x. Must load after the plugins.
         set -g status-interval 15
+
+        # Per-client display routing (see tmux-client-env above and the zsh
+        # precmd hook). update-environment publishes the attaching client's
+        # variables into the session environment; XDG_RUNTIME_DIR and
+        # DBUS_SESSION_BUS_ADDRESS are not in tmux's default list, and the
+        # remote-session Sway uses a private runtime dir and bus.
+        set -g update-environment "DISPLAY KRB5CCNAME MSYSTEM SSH_ASKPASS SSH_AUTH_SOCK SSH_AGENT_PID SSH_CONNECTION WAYLAND_DISPLAY WINDOWID XAUTHORITY XDG_CURRENT_DESKTOP XDG_SESSION_DESKTOP XDG_SESSION_TYPE XDG_RUNTIME_DIR DBUS_SESSION_BUS_ADDRESS"
+        set-hook -g client-attached 'run-shell -b "${tmuxClientEnv}/bin/tmux-client-env snapshot #{client_tty} #{session_name} #{socket_path}"'
+        set-hook -g client-detached 'run-shell -b "${tmuxClientEnv}/bin/tmux-client-env remove #{client_tty}"'
 
         source-file ~/.config/tmux/keybindings.tmux
       '';

@@ -147,6 +147,29 @@ in
                 chpwd_functions+=(_tmux_repo_theme)
               fi
             '')
+            (lib.mkOrder 1000 ''
+              # +-----------------------------------------------------+
+              # | Route GUI/D-Bus apps to this pane's tmux client      |
+              # +-----------------------------------------------------+
+              # The tmux client-attached hook snapshots each client's
+              # display environment under /run/user/<uid>/tmux-client-env,
+              # keyed by client tty. Re-read the snapshot at each prompt so
+              # a pane opened in one graphical session follows whichever
+              # client is currently viewing it (niri desktop, remote-session
+              # Sway with its private runtime dir/bus, ...).
+              if [[ -n "$TMUX" ]]; then
+                _tmux_client_env_sync() {
+                  local ctty file
+                  ctty=$(command tmux display -p '#{client_tty}' 2>/dev/null) || return 0
+                  [[ -n "$ctty" ]] || return 0
+                  file="/run/user/$UID/tmux-client-env/''${ctty//\//_}.env"
+                  [[ -r "$file" ]] && source "$file"
+                  return 0
+                }
+                autoload -Uz add-zsh-hook
+                add-zsh-hook precmd _tmux_client_env_sync
+              fi
+            '')
           ];
 
           shellAliases =
