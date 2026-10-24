@@ -45,7 +45,7 @@ in
           waybar-themed = pkgs.waybar-balcony;
           settings = [
             (waybar-themed.passthru.settings // {
-              "modules-right" = waybar-themed.passthru.settings."modules-right" ++ [ "custom/dictate" ];
+              "modules-right" = [ "custom/dictate" ] ++ waybar-themed.passthru.settings."modules-right";
               "custom/dictate" = {
                 exec = "${config.home.profileDirectory}/bin/dictate-status";
                 interval = 1;

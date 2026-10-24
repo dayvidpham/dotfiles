@@ -16,5 +16,6 @@
     ./clip-sync
     ./clipse
     ./remote-audio
+    ./dictated
   ];
 }

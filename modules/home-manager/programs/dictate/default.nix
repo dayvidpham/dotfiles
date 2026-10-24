@@ -5,19 +5,45 @@
 }:
 let
   cfg = config.CUSTOM.programs.dictate;
+
+  # Everything the scripts shell out to, so they do not depend on the session
+  # PATH of whoever installs this.
+  runtimePath = lib.makeBinPath [
+    pkgs.pipewire # pw-record, pw-play
+    pkgs.curl
+    pkgs.wl-clipboard # wl-copy
+    pkgs.coreutils # mkfifo, rm, mkdir, cat, readlink
+  ];
+
+  dictate = pkgs.stdenvNoCC.mkDerivation {
+    pname = "dictate";
+    version = "0.3.0";
+    src = ./.;
+    nativeBuildInputs = [ pkgs.makeWrapper ];
+    dontBuild = true;
+    installPhase = ''
+      runHook preInstall
+      mkdir -p $out/bin $out/share/dictate
+      install -m755 dictate.sh $out/bin/dictate
+      install -m755 dictate-status.sh $out/bin/dictate-status
+      install -m644 sounds/*.wav $out/share/dictate/
+      runHook postInstall
+    '';
+    postFixup = ''
+      for program in dictate dictate-status; do
+        wrapProgram $out/bin/$program --prefix PATH : ${runtimePath}
+      done
+    '';
+  };
 in
 {
   options.CUSTOM.programs.dictate = {
-    enable = lib.mkEnableOption "push-to-talk dictation with Whistle";
+    enable = lib.mkEnableOption "the dictate client and its waybar indicator";
   };
 
   config = lib.mkIf cfg.enable {
-    home.packages = [
-      # `dictate` toggles a recording and copies the transcript; `dictate-status`
-      # feeds the waybar indicator. Both expect the Whistle engine and model in
-      # ~/.local/share/whistle, and jq/wl-clipboard/pw-record on PATH.
-      (pkgs.writeScriptBin "dictate" (builtins.readFile ./dictate.sh))
-      (pkgs.writeScriptBin "dictate-status" (builtins.readFile ./dictate-status.sh))
-    ];
+    # `dictate` records through a FIFO into the dictated service and copies the
+    # transcript; `dictate-status` feeds the waybar indicator.
+    home.packages = [ dictate ];
   };
 }
