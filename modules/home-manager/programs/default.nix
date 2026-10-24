@@ -20,5 +20,6 @@
     ./unity
     ./btop
     ./remote-desktop
+    ./dictate
   ];
 }

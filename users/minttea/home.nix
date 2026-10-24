@@ -231,6 +231,7 @@ rec {
 
   CUSTOM.programs.ghostty.enable = true;
   CUSTOM.programs.tmux.enable = true;
+  CUSTOM.programs.dictate.enable = true;
 
   # NOTE: Zsh setup
   # Manual setup: don't like how home-manager currently sets up zsh

@@ -43,7 +43,18 @@ in
       (mkIf (cfg.theme == "balcony") (
         let
           waybar-themed = pkgs.waybar-balcony;
-          settings = [ waybar-themed.passthru.settings ];
+          settings = [
+            (waybar-themed.passthru.settings // {
+              "modules-right" = waybar-themed.passthru.settings."modules-right" ++ [ "custom/dictate" ];
+              "custom/dictate" = {
+                exec = "${config.home.profileDirectory}/bin/dictate-status";
+                interval = 1;
+                return-type = "json";
+                format = "{}";
+                tooltip = true;
+              };
+            })
+          ];
           style = waybar-themed.passthru.style;
         in
         {

@@ -348,6 +348,9 @@ binds {
     // Suggested binds for running programs: terminal, app launcher, screen locker.
     Mod+Return { spawn "ghostty"; }
     Mod+Space { spawn "rofi" "-show" "run"; }
+
+    // Push-to-talk dictation (Whistle, CPU). Second press stops and copies.
+    Mod+Ctrl+Space { spawn "dictate" "toggle"; }
     Super+Alt+L allow-when-locked=true { spawn "swaylock"; }
 
     // You can also use a shell. Do this if you need pipes, multiple commands, etc.
