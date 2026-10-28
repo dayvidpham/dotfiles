@@ -78,6 +78,36 @@ let
     '';
   };
 
+  # Sunshine initialises its capture method once, at startup. If the Wayland
+  # socket is not accepting yet it logs "Couldn't connect to Wayland display",
+  # gives up on the platform, keeps serving the web UI, and every later launch
+  # returns 503 "Failed to initialize video capture/encoding". The compositor's
+  # notify readiness is supposed to order this, but a same-second start still
+  # raced. Probe the socket ourselves before exec'ing Sunshine.
+  waitForWayland = pkgs.writeShellApplication {
+    name = "wait-for-wayland-socket";
+    runtimeInputs = [ pkgs.python3 ];
+    text = ''
+      exec python3 - "$1" <<'PY'
+      import socket
+      import sys
+      import time
+
+      path = sys.argv[1]
+      deadline = time.monotonic() + 30
+      while time.monotonic() < deadline:
+          with socket.socket(socket.AF_UNIX) as probe:
+              try:
+                  probe.connect(path)
+                  sys.exit(0)
+              except OSError:
+                  time.sleep(0.05)
+      print(f"wait-for-wayland-socket: {path} is not accepting connections", file=sys.stderr)
+      sys.exit(1)
+      PY
+    '';
+  };
+
   # Sunshine needs a writable config dir for its pairing credentials; the
   # settings file itself lives in the store, so pass it explicitly (like the
   # upstream module does).
@@ -167,7 +197,11 @@ in
           # session env, so point the loader at the driver runpath explicitly.
           "LD_LIBRARY_PATH=/run/opengl-driver/lib"
         ];
-        # After= is gated by shared compositor notify readiness.
+        # After= is gated by shared compositor notify readiness; probe again so
+        # a same-second start cannot leave Sunshine without a capture platform.
+        ExecStartPre = [
+          "${getExe waitForWayland} ${session.runtimeDir}/${session.display}"
+        ];
         ExecStart = getExe sunshine;
         Restart = "always";
         RestartSec = 3;
