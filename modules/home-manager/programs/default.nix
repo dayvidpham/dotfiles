@@ -22,5 +22,6 @@
     ./remote-desktop
     ./remote-audio-client
     ./dictate
+    ./moonlight
   ];
 }

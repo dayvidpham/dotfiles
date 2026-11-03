@@ -47,8 +47,12 @@
   # Attach to the desktop's persistent sway session over VNC (tailnet-only).
   CUSTOM.programs.remote-desktop.enable = true;
 
+  # Stream the desktop's Sunshine/NVENC session over the tailnet.
+  CUSTOM.programs.moonlight.enable = true;
+
   # VNC attachment alone is silent. Explicit `remote-audio-mode vnc` selects
   # ROC, deliberately closing managed Moonlight; viewer exit never restores it.
+  # Receive the desktop's remote-session audio over RTP (roc) on the tailnet.
   CUSTOM.services.remote-audio = {
     enable = true;
     role = "recv";
