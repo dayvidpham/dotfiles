@@ -154,6 +154,7 @@ rec {
     qbittorrent # torrenting client
     glow # charmbracelet markdown reader
     tuicr # pr cli tool
+    imagemagick # image conversion/manipulation (png -> jpg, resize, crop)
 
     # For SFU
     openfortivpn
