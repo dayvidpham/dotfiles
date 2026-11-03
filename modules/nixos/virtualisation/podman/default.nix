@@ -40,5 +40,10 @@ in
     hardware.nvidia-container-toolkit = mkIf (config.CUSTOM.hardware.nvidia.enable && config.CUSTOM.hardware.nvidia.proprietaryDrivers.enable) {
       enable = true;
     };
+
+    # Allow `podman run --device nvidia.com/gpu=all`. Gated on the same
+    # condition as the toolkit: the toolkit module asserts an NVIDIA driver
+    # is present, so enabling this on a GPU-less host would fail evaluation.
+    virtualisation.podman.enableNvidia = mkIf (config.CUSTOM.hardware.nvidia.enable && config.CUSTOM.hardware.nvidia.proprietaryDrivers.enable) true;
   };
 }
