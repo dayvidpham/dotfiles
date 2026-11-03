@@ -4,5 +4,9 @@
   {"name":"equal", "initialMiB":32, "expectedMiB":32},
   {"name":"larger", "initialMiB":48, "expectedMiB":48},
   {"name":"repeat", "initialMiB":16, "expectedMiB":32, "repeat":true},
-  {"name":"unwritable", "initialMiB":16, "expectedMiB":16, "readonly":true}
+  {"name":"unwritable", "initialMiB":16, "expectedMiB":16, "readonly":true, "failure":true},
+  {"name":"existing-symlink", "kind":"existing-symlink", "failure":true},
+  {"name":"dangling-symlink", "kind":"dangling-symlink", "failure":true},
+  {"name":"nonregular-directory", "kind":"directory", "failure":true},
+  {"name":"nonregular-fifo", "kind":"fifo", "failure":true}
 ]

@@ -268,6 +268,8 @@ in
       wantedBy = [ "multi-user.target" ];
       requires = [ "systemd-growfs@var-lib-containers.service" ];
       after = [ "local-fs.target" "systemd-growfs@var-lib-containers.service" ];
+      # Power off if growth or image loading fails, so a slot cannot wedge.
+      unitConfig.OnFailure = [ "poweroff.target" ];
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
@@ -275,10 +277,6 @@ in
         # this machine's journal — a load failure is diagnosable from the host.
         StandardOutput = "journal+console";
         StandardError = "journal+console";
-        # A failure here means runner-job never starts (its dependency), so the
-        # job unit's poweroff cannot fire. Power the guest off directly; a slot
-        # must never wedge holding memory.
-        OnFailure = [ "poweroff.target" ];
       };
       script = ''
         set -euo pipefail
