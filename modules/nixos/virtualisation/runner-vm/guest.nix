@@ -20,6 +20,40 @@ let
   # identical in every VM: the Go build cache keys on source directories, so a
   # per-slot path would cache every package once per slot.
   runnerRoot = "/var/lib/containers/runner";
+
+  # Copy only the server package's vendored upstream profile into the guest.
+  # Check it against the same source's DefaultProfile before shipping it.
+  runnerBuildSeccomp = pkgs.runCommand "runner-build-seccomp.json" {
+    nativeBuildInputs = [ pkgs.go pkgs.jq ];
+  } ''
+    set -eu
+    src=${config.virtualisation.podman.package.src}
+    profile="$src/vendor/go.podman.io/common/pkg/seccomp/seccomp.json"
+    if [ ! -f "$profile" ]; then
+      echo "Podman ${config.virtualisation.podman.package.version}: missing vendored seccomp profile: $profile" >&2
+      exit 1
+    fi
+    cat > "$TMPDIR/profile.go" <<'EOF'
+    package main
+    import (
+      "encoding/json"
+      "os"
+      "go.podman.io/common/pkg/seccomp"
+    )
+    func main() {
+      if err := json.NewEncoder(os.Stdout).Encode(seccomp.DefaultProfile()); err != nil { panic(err) }
+    }
+    EOF
+    export CGO_ENABLED=0 GOPROXY=off GOSUMDB=off GOTOOLCHAIN=local
+    export GOCACHE="$TMPDIR/go-cache" HOME="$TMPDIR"
+    cd "$src"
+    go run -mod=vendor "$TMPDIR/profile.go" > "$TMPDIR/generated.json"
+    jq -e 'type == "object" and (.defaultAction | type == "string") and (.syscalls | type == "array")' "$profile" > /dev/null
+    jq -S . "$profile" > "$TMPDIR/vendor.json"
+    jq -S . "$TMPDIR/generated.json" > "$TMPDIR/default.json"
+    cmp "$TMPDIR/vendor.json" "$TMPDIR/default.json"
+    cp "$profile" "$out"
+  '';
 in
 {
   options.CUSTOM.virtualisation.runner-vm.guest = {
@@ -202,6 +236,7 @@ in
 
     virtualisation.podman.enable = true;
     virtualisation.containers.enable = true;
+    environment.etc."runner-build/seccomp.json".source = runnerBuildSeccomp;
     # The guest's own podman API, for services: and container: jobs. It runs
     # as guest root and controls only this VM's containers; the host's podman
     # socket never reaches a VM.
@@ -281,6 +316,7 @@ in
           ${pkgs.podman}/bin/podman run --rm --name runner-job --user 0 \
             --network=host \
             -e RUNNER_ALLOW_RUNASROOT=1 \
+            -e RUNNER_BUILD_SECCOMP_PROFILE=/etc/runner-build/seccomp.json \
             -e GOMODCACHE=/var/cache/runner/gomod \
             -e GOCACHE=/var/cache/runner/gobuild \
             -e AGENT_TOOLSDIRECTORY=/var/cache/runner/tool \
