@@ -1,0 +1,8 @@
+[
+  {"name":"absent", "initialMiB":null, "expectedMiB":null},
+  {"name":"smaller", "initialMiB":16, "expectedMiB":32},
+  {"name":"equal", "initialMiB":32, "expectedMiB":32},
+  {"name":"larger", "initialMiB":48, "expectedMiB":48},
+  {"name":"repeat", "initialMiB":16, "expectedMiB":32, "repeat":true},
+  {"name":"unwritable", "initialMiB":16, "expectedMiB":16, "readonly":true}
+]

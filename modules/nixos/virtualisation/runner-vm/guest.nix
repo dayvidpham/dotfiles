@@ -20,6 +20,7 @@ let
   # identical in every VM: the Go build cache keys on source directories, so a
   # per-slot path would cache every package once per slot.
   runnerRoot = "/var/lib/containers/runner";
+  diskImage = "${cfg.disksHostPath}/runner-vm-${toString cfg.slot}.img";
 
   # Copy only the server package's vendored upstream profile into the guest.
   # Check it against the same source's DefaultProfile before shipping it.
@@ -99,9 +100,8 @@ in
       type = types.ints.positive;
       default = 16384;
       description = ''
-        Maximum size in MiB of the slot's scratch disk. The file is sparse and
-        trimmed at every boot, so the host holds only what the last job wrote.
-        Applies when the image is created; delete an existing image to resize.
+        Minimum size in MiB of the slot's sparse scratch disk. Existing images
+        grow on the next VM start; larger images are never shrunk automatically.
       '';
     };
     idleTimeoutSec = mkOption {
@@ -121,6 +121,24 @@ in
 
     microvm = {
       hypervisor = "cloud-hypervisor";
+      # The slot unit owns its image exclusively until the hypervisor starts.
+      # Missing images are left to microvm.nix's normal creation path.
+      preStart = ''
+        image=${lib.escapeShellArg diskImage}
+        if [ -L "$image" ]; then
+          echo "runner-vm: refusing symlink scratch image $image" >&2
+          exit 1
+        elif [ -e "$image" ]; then
+          if [ ! -f "$image" ]; then
+            echo "runner-vm: scratch image is not a regular file: $image" >&2
+            exit 1
+          fi
+          ${config.microvm.vmHostPackages.coreutils}/bin/truncate --no-create --size='>${toString cfg.diskSize}M' "$image" || {
+            echo "runner-vm: failed to grow scratch image $image" >&2
+            exit 1
+          }
+        fi
+      '';
       vcpu = cfg.vcpu;
       mem = cfg.mem;
       # AF_VSOCK enables the host unit's Type=notify: systemd in the guest
@@ -158,7 +176,7 @@ in
       # Every boot wipes it and trims the freed blocks back to the host.
       volumes = [
         {
-          image = "${cfg.disksHostPath}/runner-vm-${toString cfg.slot}.img";
+          image = diskImage;
           mountPoint = "/var/lib/containers";
           size = cfg.diskSize;
         }
@@ -172,6 +190,7 @@ in
       fsType = "virtiofs";
       options = [ "nofail" "x-systemd.mount-timeout=10" ];
     };
+    fileSystems."/var/lib/containers".autoResize = true;
     fileSystems."/run/jit" = {
       device = "jit";
       fsType = "virtiofs";
@@ -247,7 +266,8 @@ in
     systemd.services.runner-image-load = {
       description = "Load the baked runner image into podman";
       wantedBy = [ "multi-user.target" ];
-      after = [ "local-fs.target" ];
+      requires = [ "systemd-growfs@var-lib-containers.service" ];
+      after = [ "local-fs.target" "systemd-growfs@var-lib-containers.service" ];
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;

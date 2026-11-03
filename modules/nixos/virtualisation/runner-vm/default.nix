@@ -43,8 +43,8 @@ in
         type = lib.types.ints.positive;
         default = 16384;
         description = ''
-          Maximum size in MiB of each slot's sparse scratch disk. Takes effect
-          when a slot image is created; delete an idle slot's image to resize.
+          Minimum size in MiB of each slot's sparse scratch disk. Existing
+          images grow on the next VM start and are never shrunk automatically.
         '';
       };
       idleTimeoutSec = lib.mkOption {
