@@ -159,13 +159,22 @@ in
     sudoInto.fromUser = "minttea";
   };
 
-  # GitHub Actions self-hosted runners for the peasant-labs org. Rootless
-  # podman containers built from the module's Containerfile; the containers
-  # carry the "container" label and the org router selects them when a runner
-  # is online. The "minttea--desktop" runner group must already exist in the
-  # org (Settings -> Actions -> Runners).
+  # GitHub Actions self-hosted runners for the peasant-labs org: four rootless
+  # podman containers, retired on this host. The per-job MicroVM pool below is
+  # the only CI pool. This module stays configured with its registration
+  # material, runner group and resource limits so the persistent pool can be
+  # restored by flipping `enable` back, but no unit, slice, image pull or drain
+  # helper is deployed while it is false.
+  #
+  # Retirement order matters: the switch stops removed user units and runs
+  # `ExecStop` (`podman stop`), which cancels a running job, so drain until
+  # `github-runner-drain` exits 0, stop the four
+  # `github-runner-container@desktop-container-N` units, then switch. State,
+  # image, token, runner group and the previous generation are kept. See
+  # peasant-labs/infra docs/runner-pool.md, "Retiring a host's persistent
+  # container pool".
   CUSTOM.services.github-runner = {
-    enable = true;
+    enable = false;
     count = 4;
     labels = [ "container" ];
     runnerGroup = "minttea--desktop";
@@ -219,10 +228,12 @@ in
     };
   };
 
-  # Runner per-job microVMs. The dispatcher below drives a runner scale set.
-  # The VM pool also carries the "container" label, so it takes pool jobs
-  # alongside the container runners while the router's v1 tag keeps routing to
-  # that label set.
+  # Runner per-job microVMs: the only CI pool on this host. The dispatcher
+  # below drives the scale set. It keeps the transitional "container" label
+  # while a caller still routes to it (Scry is deferred); the persistent pool
+  # above is disabled, so the label now selects this scale set whenever a VM is
+  # online. Remove it only after that caller migrates, and only while the scale
+  # set is idle.
   CUSTOM.virtualisation.runner-vm.enable = true;
 
   CUSTOM.services.runner-dispatcher = {

@@ -588,11 +588,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1791085425,
-        "narHash": "sha256-rNvvUVMEAzCnu2jSstytk0ivHcqjkCCuWqEs9Fs0Syw=",
+        "lastModified": 1793768964,
+        "narHash": "sha256-290zWofLRHaG50N2g79UA+qEkV8kwGcEOwNqB3VPrn8=",
         "owner": "peasant-labs",
         "repo": "infra",
-        "rev": "6f3b987af7026aef195c29f1e6627297068aef42",
+        "rev": "7af0a667374217496516cd70632b4aeeeb3bb96d",
         "type": "github"
       },
       "original": {

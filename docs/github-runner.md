@@ -1,5 +1,15 @@
 # GitHub Actions self-hosted runners (desktop)
 
+> **Status on this host: retired.** `CUSTOM.services.github-runner.enable =
+> false` in `hosts/desktop/configuration.nix`; CI runs on the per-job MicroVM
+> scale set (`CUSTOM.virtualisation.runner-vm` plus
+> `CUSTOM.services.runner-dispatcher`). The module and its configured state
+> remain importable for rollback. The scale set keeps the transitional
+> `container` label until the deferred Scry caller migrates. See
+> `peasant-labs/infra` `docs/runner-pool.md`, "Retiring a host's persistent
+> container pool", for the drain/stop/switch sequence, verification and label
+> removal.
+
 Module: `modules/nixos/services/github-runner/`. Enabled in
 `hosts/desktop/configuration.nix`. The runner registration PAT is the sops
 secret `github-runner/token` (owned by `minttea`); the routing jobs in the
@@ -8,9 +18,11 @@ runner list).
 
 ## How it works
 
-- Four **rootless podman containers** (`desktop-container-1..4`) in the
-  organization runner group `minttea--desktop`, labels `self-hosted`, `linux`,
-  `x64`, `container`. The image is built from
+- When enabled, four **rootless podman containers** (`desktop-container-1..4`)
+  in the organization runner group `minttea--desktop`, labels `self-hosted`,
+  `linux`, `x64`, `container`. They are disabled on this host; the module and
+  its state, token and runner-group settings are retained for rollback. The
+  image is built from
   `peasant-labs/infra`'s `runner-image/Containerfile` (digest-pinned Ubuntu
   26.04 + actions/runner + build-essential + docker CLI + gh + podman + unzip;
   apt installs from a dated archive snapshot; both downloaded tarballs
@@ -49,8 +61,12 @@ runner list).
 - Lifecycle is systemd user services for `minttea`:
   `github-runner-image` (pulls and verifies the pinned image), `github-runner-prepare` (directories and
   state ownership), `github-runner-container@<instance>` (one `podman run` in the
-  foreground per runner). The user has linger enabled, so the pool comes back
-  after a reboot and a `nixos-rebuild switch` restarts only what changed.
+  foreground per runner). While enabled, the user has linger enabled, so the
+  pool comes back after a reboot and a `nixos-rebuild switch` restarts only what
+  changed. Disabling the module removes those units and the drain helper from
+  the next generation, and the switch stops any still-active container units
+  (stop-on-removal runs `ExecStop`, `podman stop`); state, image, token and the
+  previous generation remain.
 - **Resource isolation:** each runner has its own `github-runner-<n>.slice`
   nested under the explicit `github-runner.slice` pool group. The pool slice is
   the host-protection ceiling (hard `MemoryMax` with a soft `MemoryHigh`, and a
