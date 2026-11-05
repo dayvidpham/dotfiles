@@ -116,6 +116,22 @@ in
       # resolve the wrong portals.conf and ScreenCast never appears.
       systemd.user.sessionVariables.XDG_CURRENT_DESKTOP = "niri";
 
+      # xdg-desktop-portal caches the backend's AvailableCursorModes and
+      # AvailableSourceTypes when it starts. If it is D-Bus-activated while
+      # graphical-session.target is down (for example between compositor
+      # restarts), it caches zeroes. Clients that request a cursor mode then
+      # fail with "Unavailable cursor mode 2" before the picker can open;
+      # Discord's native picker requests embedded mode 2. xdg-desktop-portal-
+      # gnome already has this guard. Give the frontend the same one so its
+      # activation always happens inside a live session and sees the backend's
+      # real capabilities. If this regresses, restarting the portal re-reads
+      # the values: systemctl --user restart xdg-desktop-portal.
+      xdg.configFile."systemd/user/xdg-desktop-portal.service.d/10-graphical-session.conf".text = ''
+        [Unit]
+        Requisite=graphical-session.target
+        After=graphical-session.target
+      '';
+
       xdg.portal.enable = true;
       xdg.portal.xdgOpenUsePortal = false;
       xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-gtk pkgs.xdg-desktop-portal-gnome ];
