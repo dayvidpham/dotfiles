@@ -12,6 +12,7 @@
   CUSTOM.programs.remote-audio-client = {
     enable = true;
     moonlightPackage = pkgs-unstable.moonlight-qt;
+    clipboardIdentityFile = "${config.home.homeDirectory}/.ssh/id_ed25519";
   };
 
   # NOTE: Hyprland

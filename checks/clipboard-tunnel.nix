@@ -16,6 +16,15 @@ let
   ssh = commandStub "ssh";
   viewer = commandStub "vncviewer";
   moonlight = commandStub "moonlight-qt";
+  sshKeyTools = pkgs.symlinkJoin {
+    name = "clipboard-key-tools-fixture";
+    paths = [
+      (pkgs.writeShellScriptBin "ssh-keygen" ''printf '%s\n' '256 SHA256:fixture fixture (ED25519)' '')
+      (pkgs.writeShellScriptBin "ssh-add" ''
+        if [ "$1" = -l ]; then printf '%s\n' '256 SHA256:fixture fixture (ED25519)'; fi
+      '')
+    ];
+  };
   scopeRunner = pkgs.writeShellApplication {
     name = "systemd-run";
     text = ''
@@ -50,11 +59,13 @@ let
     ../users/minttea/home.flowX13.nix
     ({ lib, ... }: {
       config.CUSTOM.programs.remote-audio-client.systemdPackage = scopeRunner;
+      config.CUSTOM.programs.remote-audio-client.sshPackage = sshKeyTools;
       # Unrelated host options are inert in this isolated client fixture. The
       # real Flow X13 file still generates its actual Moonlight wrapper here.
       options.CUSTOM = {
         wayland = lib.mkOption { type = lib.types.attrs; default = { }; };
         services.syncthing = lib.mkOption { type = lib.types.attrs; default = { }; };
+        programs.moonlight = lib.mkOption { type = lib.types.attrs; default = { }; };
       };
     })
   ]).config;

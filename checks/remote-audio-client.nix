@@ -29,6 +29,26 @@ let
                     'XDG_RUNTIME_DIR', 'DBUS_SESSION_BUS_ADDRESS', 'AUDIO_TEST_LITERAL']}}, f)
     sys.exit(int(os.environ.get('APP_FAILURE', '0')))
   '';
+  ssh = pkgs.symlinkJoin {
+    name = "clipboard-ssh-fixture";
+    paths = [
+      (pkgs.writeScriptBin "ssh-keygen" ''
+        #!${pkgs.python3}/bin/python3
+        print('256 SHA256:fixture fixture (ED25519)')
+      '')
+      (pkgs.writeScriptBin "ssh-add" ''
+        #!${pkgs.python3}/bin/python3
+        import json, os, sys
+        assert os.path.isfile(os.environ['SSH_ASKPASS']) and os.access(os.environ['SSH_ASKPASS'], os.X_OK)
+        with open(os.environ['SSH_LOG'], 'a') as f: f.write(json.dumps(sys.argv[1:]) + '\n')
+        if sys.argv[1:] == ['-l']:
+            if os.environ.get('KEY_LOADED') == '1': print('256 SHA256:fixture fixture (ED25519)')
+            else: sys.exit(1)
+        elif os.environ.get('UNLOCK_FAILURE'):
+            sys.exit(1)
+      '')
+    ];
+  };
   base = {
     imports = [
       ../modules/home-manager/programs/remote-audio-client
@@ -53,8 +73,10 @@ let
         services.clipd = lib.mkOption { type = lib.types.attrs; default = {}; };
         services.clip-tunnel = lib.mkOption { type = lib.types.attrs; default = {}; };
         programs.remote-desktop = lib.mkOption { type = lib.types.attrs; default = {}; };
+        programs.moonlight = lib.mkOption { type = lib.types.attrs; default = {}; };
       };
       config.CUSTOM.programs.remote-audio-client.systemdPackage = systemd;
+      config.CUSTOM.programs.remote-audio-client.sshPackage = ssh;
     })
   ];
   recv = evaluate [{ CUSTOM.services.remote-audio = { enable = true; role = "recv"; }; }];
@@ -81,7 +103,7 @@ pkgs.runCommand "remote-audio-client-check" { nativeBuildInputs = [ pkgs.python3
   from pathlib import Path
   root = Path(os.environ['TMPDIR'])
   env = dict(os.environ, RUN_LOG=str(root/'run.json'), APP_LOG=str(root/'app.json'),
-             CTL_LOG=str(root/'ctl.jsonl'), WAYLAND_DISPLAY='wayland-literal', DISPLAY=':42',
+             CTL_LOG=str(root/'ctl.jsonl'), SSH_LOG=str(root/'ssh.jsonl'), WAYLAND_DISPLAY='wayland-literal', DISPLAY=':42',
              XDG_RUNTIME_DIR='/run/user/fixture', DBUS_SESSION_BUS_ADDRESS='unix:path=/fixture',
              AUDIO_TEST_LITERAL='$NAME \\ "quoted"')
   wrapper, selector = env['WRAPPER'], env['SELECTOR']
@@ -91,6 +113,15 @@ pkgs.runCommand "remote-audio-client-check" { nativeBuildInputs = [ pkgs.python3
       return result
   args = ['stream', 'desktop', 'Remote', '$NAME', '$'+'{NAME}', '"quoted"', r'back\slash', '--leading-argument']
   invoke(wrapper, args)
+  assert [json.loads(line) for line in (root/'ssh.jsonl').read_text().splitlines()] == [
+      ['-l'], ['/home/fixture/.ssh/id_ed25519']]
+  (root/'ssh.jsonl').unlink()
+  invoke(wrapper, args, {'KEY_LOADED':'1'})
+  assert [json.loads(line) for line in (root/'ssh.jsonl').read_text().splitlines()] == [
+      ['-l'], ['-T', '/home/fixture/.ssh/id_ed25519.pub']]
+  warning = invoke(wrapper, args, {'UNLOCK_FAILURE':'1'})
+  assert 'launching without guaranteed clipboard sync' in warning.stderr
+  assert json.loads((root/'app.json').read_text())['args'] == args
   run = json.loads((root/'run.json').read_text())
   assert run == ['--user', '--scope', '--collect', '--unit=moonlight-client.scope',
                  '--expand-environment=no', '--property=Conflicts=remote-audio-recv.service',

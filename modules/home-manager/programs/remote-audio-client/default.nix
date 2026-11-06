@@ -9,6 +9,21 @@ let
     name = "moonlight-qt";
     text = ''
       export SDL_MOUSE_RELATIVE_SYSTEM_SCALE=1
+      ${lib.optionalString (cfg.clipboardIdentityFile != null) ''
+        identity=${lib.escapeShellArg cfg.clipboardIdentityFile}
+        export SSH_ASKPASS=${pkgs.openssh-askpass}/libexec/gtk-ssh-askpass
+        if [ ! -t 0 ]; then export SSH_ASKPASS_REQUIRE=force; fi
+        fingerprint=$(${lib.getExe' cfg.sshPackage "ssh-keygen"} -lf "$identity.pub" 2>/dev/null | ${pkgs.gawk}/bin/awk '{print $2}') || fingerprint=
+        if [ -n "$fingerprint" ] && ${lib.getExe' cfg.sshPackage "ssh-add"} -l 2>/dev/null | ${pkgs.gnugrep}/bin/grep -Fq -- "$fingerprint"; then
+          unlock_command=(-T "$identity.pub")
+        else
+          unlock_command=("$identity")
+        fi
+        if ! ${lib.getExe' cfg.sshPackage "ssh-add"} "''${unlock_command[@]}"; then
+          printf '%s\n' 'moonlight-qt: could not unlock the clipboard SSH key; launching without guaranteed clipboard sync.' \
+            'Check: systemctl --user status clip-tunnel; unlock the key with ssh-add and the tunnel will retry.' >&2
+        fi
+      ''}
       if ${cfg.systemdPackage}/bin/systemd-run --user --scope --collect \
         --unit=${scope} --expand-environment=no \
         --property=Conflicts=${receiver} --property=After=${receiver} \
@@ -65,6 +80,16 @@ in
       type = lib.types.package;
       default = pkgs.systemd;
       description = "Package providing systemd-run and systemctl.";
+    };
+    clipboardIdentityFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Absolute path to the clipboard tunnel's SSH private key, or null to skip unlocking.";
+    };
+    sshPackage = lib.mkOption {
+      type = lib.types.package;
+      default = pkgs.openssh;
+      description = "Package providing ssh-add for clipboard key unlocking.";
     };
   };
   config = lib.mkIf cfg.enable {
