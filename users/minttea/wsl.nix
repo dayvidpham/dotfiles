@@ -11,7 +11,7 @@ rec {
 
   nix.gc = {
     automatic = true;
-    frequency = "weekly";
+    dates = "weekly";
   };
 
   home.username = "minttea";
