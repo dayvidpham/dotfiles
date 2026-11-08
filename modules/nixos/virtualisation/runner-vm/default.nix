@@ -258,13 +258,23 @@ in
 
       # Outbound-only networking: one bridge, a DHCP server for guests, and
       # NAT for everything behind it.
+      # A bridge without an explicit MAC is created with a generated one, and the
+      # generated address changes whenever networkd recreates the netdev. Pin it
+      # so the bridge keeps one identity across reboots and rebuilds.
       systemd.network.netdevs."10-runner-vm-bridge".netdevConfig = {
         Kind = "bridge";
         Name = cfg.network.bridge;
+        MACAddress = "02:00:00:00:00:01";
       };
       systemd.network.networks."10-runner-vm-bridge" = {
         matchConfig.Name = cfg.network.bridge;
-        networkConfig.DHCPServer = true;
+        networkConfig = {
+          DHCPServer = true;
+          # The bridge has no carrier until a slot's tap attaches. Without this,
+          # a reconfigure can leave the bridge up with no IPv4 address, which
+          # takes the DHCP server and the guest route with it.
+          ConfigureWithoutCarrier = true;
+        };
         addresses = [ { addressConfig.Address = "${cfg.network.subnet}.1/24"; } ];
       };
       systemd.network.networks."11-runner-vm-taps" = {
