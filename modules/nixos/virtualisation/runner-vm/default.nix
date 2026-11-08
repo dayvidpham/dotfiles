@@ -221,13 +221,16 @@ in
         # A lower priority number wins. These rules match the bridge before the
         # catch-all rule, so guest egress and host-to-guest traffic use `main`
         # (the physical default) while the host itself keeps using the exit
-        # node.
+        # node. They sit below 5000 on purpose: Tailscale owns the 5200-5270
+        # band and removes rules in it when it (re)configures routing.
         runner-vm-policy-routes = lib.mkIf cfg.bypassExitNode {
           description = "Keep GitHub runner VM traffic on the physical uplink";
           wantedBy = [ "multi-user.target" ];
           wants = [ "network-online.target" ];
           after = [ "network-online.target" "systemd-networkd.service" ]
             ++ lib.optional config.services.tailscale.enable "tailscaled.service";
+          # Re-add the rules when Tailscale restarts and rewrites its own rules.
+          partOf = lib.optional config.services.tailscale.enable "tailscaled.service";
           serviceConfig = {
             Type = "oneshot";
             RemainAfterExit = true;
@@ -240,9 +243,9 @@ in
                   ${pkgs.iproute2}/bin/ip rule add "$@" priority "$priority"
                 fi
               }
-              add_rule 5200 from ${cfg.network.subnet}.0/24 lookup main
-              add_rule 5201 to ${cfg.network.subnet}.0/24 lookup main
-              add_rule 5202 iif ${cfg.network.bridge} lookup main
+              add_rule 1000 from ${cfg.network.subnet}.0/24 lookup main
+              add_rule 1001 to ${cfg.network.subnet}.0/24 lookup main
+              add_rule 1002 iif ${cfg.network.bridge} lookup main
             '';
           };
         };
