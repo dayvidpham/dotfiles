@@ -91,9 +91,9 @@ in
             keybindings = pkgs.lib.mkOptionDefault {
               "${modifier}+Return" = "exec 'run-cwd ${terminal}'";
               "${modifier}+Shift+Return" = "exec 'run-cwd ${terminal} -e ranger'";
-              XF86AudioRaiseVolume = "exec 'pw-volume change +2.5%; pkill -RTMIN+8 waybar'";
-              XF86AudioLowerVolume = "exec 'pw-volume change -2.5%; pkill -RTMIN+8 waybar'";
-              XF86AudioMute = "exec 'pw-volume mute toggle; pkill -RTMIN+8 waybar'";
+              XF86AudioRaiseVolume = "exec 'wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+'";
+              XF86AudioLowerVolume = "exec 'wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%-'";
+              XF86AudioMute = "exec 'wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle'";
               "Ctrl+Alt+Tab" = "mode remote";
             };
             modes = {

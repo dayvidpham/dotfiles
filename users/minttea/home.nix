@@ -114,7 +114,6 @@ rec {
     wdisplays # gui for display settings
     wl-clipboard # CLI clipboard utilities (wl-paste --watch, wl-copy --type)
     clipse # CLI clipboard manager
-    pw-volume # for volume control w/ sway
     grim # screenshot
     slurp # select region on screen
     swappy # draw on image, mostly for screenshots
@@ -176,7 +175,9 @@ rec {
     #lorien # infinite canvas notes
 
     # Utils
-    neovide # Rust-based native nvim text editor
+    # 0.17.1 in nixpkgs-unstable points src at the skia tarball (bad hash),
+    # so it fails in the vendor phase. Use the cached stable build instead.
+    pkgs-stable.neovide # Rust-based native nvim text editor
     nix-search # Fast, indexed replacement for awful builtin `nix search`
   ])
   ++ (with pkgs-unstable; [
