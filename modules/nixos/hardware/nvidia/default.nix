@@ -146,9 +146,12 @@ in
         mkEnableOption "proprietary NVIDIA drivers" // {
           default = true;
         };
+      # Track NVIDIA's New Feature Branch (615.78.08 in nixos-unstable f9a75f4)
+      # instead of the 595 production branch. Still comes from the same
+      # linuxPackages set as the kernel, so the SYSSRC assertion holds.
       package =
-        mkPackageOption config.boot.kernelPackages "nvidia_x11" {
-          example = [ "nvidia_x11" "nvidia_x11_beta" "nvidia_x11_production" ];
+        mkPackageOption config.boot.kernelPackages "nvidia_x11_latest" {
+          example = [ "nvidia_x11" "nvidia_x11_latest" "nvidia_x11_production" ];
         };
     };
 
