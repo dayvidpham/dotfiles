@@ -133,6 +133,21 @@ in
         description = "Upstream interface used for NAT.";
       };
     };
+
+    bypassExitNode = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = ''
+        Keep runner guest traffic on the physical uplink when a Tailscale exit
+        node is active. An exit node changes the host's default route and can
+        route the bridge subnet into the tunnel; Tailscale forwards the host's
+        own traffic but does not NAT packets arriving from the guest bridge, so
+        those packets are dropped and the runner never reaches GitHub. The
+        policy rules added here match the bridge before the exit node's
+        catch-all rule, so the host keeps using the exit node while the guests
+        use the normal uplink.
+      '';
+    };
   };
 
   config = lib.mkIf cfg.enable (lib.mkMerge [
@@ -193,7 +208,45 @@ in
           name = "microvm-virtiofsd@runner-vm-${toString i}";
           value.serviceConfig.Slice = "runner-vm.slice";
         }
-      ]) slots);
+      ]) slots) // {
+        # Keep runner traffic on the physical uplink even while a Tailscale exit
+        # node is active. An exit node installs a catch-all policy rule
+        # (`from all lookup 52` -> `default via tailscale0`) and can learn the
+        # bridge subnet into that table, so guest packets would otherwise enter
+        # the tunnel with a private source address. Tailscale forwards the
+        # host's own traffic; it does not NAT traffic arriving from another
+        # interface, so those packets are dropped and the runner never
+        # registers.
+        #
+        # A lower priority number wins. These rules match the bridge before the
+        # catch-all rule, so guest egress and host-to-guest traffic use `main`
+        # (the physical default) while the host itself keeps using the exit
+        # node.
+        runner-vm-policy-routes = lib.mkIf cfg.bypassExitNode {
+          description = "Keep GitHub runner VM traffic on the physical uplink";
+          wantedBy = [ "multi-user.target" ];
+          wants = [ "network-online.target" ];
+          after = [ "network-online.target" "systemd-networkd.service" ]
+            ++ lib.optional config.services.tailscale.enable "tailscaled.service";
+          serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+            ExecStart = pkgs.writeShellScript "runner-vm-policy-routes" ''
+              set -eu
+              add_rule() {
+                priority="$1"
+                shift
+                if ! ${pkgs.iproute2}/bin/ip rule show | grep -q "^''${priority}:"; then
+                  ${pkgs.iproute2}/bin/ip rule add "$@" priority "$priority"
+                fi
+              }
+              add_rule 5200 from ${cfg.network.subnet}.0/24 lookup main
+              add_rule 5201 to ${cfg.network.subnet}.0/24 lookup main
+              add_rule 5202 iif ${cfg.network.bridge} lookup main
+            '';
+          };
+        };
+      };
 
       systemd.slices.runner-vm = {
         description = "Per-job GitHub runner VMs";
