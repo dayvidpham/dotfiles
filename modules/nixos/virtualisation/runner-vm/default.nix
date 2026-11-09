@@ -223,6 +223,11 @@ in
         # (the physical default) while the host itself keeps using the exit
         # node. They sit below 5000 on purpose: Tailscale owns the 5200-5270
         # band and removes rules in it when it (re)configures routing.
+        #
+        # A oneshot with RemainAfterExit only runs at boot or when the
+        # tailscaled UNIT restarts. Toggling an exit node changes the running
+        # daemon's prefs without a unit restart, and Tailscale may then drop
+        # these rules; the timer below re-applies them within 30 seconds.
         runner-vm-policy-routes = lib.mkIf cfg.bypassExitNode {
           description = "Keep GitHub runner VM traffic on the physical uplink";
           wantedBy = [ "multi-user.target" ];
@@ -233,7 +238,8 @@ in
           partOf = lib.optional config.services.tailscale.enable "tailscaled.service";
           serviceConfig = {
             Type = "oneshot";
-            RemainAfterExit = true;
+            # No RemainAfterExit: the timer must be able to start the unit
+            # again. Starting an already-active unit would not re-run it.
             ExecStart = pkgs.writeShellScript "runner-vm-policy-routes" ''
               set -eu
               add_rule() {
@@ -248,6 +254,19 @@ in
               add_rule 1002 iif ${cfg.network.bridge} lookup main
             '';
           };
+        };
+      };
+
+      # Toggling a Tailscale exit node changes the running daemon's prefs
+      # without restarting tailscaled.service, so partOf= never fires. Re-run
+      # the idempotent rule script every 30s; it only adds missing rules.
+      systemd.timers.runner-vm-policy-routes = lib.mkIf cfg.bypassExitNode {
+        wantedBy = [ "timers.target" ];
+        timerConfig = {
+          OnBootSec = "30s";
+          OnUnitInactiveSec = "30s";
+          AccuracySec = "5s";
+          Unit = "runner-vm-policy-routes.service";
         };
       };
 
