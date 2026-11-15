@@ -43,8 +43,9 @@ in
         type = lib.types.ints.positive;
         default = 16384;
         description = ''
-          Minimum size in MiB of each slot's sparse scratch disk. Existing
-          images grow on the next VM start and are never shrunk automatically.
+          Preallocated size in MiB of each slot's scratch disk. The host
+          reserves this space before boot; existing larger images are never
+          shrunk.
         '';
       };
       idleTimeoutSec = lib.mkOption {

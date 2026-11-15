@@ -100,8 +100,8 @@ in
       type = types.ints.positive;
       default = 16384;
       description = ''
-        Minimum size in MiB of the slot's sparse scratch disk. Existing images
-        grow on the next VM start; larger images are never shrunk automatically.
+        Preallocated size in MiB of the slot's scratch disk. The host reserves
+        this space before boot; existing larger images are never shrunk.
       '';
     };
     idleTimeoutSec = mkOption {
@@ -122,21 +122,39 @@ in
     microvm = {
       hypervisor = "cloud-hypervisor";
       # The slot unit owns its image exclusively until the hypervisor starts.
-      # Missing images are left to microvm.nix's normal creation path.
+      # It creates and preallocates the image itself; microvm.nix must not
+      # auto-create a sparse one.
       preStart = ''
         image=${lib.escapeShellArg diskImage}
+        target=$(( ${toString cfg.diskSize} * 1024 * 1024 ))
+        fallocate=${pkgs.util-linux}/bin/fallocate
+        stat=${pkgs.coreutils}/bin/stat
         if [ -L "$image" ]; then
           echo "runner-vm: refusing symlink scratch image $image" >&2
           exit 1
-        elif [ -e "$image" ]; then
-          if [ ! -f "$image" ]; then
-            echo "runner-vm: scratch image is not a regular file: $image" >&2
-            exit 1
-          fi
-          ${config.microvm.vmHostPackages.coreutils}/bin/truncate --no-create --size='>${toString cfg.diskSize}M' "$image" || {
-            echo "runner-vm: failed to grow scratch image $image" >&2
+        elif [ ! -e "$image" ]; then
+          # Create and format the volume here, not through microvm.nix, so the
+          # host reserves the whole disk before the guest can write to it.
+          "$fallocate" -l "$target" "$image" || {
+            echo "runner-vm: not enough host space to preallocate $image (${toString cfg.diskSize} MiB)" >&2
             exit 1
           }
+          ${pkgs.e2fsprogs}/bin/mkfs.ext4 -F -q "$image" || {
+            echo "runner-vm: failed to format scratch image $image" >&2
+            exit 1
+          }
+        elif [ ! -f "$image" ]; then
+          echo "runner-vm: scratch image is not a regular file: $image" >&2
+          exit 1
+        else
+          current=$("$stat" -c %s "$image")
+          if [ "$current" -le "$target" ]; then
+            # Fill holes left by an older sparse image or a previous trim.
+            "$fallocate" -l "$target" "$image" || {
+              echo "runner-vm: not enough host space to preallocate $image (${toString cfg.diskSize} MiB)" >&2
+              exit 1
+            }
+          fi
         fi
       '';
       vcpu = cfg.vcpu;
@@ -173,12 +191,14 @@ in
       # Container storage, the runner install, the workspace and job temp
       # files live on this scratch volume, not the tmpfs root: the runner image
       # alone is ~1.4 GiB uncompressed and the root is half the guest's RAM.
-      # Every boot wipes it and trims the freed blocks back to the host.
+      # The host creates, formats and fully allocates it before boot; the guest
+      # wipes the store each boot without returning the reservation.
       volumes = [
         {
           image = diskImage;
           mountPoint = "/var/lib/containers";
           size = cfg.diskSize;
+          autoCreate = false;
         }
       ];
       # Boot as fast as possible; no console, no graphics.
@@ -282,12 +302,10 @@ in
         set -euo pipefail
         podman=${pkgs.podman}/bin/podman
         # The volume is scratch space; start from an empty store and runner
-        # root so a slot never inherits a previous job's state.
+        # root so a slot never inherits a previous job's state. The host
+        # preallocates the disk, so the freed blocks stay reserved to this slot;
+        # do not trim here or the reservation becomes sparse again.
         rm -rf /var/lib/containers/storage ${runnerRoot}
-        # Hand the freed blocks back to the host so the sparse disk image only
-        # holds what this job writes. Advisory: a failed trim costs host disk,
-        # not correctness.
-        ${pkgs.util-linux}/bin/fstrim -v /var/lib/containers || true
         "$podman" load -i ${cfg.runnerImage}
         # Copy the runner install out of the image to the shared-path runner
         # root (see runnerRoot).
