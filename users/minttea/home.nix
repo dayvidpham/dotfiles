@@ -189,6 +189,7 @@ rec {
     llm-agents.copilot-cli
     llm-agents.zcode
     llm-agents.dsh
+    llm-agents.antigravity-hub
   ]);
 
 
