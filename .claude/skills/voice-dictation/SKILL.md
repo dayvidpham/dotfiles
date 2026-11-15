@@ -71,7 +71,11 @@ recording), `dictate.state` (`recording` / `transcribing` / empty), and
 
 Parakeet TDT 0.6B v2, int8, English-only, CC-BY-4.0 weights, fetched from
 `csukuangfj/sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8` with per-file SHA-256
-pins in `services/dictated/default.nix`. Chosen over the bundle default
+pins in `services/dictated/default.nix`. The URL pins a commit (`modelRev`), not
+`resolve/main`: Hugging Face re-exports files in place (every int8 file changed
+on 2026-11-07), which otherwise surfaces as a hash mismatch on the next rebuild.
+Bump the pin with `scripts/update-parakeet-model.sh`; `--check` reports whether
+it is stale without touching the tree. Chosen over the bundle default
 (SenseVoiceSmall) on measured accuracy:
 
 | Model | LibriSpeech clean WER | Cold load | Note |
@@ -165,6 +169,7 @@ window per call. Feeding it a whole clip at once yields only the tail segment;
 | Text on clipboard but bar never changed | waybar config not reloaded | `systemctl --user restart waybar` |
 | `error while loading shared libraries: libsherpa-onnx-c-api.so` | RUNPATH lost, or the flake's sherpa changed | rebuild; the RPATH is set in `CGO_LDFLAGS` |
 | `sherpa-onnx could not create the recognizer` | wrong `DICTATED_MODEL_DIR` or unreadable ONNX files | check the unit's `Environment` and the store path |
+| `hash mismatch in fixed-output derivation … parakeet-*.onnx.drv` | upstream re-exported the model, or the commit is not pinned | `scripts/update-parakeet-model.sh`, then rebuild |
 | Two daemons after a rename | old user unit still running | `systemctl --user stop <old>`, check `pgrep -af dictated` |
 
 ## Checklist before changing
