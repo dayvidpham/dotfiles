@@ -15,7 +15,6 @@ let
     ;
 
   npmHomePkgs = "pkgs/npm-global";
-  npmConfigFile = "npm/.npmrc";
 in
 {
   options.CUSTOM.programs.nodejs = {
@@ -37,14 +36,12 @@ in
       text = "";
     };
 
-    xdg.configFile."${npmConfigFile}" = {
-      text = ''
-        prefix=${config.home.homeDirectory + "/" + npmHomePkgs}
-      '';
-    };
-
+    # npm's user config is a normal writable file; Home Manager must not own it.
+    # The global prefix comes from the environment instead of being written
+    # into that file, so an npm-managed (or hand-edited) .npmrc stays usable.
     home.sessionVariables = {
-      NPM_CONFIG_USERCONFIG = "${config.xdg.configHome + "/" + npmConfigFile}";
+      NPM_CONFIG_USERCONFIG = "${config.xdg.configHome}/npm/.npmrc";
+      NPM_CONFIG_PREFIX = "${config.home.homeDirectory}/${npmHomePkgs}";
     };
   };
 }
