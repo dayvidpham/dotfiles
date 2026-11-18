@@ -52,11 +52,13 @@ in
         let
           modifier = "Mod1";
           terminal = "${pkgs.ghostty}/bin/ghostty";
+          menu = "${lib.getExe config.CUSTOM.programs.rofi.package} -show drun";
         in
         {
           enable = true;
           config = {
             terminal = terminal;
+            menu = menu;
             bars = [ ];
             startup = [
               { command = "systemctl --user restart kanshi"; always = true; }
