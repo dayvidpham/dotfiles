@@ -79,15 +79,14 @@ trap cleanup EXIT
 if [[ $# -eq 0 || "$1" = "home" ]]; then
    home-manager switch --flake . |& nom
 elif [[ "$1" = "nixos" ]]; then
-   # Build first so the drain decision and the switch use the same system.
-   # Pipe plain output into nom rather than `nom build`: that mode reads nix's
-   # JSON log, which newer (Determinate) Nix extends with activity types nom
-   # cannot parse.
+   # Build first so the drain decision can inspect the new system. The build
+   # runs from a temporary directory because nixos-rebuild always leaves a
+   # ./result link there; the switch below reuses the built store paths.
    build_dir=$(mktemp -d)
-   nix build ".#nixosConfigurations.$(hostname).config.system.build.toplevel" \
-      --out-link "$build_dir/system" |& nom
+   repo_dir=$PWD
+   (cd "$build_dir" && nixos-rebuild build --flake "$repo_dir") |& nom
    (( PIPESTATUS[0] == 0 )) || exit 1
-   new_system=$(readlink -f "$build_dir/system")
+   new_system=$(readlink -f "$build_dir/result")
 
    if [[ "$no_drain" = 1 || "${SWITCH_NO_DRAIN:-0}" = 1 ]]; then
       echo 'NOTICE: drain skipped (--no-drain or SWITCH_NO_DRAIN=1); in-flight runner jobs may be interrupted.'
@@ -96,7 +95,7 @@ elif [[ "$1" = "nixos" ]]; then
    else
       echo 'Runner pool units are unchanged by this switch; not draining.'
    fi
-   sudo nixos-rebuild switch --store-path "$new_system"
+   sudo nixos-rebuild switch --flake . |& nom
 elif [[ $# -gt 1 ]]; then
    echo 'ERROR: Zero or one argument [--no-drain] [home|nixos] only, home if no arguments given'
 fi
