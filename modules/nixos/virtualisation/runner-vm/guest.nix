@@ -124,6 +124,11 @@ in
       # The slot unit owns its image exclusively until the hypervisor starts.
       # It creates and preallocates the image itself; microvm.nix must not
       # auto-create a sparse one.
+      #
+      # The volume is scratch, so it is reformatted on every start (well under
+      # a second). A filesystem damaged by an earlier failure, such as host
+      # write errors, then cannot strand the slot in emergency mode at its next
+      # boot.
       preStart = ''
         image=${lib.escapeShellArg diskImage}
         target=$(( ${toString cfg.diskSize} * 1024 * 1024 ))
@@ -132,30 +137,24 @@ in
         if [ -L "$image" ]; then
           echo "runner-vm: refusing symlink scratch image $image" >&2
           exit 1
-        elif [ ! -e "$image" ]; then
-          # Create and format the volume here, not through microvm.nix, so the
-          # host reserves the whole disk before the guest can write to it.
+        elif [ -e "$image" ] && [ ! -f "$image" ]; then
+          echo "runner-vm: scratch image is not a regular file: $image" >&2
+          exit 1
+        fi
+        # Creates a missing image and fills holes left by an older sparse image
+        # or a previous trim. Larger images are never shrunk.
+        if [ ! -e "$image" ] || [ "$("$stat" -c %s "$image")" -le "$target" ]; then
           "$fallocate" -l "$target" "$image" || {
             echo "runner-vm: not enough host space to preallocate $image (${toString cfg.diskSize} MiB)" >&2
             exit 1
           }
-          ${pkgs.e2fsprogs}/bin/mkfs.ext4 -F -q "$image" || {
-            echo "runner-vm: failed to format scratch image $image" >&2
-            exit 1
-          }
-        elif [ ! -f "$image" ]; then
-          echo "runner-vm: scratch image is not a regular file: $image" >&2
-          exit 1
-        else
-          current=$("$stat" -c %s "$image")
-          if [ "$current" -le "$target" ]; then
-            # Fill holes left by an older sparse image or a previous trim.
-            "$fallocate" -l "$target" "$image" || {
-              echo "runner-vm: not enough host space to preallocate $image (${toString cfg.diskSize} MiB)" >&2
-              exit 1
-            }
-          fi
         fi
+        # nodiscard: by default mkfs discards the whole device, which on a
+        # regular file punches holes and undoes the preallocation above.
+        ${pkgs.e2fsprogs}/bin/mkfs.ext4 -F -q -E nodiscard "$image" || {
+          echo "runner-vm: failed to format scratch image $image" >&2
+          exit 1
+        }
       '';
       vcpu = cfg.vcpu;
       mem = cfg.mem;
@@ -191,8 +190,7 @@ in
       # Container storage, the runner install, the workspace and job temp
       # files live on this scratch volume, not the tmpfs root: the runner image
       # alone is ~1.4 GiB uncompressed and the root is half the guest's RAM.
-      # The host creates, formats and fully allocates it before boot; the guest
-      # wipes the store each boot without returning the reservation.
+      # The host fully allocates it and formats it fresh before every boot.
       volumes = [
         {
           image = diskImage;
