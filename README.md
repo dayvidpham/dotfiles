@@ -75,7 +75,7 @@ Rebuild the current machine without invoking system change detection by hand:
 
 ```bash
 ./switch.sh          # home-manager switch --flake .   (default)
-./switch.sh nixos    # build, then sudo nixos-rebuild switch --store-path <built system>
+./switch.sh nixos    # sudo nixos-rebuild switch --flake .  (after a drain check)
 ```
 
 `./switch.sh nixos` builds the system first and asks it (`switch-to-configuration

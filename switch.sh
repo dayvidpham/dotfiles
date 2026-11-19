@@ -79,7 +79,8 @@ trap cleanup EXIT
 if [[ $# -eq 0 || "$1" = "home" ]]; then
    home-manager switch --flake . |& nom
 elif [[ "$1" = "nixos" ]]; then
-   # Build first so the drain decision and the switch use the same system.
+   # Build first so the drain decision can inspect the new system; the switch
+   # below reuses the built store paths.
    # Pipe plain output into nom rather than `nom build`: that mode reads nix's
    # JSON log, which newer (Determinate) Nix extends with activity types nom
    # cannot parse.
@@ -96,10 +97,7 @@ elif [[ "$1" = "nixos" ]]; then
    else
       echo 'Runner pool units are unchanged by this switch; not draining.'
    fi
-   # --no-reexec: with --store-path there is no flake to rebuild nixos-rebuild
-   # from, so its self-update falls back to NIX_PATH's nixos-config, which is
-   # flake.nix here and does not evaluate as a NixOS module.
-   sudo nixos-rebuild switch --store-path "$new_system" --no-reexec
+   sudo nixos-rebuild switch --flake . |& nom
 elif [[ $# -gt 1 ]]; then
    echo 'ERROR: Zero or one argument [--no-drain] [home|nixos] only, home if no arguments given'
 fi
