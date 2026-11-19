@@ -133,6 +133,9 @@ in
     };
     services.gnome.gnome-keyring.enable = true;
     security.pam.services.greetd.enableGnomeKeyring = true;
+    # If the login keyring was started without a password (e.g. D-Bus
+    # activation after the session ended), unlocking the screen unlocks it too.
+    security.pam.services.swaylock.enableGnomeKeyring = true;
 
     #####################################################
     # Package management, packages
