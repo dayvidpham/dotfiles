@@ -80,9 +80,13 @@ if [[ $# -eq 0 || "$1" = "home" ]]; then
    home-manager switch --flake . |& nom
 elif [[ "$1" = "nixos" ]]; then
    # Build first so the drain decision and the switch use the same system.
+   # Pipe plain output into nom rather than `nom build`: that mode reads nix's
+   # JSON log, which newer (Determinate) Nix extends with activity types nom
+   # cannot parse.
    build_dir=$(mktemp -d)
-   nom build ".#nixosConfigurations.$(hostname).config.system.build.toplevel" \
-      --out-link "$build_dir/system" || exit 1
+   nix build ".#nixosConfigurations.$(hostname).config.system.build.toplevel" \
+      --out-link "$build_dir/system" |& nom
+   (( PIPESTATUS[0] == 0 )) || exit 1
    new_system=$(readlink -f "$build_dir/system")
 
    if [[ "$no_drain" = 1 || "${SWITCH_NO_DRAIN:-0}" = 1 ]]; then
