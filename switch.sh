@@ -96,7 +96,10 @@ elif [[ "$1" = "nixos" ]]; then
    else
       echo 'Runner pool units are unchanged by this switch; not draining.'
    fi
-   sudo nixos-rebuild switch --store-path "$new_system"
+   # --no-reexec: with --store-path there is no flake to rebuild nixos-rebuild
+   # from, so its self-update falls back to NIX_PATH's nixos-config, which is
+   # flake.nix here and does not evaluate as a NixOS module.
+   sudo nixos-rebuild switch --store-path "$new_system" --no-reexec
 elif [[ $# -gt 1 ]]; then
    echo 'ERROR: Zero or one argument [--no-drain] [home|nixos] only, home if no arguments given'
 fi
