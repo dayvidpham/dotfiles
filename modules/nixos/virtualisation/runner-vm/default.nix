@@ -298,7 +298,7 @@ in
           # takes the DHCP server and the guest route with it.
           ConfigureWithoutCarrier = true;
         };
-        addresses = [ { addressConfig.Address = "${cfg.network.subnet}.1/24"; } ];
+        addresses = [ { Address = "${cfg.network.subnet}.1/24"; } ];
       };
       systemd.network.networks."11-runner-vm-taps" = {
         matchConfig.Name = "runner-vm-*";

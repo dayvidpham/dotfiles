@@ -37,13 +37,11 @@ in
     systemd.services.podman-restart.wantedBy = [ "multi-user.target" ];
     systemd.user.services.podman-restart.wantedBy = [ "multi-user.target" ];
 
+    # Allows `podman run --device nvidia.com/gpu=all` through the toolkit's CDI
+    # spec. Gated because the toolkit module asserts an NVIDIA driver is
+    # present, so enabling it on a GPU-less host would fail evaluation.
     hardware.nvidia-container-toolkit = mkIf (config.CUSTOM.hardware.nvidia.enable && config.CUSTOM.hardware.nvidia.proprietaryDrivers.enable) {
       enable = true;
     };
-
-    # Allow `podman run --device nvidia.com/gpu=all`. Gated on the same
-    # condition as the toolkit: the toolkit module asserts an NVIDIA driver
-    # is present, so enabling this on a GPU-less host would fail evaluation.
-    virtualisation.podman.enableNvidia = mkIf (config.CUSTOM.hardware.nvidia.enable && config.CUSTOM.hardware.nvidia.proprietaryDrivers.enable) true;
   };
 }
