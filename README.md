@@ -75,12 +75,16 @@ Rebuild the current machine without invoking system change detection by hand:
 
 ```bash
 ./switch.sh          # home-manager switch --flake .   (default)
-./switch.sh nixos    # sudo nixos-rebuild switch --flake .
+./switch.sh nixos    # build, then sudo nixos-rebuild switch --store-path <built system>
 ```
 
-`./switch.sh nixos` drains the GitHub runner pool first when the
-`github-runner-drain` helper is on `PATH`; set `SWITCH_NO_DRAIN=1` to skip that
-(for example on the first rebuild that introduces the pool module).
+`./switch.sh nixos` builds the system first and asks it (`switch-to-configuration
+dry-activate`) which units the switch would stop or restart. It drains the
+microVM runner pool only when that includes `runner-dispatcher`, a
+`microvm*@runner-vm-*` unit or `runner-vm.slice`, and it drains when the plan
+cannot be computed. If it stopped the dispatcher, it starts it again on every
+exit path, including an aborted drain or a failed switch. Pass `--no-drain` or
+set `SWITCH_NO_DRAIN=1` to skip the drain entirely.
 
 The equivalent explicit commands:
 

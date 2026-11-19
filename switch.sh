@@ -40,19 +40,59 @@ drain_runner_vms() {
    return 0
 }
 
+# Ask the built system which units a switch would stop or restart, and drain
+# only when that touches the pool. A started or reloaded unit does not
+# interrupt a job. Declarative microVMs restart on any guest change, so a guest
+# change shows up here as a microvm@runner-vm-* restart. If the plan cannot be
+# computed, assume the pool is affected.
+runner_pool_affected() {
+   local plan touched
+
+   if ! plan=$(sudo "$1/bin/switch-to-configuration" dry-activate 2>&1); then
+      echo 'WARNING: could not compute the switch plan (dry-activate failed); draining to be safe.' >&2
+      return 0
+   fi
+   touched=$(grep -E '^would (stop|restart) the following units:' <<<"$plan" \
+      | grep -oE '(runner-dispatcher[^ ,]*|microvm[^ ,]*@runner-vm-[^ ,]*|runner-vm\.slice)' \
+      | sort -u)
+   if [[ -n "$touched" ]]; then
+      echo 'This switch stops or restarts runner pool units:'
+      sed 's/^/   /' <<<"$touched"
+      return 0
+   fi
+   return 1
+}
+
+# A rebuild does not start a unit that was stopped for the drain. Restart it on
+# every exit path, including an aborted drain or a failed build or switch, so
+# the pool never stays down after this script.
+build_dir=
+cleanup() {
+   if [[ $dispatcher_was_active = 1 ]]; then
+      echo 'Restarting the runner dispatcher.'
+      sudo systemctl start runner-dispatcher.service
+   fi
+   [[ -n "$build_dir" ]] && rm -rf "$build_dir"
+}
+trap cleanup EXIT
+
 if [[ $# -eq 0 || "$1" = "home" ]]; then
    home-manager switch --flake . |& nom
 elif [[ "$1" = "nixos" ]]; then
+   # Build first so the drain decision and the switch use the same system.
+   build_dir=$(mktemp -d)
+   nom build ".#nixosConfigurations.$(hostname).config.system.build.toplevel" \
+      --out-link "$build_dir/system" || exit 1
+   new_system=$(readlink -f "$build_dir/system")
+
    if [[ "$no_drain" = 1 || "${SWITCH_NO_DRAIN:-0}" = 1 ]]; then
       echo 'NOTICE: drain skipped (--no-drain or SWITCH_NO_DRAIN=1); in-flight runner jobs may be interrupted.'
-   else
+   elif runner_pool_affected "$new_system"; then
       drain_runner_vms || exit 1
+   else
+      echo 'Runner pool units are unchanged by this switch; not draining.'
    fi
-   sudo nixos-rebuild switch --flake . |& nom
-   # A rebuild does not start a unit that was stopped for the drain.
-   if [[ $dispatcher_was_active = 1 ]]; then
-      sudo systemctl start runner-dispatcher.service
-   fi
+   sudo nixos-rebuild switch --store-path "$new_system"
 elif [[ $# -gt 1 ]]; then
    echo 'ERROR: Zero or one argument [--no-drain] [home|nixos] only, home if no arguments given'
 fi
