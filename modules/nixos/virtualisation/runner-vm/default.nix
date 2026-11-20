@@ -107,13 +107,13 @@ in
       '';
       default = pkgs.dockerTools.pullImage {
         imageName = "quay.io/peasant-labs/github-runner";
-        imageDigest = "sha256:078b20f289f2852c45a92b862894536624b90e759ce9ff2e405b12db9ca565ae";
+        imageDigest = "sha256:2ed732ce969039005d32a279fe05ece6b312766c19372d9b0dbc04d863a8d39a";
         finalImageTag = "pinned";
         os = "linux";
         arch = "amd64";
         # Output hash of the fetched image tarball; re-fetched and re-hashed
         # whenever the digest or the dockerTools implementation changes.
-        sha256 = "sha256-Xa6JMWt7SQmmyb58IsoqT2DsuGxm5ozWrD41kwaQ2aE=";
+        sha256 = "sha256-gwqaf2HO1ZEU6wWhaAMe7O+Sz4dDrsu1/5jfVp1cK8g=";
       };
     };
 
