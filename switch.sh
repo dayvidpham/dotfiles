@@ -67,7 +67,9 @@ runner_pool_affected() {
 # every exit path, including an aborted drain or a failed build or switch, so
 # the pool never stays down after this script.
 build_dir=
+sudo_keepalive_pid=
 cleanup() {
+   [[ -n "$sudo_keepalive_pid" ]] && kill "$sudo_keepalive_pid" 2>/dev/null
    if [[ $dispatcher_was_active = 1 ]]; then
       echo 'Restarting the runner dispatcher.'
       sudo systemctl start runner-dispatcher.service
@@ -79,6 +81,13 @@ trap cleanup EXIT
 if [[ $# -eq 0 || "$1" = "home" ]]; then
    home-manager switch --flake . |& nom
 elif [[ "$1" = "nixos" ]]; then
+   # Ask for the sudo password up front, then keep the credential fresh while
+   # the build and the drain run, so the dry-activate, drain and switch steps
+   # never stop to prompt partway through.
+   sudo -v || exit 1
+   while kill -0 "$$" 2>/dev/null; do sudo -n -v 2>/dev/null; sleep 60; done &
+   sudo_keepalive_pid=$!
+
    # Build first so the drain decision can inspect the new system; the switch
    # below reuses the built store paths.
    # Pipe plain output into nom rather than `nom build`: that mode reads nix's
