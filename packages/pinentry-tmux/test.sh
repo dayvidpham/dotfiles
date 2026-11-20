@@ -3,10 +3,12 @@
 #
 #   ./test.sh [path/to/pinentry.sh]
 #
-# Test 1 (stubs): verifies ttyname rewriting for pane, client, and unusable
+# Tests 1-6 (stubs): verify ttyname rewriting for pane, client, and unusable
 # ttys, pass-through for plain terminals, the no-client failure, and popup
 # teardown.
-# Test 2 (integration): verifies the popup dance against a real isolated tmux
+# Tests 7-9 (stubs): verify the popup follows the newest client across
+# sessions and the Qt prompt uses the requesting terminal's display.
+# Tests 10-11 (integration): verify the popup dance against a real isolated tmux
 # server with a scripted attached client (skipped when tmux/script are absent).
 #
 # The tests deliberately target an isolated tmux server via an unset $TMUX and
@@ -26,6 +28,9 @@ test_sock="$tmp/sock"
 tmux_test() { TMUX_TMPDIR="$test_sock" env -u TMUX tmux "$@"; }
 
 cleanup() {
+  if [ -s "$tmp/pids" ]; then
+    xargs kill < "$tmp/pids" 2> /dev/null || true
+  fi
   tmux_test kill-server 2> /dev/null || true
   rm -rf "$tmp"
 }
@@ -51,7 +56,11 @@ case "$sub" in
     ;;
   list-clients)
     [ -n "${STUB_NO_CLIENTS:-}" ] && exit 0
-    printf '/dev/pts/46 test-session 1000\n'
+    if [ -n "${STUB_CLIENTS:-}" ]; then
+      printf '%s\n' "$STUB_CLIENTS"
+    else
+      printf '/dev/pts/46 test-session 1000\n'
+    fi
     ;;
   list-panes)
     printf '%s test-session\n' "${STUB_PANE_TTY:-/dev/pts/16}"
@@ -60,6 +69,10 @@ case "$sub" in
     ttyfifo=""; donefifo=""
     while [ $# -gt 0 ]; do
       case "$1" in
+        -c)
+          printf 'popup-client=%s\n' "$2" >> "$STUB_LOG"
+          shift 2
+          ;;
         -e)
           case "$2" in
             PINENTRY_TTY_FIFO=*) ttyfifo="${2#PINENTRY_TTY_FIFO=}" ;;
@@ -97,9 +110,20 @@ done
 EOF
 chmod +x "$tmp/stubpin/pinentry-curses"
 
+# pinentry-qt only records which display it would have drawn on.
+cat > "$tmp/stubpin/pinentry-qt" <<'EOF'
+#!/usr/bin/env bash
+printf 'qt runtime=%s wayland=%s\n' "${XDG_RUNTIME_DIR:-}" "${WAYLAND_DISPLAY:-}" >> "$STUB_LOG"
+printf 'OK stub-qt\n'
+while IFS= read -r line; do
+  case "$line" in BYE*) printf 'OK bye\n'; exit 0 ;; esac
+done
+EOF
+chmod +x "$tmp/stubpin/pinentry-qt"
+
 stub_run() { # <log> <extra env>... -- reads stdin
   local log="$1"; shift
-  env -u TMUX STUB_LOG="$log" "$@" PATH="$tmp/stubtmux:$tmp/stubpin:$PATH" "$shim"
+  env -u TMUX -u GPG_TTY STUB_LOG="$log" "$@" PATH="$tmp/stubtmux:$tmp/stubpin:$PATH" "$shim"
 }
 
 # --- test 1: pane tty is rewritten to the popup tty ------------------------
@@ -166,9 +190,71 @@ log_has '^OPTION ttyname=/dev/null$' "$tmp/log6" "plain ttyname should pass thro
 log_lacks '^popup-closed$' "$tmp/log6" "popup must not be opened without an attached client"
 echo "ok 6 - no client, plain terminal passes through"
 
-# --- test 7 (integration): real tmux server + scripted attached client -----
+# --- test 7: pane popup goes to the newest client, in any session ----------
+# The pane's session is shown only by an idle client; the user last typed in
+# a client of another session (the remote session, say).
+: > "$tmp/log7"
+printf 'OPTION ttyname=/dev/pts/16\nBYE\n' |
+  stub_run "$tmp/log7" STUB_CLIENTS="$(printf '%s\n' \
+    '/dev/pts/46 test-session 1000' \
+    '/dev/pts/47 other-session 2000')" > "$tmp/out7" 2>&1 ||
+  fail "shim exited nonzero (test 7)"
+
+log_has '^popup-client=/dev/pts/47$' "$tmp/log7" "popup did not follow the most recently active client"
+log_has '^OPTION ttyname=/dev/pts/99$' "$tmp/log7" "pane ttyname was not rewritten (test 7)"
+echo "ok 7 - pane popup follows the newest client across sessions"
+
+# --- tests 8-9: the Qt prompt uses the requesting terminal's display -------
+# Both runtime dirs hold a wayland-1 socket, as the desktop and the remote
+# session do. The agent's environment points at the desktop's.
+if command -v script > /dev/null && command -v python3 > /dev/null; then
+  mkdir -p "$tmp/rt-agent" "$tmp/rt-requester"
+  for dir in "$tmp/rt-agent" "$tmp/rt-requester"; do
+    python3 -c 'import socket, sys; socket.socket(socket.AF_UNIX).bind(sys.argv[1])' "$dir/wayland-1"
+  done
+
+  # Hold a terminal open whose processes carry the given environment, and
+  # print its tty.
+  hold_tty() { # <name> <env assignments>...
+    local name="$1"; shift
+    env -i PATH="$PATH" "$@" script -qec 'tty > "$TTY_OUT"; exec sleep 30' /dev/null \
+      < /dev/null > /dev/null 2>&1 &
+    printf '%s\n' "$!" >> "$tmp/pids"
+    for _ in $(seq 1 50); do
+      [ -s "$tmp/$name.tty" ] && break
+      sleep 0.1
+    done
+    [ -s "$tmp/$name.tty" ] || fail "could not open a test terminal ($name)"
+    cat "$tmp/$name.tty"
+  }
+
+  remote_tty="$(hold_tty remote TTY_OUT="$tmp/remote.tty" \
+    XDG_RUNTIME_DIR="$tmp/rt-requester" WAYLAND_DISPLAY=wayland-1)"
+  : > "$tmp/log8"
+  printf 'OPTION ttyname=%s\nBYE\n' "$remote_tty" |
+    stub_run "$tmp/log8" STUB_NO_CLIENTS=1 GPG_TTY="$remote_tty" \
+      XDG_RUNTIME_DIR="$tmp/rt-agent" WAYLAND_DISPLAY=wayland-1 > "$tmp/out8" 2>&1 ||
+    fail "shim exited nonzero (test 8)"
+  log_has "^qt runtime=$tmp/rt-requester wayland=wayland-1\$" "$tmp/log8" \
+    "Qt prompt did not use the requesting terminal's display"
+  echo "ok 8 - Qt prompt opens on the requesting terminal's display"
+
+  bare_tty="$(hold_tty bare TTY_OUT="$tmp/bare.tty" XDG_RUNTIME_DIR="$tmp/rt-requester")"
+  : > "$tmp/log9"
+  printf 'OPTION ttyname=%s\nBYE\n' "$bare_tty" |
+    stub_run "$tmp/log9" STUB_NO_CLIENTS=1 GPG_TTY="$bare_tty" \
+      XDG_RUNTIME_DIR="$tmp/rt-agent" WAYLAND_DISPLAY=wayland-1 > "$tmp/out9" 2>&1 ||
+    fail "shim exited nonzero (test 9)"
+  log_lacks '^qt ' "$tmp/log9" "a display-less terminal must not get a Qt prompt on the agent's display"
+  log_has "^OPTION ttyname=$bare_tty\$" "$tmp/log9" "display-less terminal should keep its own tty"
+  echo "ok 9 - display-less terminal stays on its tty"
+else
+  echo "skip 8-9 - display tests need script and python3"
+fi
+
+# --- test 10 (integration): real tmux server + scripted attached client -----
 if ! command -v tmux > /dev/null || ! command -v script > /dev/null; then
-  echo "skip 7 - integration test needs tmux and script"
+  echo "skip 10-11 - integration tests need tmux and script"
   exit 0
 fi
 
@@ -190,28 +276,28 @@ for _ in $(seq 1 50); do
 done
 tmux_test list-clients 2> /dev/null | grep -q . || fail "scripted tmux client did not attach"
 
-: > "$tmp/log7"
+: > "$tmp/log10"
 printf 'OPTION ttyname=%s\nBYE\n' "$pane_tty" |
-  env -u TMUX TMUX_TMPDIR="$test_sock" STUB_LOG="$tmp/log7" PATH="$tmp/stubpin:$PATH" "$shim" > "$tmp/out7" 2>&1 ||
+  env -u TMUX -u GPG_TTY -u WAYLAND_DISPLAY -u DISPLAY TMUX_TMPDIR="$test_sock" STUB_LOG="$tmp/log10" PATH="$tmp/stubpin:$PATH" "$shim" > "$tmp/out10" 2>&1 ||
   fail "shim exited nonzero (integration, pane)"
 
-rewritten="$(sed -n 's/^OPTION ttyname=//p' "$tmp/log7")"
+rewritten="$(sed -n 's/^OPTION ttyname=//p' "$tmp/log10")"
 [ -n "$rewritten" ] || fail "integration: ttyname line was not forwarded"
 [ "$rewritten" != "$pane_tty" ] || fail "integration: ttyname was not rewritten"
 case "$rewritten" in /dev/pts/*) ;; *) fail "integration: popup tty looks wrong: $rewritten" ;; esac
-log_has '^tty-exists$' "$tmp/log7" "integration: rewritten tty is not an open terminal"
-log_has '^BYE$' "$tmp/log7" "integration: BYE was not forwarded"
-echo "ok 7 - real tmux popup integration, pane tty ($pane_tty -> $rewritten)"
+log_has '^tty-exists$' "$tmp/log10" "integration: rewritten tty is not an open terminal"
+log_has '^BYE$' "$tmp/log10" "integration: BYE was not forwarded"
+echo "ok 10 - real tmux popup integration, pane tty ($pane_tty -> $rewritten)"
 
-# --- test 8 (integration): unusable tty falls back to the real client ------
-: > "$tmp/log8"
+# --- test 11 (integration): unusable tty falls back to the real client ------
+: > "$tmp/log11"
 printf 'OPTION ttyname=/dev/pts/no-such-tty\nBYE\n' |
-  env -u TMUX TMUX_TMPDIR="$test_sock" STUB_LOG="$tmp/log8" PATH="$tmp/stubpin:$PATH" "$shim" > "$tmp/out8" 2>&1 ||
+  env -u TMUX -u GPG_TTY -u WAYLAND_DISPLAY -u DISPLAY TMUX_TMPDIR="$test_sock" STUB_LOG="$tmp/log11" PATH="$tmp/stubpin:$PATH" "$shim" > "$tmp/out11" 2>&1 ||
   fail "shim exited nonzero (integration, unusable tty)"
 
-rewritten8="$(sed -n 's/^OPTION ttyname=//p' "$tmp/log8")"
-[ -n "$rewritten8" ] || fail "integration: ttyname line was not forwarded for the unusable tty"
-[ "$rewritten8" != "/dev/pts/no-such-tty" ] || fail "integration: unusable ttyname was not rewritten"
-case "$rewritten8" in /dev/pts/*) ;; *) fail "integration: popup tty looks wrong: $rewritten8" ;; esac
-log_has '^tty-exists$' "$tmp/log8" "integration: rewritten tty is not an open terminal"
-echo "ok 8 - real tmux popup integration, unusable tty ($rewritten8)"
+rewritten11="$(sed -n 's/^OPTION ttyname=//p' "$tmp/log11")"
+[ -n "$rewritten11" ] || fail "integration: ttyname line was not forwarded for the unusable tty"
+[ "$rewritten11" != "/dev/pts/no-such-tty" ] || fail "integration: unusable ttyname was not rewritten"
+case "$rewritten11" in /dev/pts/*) ;; *) fail "integration: popup tty looks wrong: $rewritten11" ;; esac
+log_has '^tty-exists$' "$tmp/log11" "integration: rewritten tty is not an open terminal"
+echo "ok 11 - real tmux popup integration, unusable tty ($rewritten11)"

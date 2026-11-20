@@ -12,8 +12,8 @@
 # `OPTION ttyname` to point pinentry at that pty. The popup client is chosen
 # from the request:
 #
-#   - the tty is a live tmux pane: the most recently active attached client
-#     of that pane's session, else any attached client;
+#   - the tty is a live tmux pane: the most recently active attached client,
+#     in any session (where the user last typed);
 #   - the tty is a tmux client tty: that client;
 #   - the tty is a plain terminal: no popup, pinentry-curses uses the tty;
 #   - the tty is empty or unusable (ssh-agent requests carry no tty): the
@@ -32,6 +32,29 @@
 # The display check is deliberately conservative: pinentry-qt selects GUI mode
 # from WAYLAND_DISPLAY/XDG_SESSION_TYPE and does not retry curses if Qt init
 # fails, so require an actual display socket instead of trusting the variable.
+#
+# gpg-agent forwards the requester's WAYLAND_DISPLAY but not XDG_RUNTIME_DIR,
+# and falls back to its own environment for anything the requester did not
+# send. The agent's environment belongs to whichever session started it, and
+# two compositors can use the same socket name in different runtime dirs (the
+# desktop and the remote session both use wayland-1). So when the requesting
+# terminal is known, its own display settings are authoritative: the prompt
+# opens on the display that terminal is on, or on none if it has none.
+
+# Replace the display variables with those of the oldest process on the
+# requesting tty (the shell the terminal started).
+adopt_requester_display() {
+  local tty="${GPG_TTY:-}" pid entry
+  [ -n "$tty" ] && [ -c "$tty" ] || return 0
+  pid="$(ps -t "${tty#/dev/}" -o pid= --sort=start_time 2> /dev/null | head -n 1 | tr -d ' ')"
+  [ -n "$pid" ] && [ -r "/proc/$pid/environ" ] || return 0
+  unset WAYLAND_DISPLAY DISPLAY
+  while IFS= read -r -d '' entry; do
+    case "$entry" in
+      XDG_RUNTIME_DIR=* | WAYLAND_DISPLAY=* | DISPLAY=*) export "${entry?}" ;;
+    esac
+  done < "/proc/$pid/environ"
+}
 
 # Is a graphical session actually reachable from this process?
 have_display() {
@@ -76,6 +99,8 @@ tty_is_tmux_pane() {
   return 1
 }
 
+adopt_requester_display
+
 # No server means no popup is possible: a graphical session still gets Qt,
 # everything else stays transparent on the requested tty.
 if ! resolve_tmux; then
@@ -94,54 +119,36 @@ pane_rows() { tmux list-panes -a -F '#{pane_tty} #{session_name}' 2> /dev/null |
 client_rows() { tmux list-clients -F '#{client_tty} #{client_session} #{client_activity}' 2> /dev/null || true; }
 
 is_pane_tty() {
-  local want="$1" tty session
-  while read -r tty session; do
+  local want="$1" tty
+  while read -r tty _; do
     [ "$tty" = "$want" ] && return 0
   done < <(pane_rows)
   return 1
 }
 
 is_client_tty() {
-  local want="$1" tty session activity
-  while read -r tty session activity; do
+  local want="$1" tty
+  while read -r tty _; do
     [ "$tty" = "$want" ] && return 0
   done < <(client_rows)
   return 1
 }
 
-session_for_pane() {
-  local want="$1" tty session
-  while read -r tty session; do
-    if [ "$tty" = "$want" ]; then
-      printf '%s\n' "$session"
-      return 0
-    fi
-  done < <(pane_rows)
-  return 1
-}
-
-# Print the most recently active attached client, optionally of one session.
+# Print the most recently active attached client, in any session. tmux updates
+# client_activity on input, so this is the terminal the user last typed in. It
+# follows the user between terminals (the desktop and a remote session, say)
+# even when the request comes from a pane in a session that only other
+# terminals show, such as an agent committing in the background.
 newest_client() {
-  local session="${1:-}" tty csession activity best=-1 found=""
-  while read -r tty csession activity; do
-    if { [ -z "$session" ] || [ "$csession" = "$session" ]; } &&
-      [ "${activity:-0}" -gt "$best" ]; then
+  local tty activity best=-1 found=""
+  while read -r tty _ activity; do
+    if [ "${activity:-0}" -gt "$best" ]; then
       best="${activity:-0}"
       found="$tty"
     fi
   done < <(client_rows)
   [ -n "$found" ] || return 1
   printf '%s\n' "$found"
-}
-
-# Print the client to show the popup on: the pane's session first, else the
-# most recently active attached client.
-pick_client() {
-  local pane_tty="$1" session
-  if session="$(session_for_pane "$pane_tty")" && [ -n "$session" ]; then
-    newest_client "$session" && return 0
-  fi
-  newest_client
 }
 
 scratch="$(mktemp -d "${TMPDIR:-/tmp}/pinentry-tmux.XXXXXX")"
@@ -202,7 +209,7 @@ start_popup() {
 decide_surface() {
   local tty="$1" client=""
   if is_pane_tty "$tty"; then
-    client="$(pick_client "$tty")" || true
+    client="$(newest_client)" || true
   elif is_client_tty "$tty"; then
     client="$tty"
   elif [ -c "$tty" ]; then

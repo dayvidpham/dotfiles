@@ -1,5 +1,6 @@
 { writeShellApplication
 , coreutils
+, procps
 , tmux
 , pinentry-curses
 , pinentry-qt
@@ -10,7 +11,7 @@
 # refuse to talk to the running server.
 writeShellApplication {
   name = "pinentry";
-  runtimeInputs = [ coreutils tmux pinentry-curses pinentry-qt ];
+  runtimeInputs = [ coreutils procps tmux pinentry-curses pinentry-qt ];
 
   # SC2016: the popup command is single-quoted on purpose; tmux expands it.
   excludeShellChecks = [ "SC2016" ];
