@@ -279,22 +279,6 @@ in
   };
   systemd.sockets.harmonia.socketConfig.FreeBind = true;
 
-  # Defense-in-depth host firewall for Harmonia (port 5000): tailscale0 is a
-  # trusted interface in nixos-fw, so enforce an explicit Tailscale IP allowlist
-  # in a dedicated inet table (evaluated independently of nixos-fw).
-  # Allowed peers: desktop itself (lo), hs0 (100.64.0.2), flowX13 (100.64.0.6).
-  networking.nftables.tables.harmonia-acl = {
-    family = "inet";
-    content = ''
-      chain input {
-        type filter hook input priority filter - 1; policy accept;
-        tcp dport 5000 iifname "lo" accept
-        tcp dport 5000 iifname "tailscale0" ip saddr { 100.64.0.2, 100.64.0.6 } accept
-        tcp dport 5000 drop
-      }
-    '';
-  };
-
   ######################################
   # Window manager & GPU
   #programs.hyprland.enable = false;
