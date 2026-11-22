@@ -23,5 +23,6 @@
     ./remote-audio-client
     ./dictate
     ./moonlight
+    ./obs
   ];
 }

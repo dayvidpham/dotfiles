@@ -90,10 +90,7 @@ in
   ]
   ;
 
-  programs.obs-studio.enable = true;
-  # OBS reads cudaSupport only to add autoAddDriverRunpath; keep it scoped
-  # here instead of globally (see flake.nix nixpkgs-options).
-  programs.obs-studio.package = pkgs.obs-studio.override { cudaSupport = true; };
+  CUSTOM.programs.obs.enable = true;
 
   # Node 24 is the global toolchain: OpenDesign's native modules are built for
   # the Node 24 ABI, and the browser tooling (agent-browser, Playwright MCP)
