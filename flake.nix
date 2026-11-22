@@ -71,6 +71,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    linear-cli = {
+      url = "github:schpet/linear-cli";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+    };
+
     #----------------------------------------
     # My stuff
 
@@ -138,6 +143,7 @@
     , llm-agents
     , microvm
     , nix-openclaw
+    , linear-cli
     , sops-nix
     , zig-flake
     , zls
@@ -177,6 +183,7 @@
           })
 
           nix-openclaw.overlays.default
+          linear-cli.overlays.default
 
           # Override openclaw to disable extended tools (whisper/torch/triton)
           # Note: nodejs/pnpm excluded to avoid collision with system packages

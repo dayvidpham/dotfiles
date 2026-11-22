@@ -601,6 +601,26 @@
         "type": "github"
       }
     },
+    "linear-cli": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs-unstable"
+        ]
+      },
+      "locked": {
+        "lastModified": 1794952650,
+        "narHash": "sha256-DIOIA00c9L4SkF1u4M3+XNA/4fJXhevL5RDcDzclZIg=",
+        "owner": "schpet",
+        "repo": "linear-cli",
+        "rev": "aa4cc2b60d5c0068028872ce25a4a34340cf053e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "schpet",
+        "repo": "linear-cli",
+        "type": "github"
+      }
+    },
     "llm-agents": {
       "inputs": {
         "bun2nix": "bun2nix",
@@ -1224,6 +1244,7 @@
         "home-manager": "home-manager",
         "home-manager-wsl": "home-manager-wsl",
         "infra": "infra",
+        "linear-cli": "linear-cli",
         "llm-agents": "llm-agents",
         "microvm": "microvm",
         "niri": "niri",
