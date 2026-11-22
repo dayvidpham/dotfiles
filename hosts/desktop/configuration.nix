@@ -252,18 +252,10 @@ in
   # Package management
   # cudaSupport is deliberately not global; see flake.nix nixpkgs-options.
 
-  # Use desktop's /nix/ store as nix cache served over ssh
-  nix.sshServe.enable = true;
-  nix.sshServe.trusted = true;
-  nix.sshServe.write = true;
-  nix.sshServe.protocol = "ssh-ng";
-
-  # Remote users allowed to access the store
-  nix.sshServe.keys = [
-    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHokUTC0zB6bZvqRtXG8GAekzCLjvsSBNXL2Y/tBmyI7 root@flowX13"
-    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFE9Bzi5oGzx9d68d4lVLgo/d1GypUwE7MhAQ7Z32LlR minttea@flowX13"
-    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILbeKlRuPta2IE0KFAMf4ia7NwCSLoqhr6dgJhHpoJed root@hs0"
-  ];
+  # Disabled: replaced by read-only Harmonia HTTP binary cache below.
+  # Keeping sshServe disabled avoids granting remote hosts `trusted-users`
+  # (root-equivalent) access to desktop's nix-daemon.
+  nix.sshServe.enable = false;
 
   nix.settings.allowed-users = [
     "minttea"
@@ -286,6 +278,22 @@ in
     };
   };
   systemd.sockets.harmonia.socketConfig.FreeBind = true;
+
+  # Defense-in-depth host firewall for Harmonia (port 5000): tailscale0 is a
+  # trusted interface in nixos-fw, so enforce an explicit Tailscale IP allowlist
+  # in a dedicated inet table (evaluated independently of nixos-fw).
+  # Allowed peers: desktop itself (lo), hs0 (100.64.0.2), flowX13 (100.64.0.6).
+  networking.nftables.tables.harmonia-acl = {
+    family = "inet";
+    content = ''
+      chain input {
+        type filter hook input priority filter - 1; policy accept;
+        tcp dport 5000 iifname "lo" accept
+        tcp dport 5000 iifname "tailscale0" ip saddr { 100.64.0.2, 100.64.0.6 } accept
+        tcp dport 5000 drop
+      }
+    '';
+  };
 
   ######################################
   # Window manager & GPU
