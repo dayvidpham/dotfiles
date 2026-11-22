@@ -145,6 +145,7 @@ rec {
 
     # Utils
     pass # standard unix password manager (backs pass-secret-service)
+    libsecret # secret-tool CLI for Freedesktop Secret Service
     mprocs # multi-processor manager TUI
     gh # GitHub CLI tool
     glab # GitLab CLI tool
