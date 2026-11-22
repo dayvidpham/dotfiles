@@ -216,7 +216,7 @@ trap 'exit 130' INT TERM HUP
 # pty directly.
 start_popup() {
   local client="$1"
-  tmux display-popup -c "$client" \
+  tmux display-popup -c "$client" -w 80 -h 16 \
     -e "PINENTRY_TTY_FIFO=$scratch/tty" \
     -e "PINENTRY_DONE_FIFO=$scratch/done" \
     -E 'printf "%s\n" "$(tty)" > "$PINENTRY_TTY_FIFO"; read -r _ < "$PINENTRY_DONE_FIFO"' &
@@ -288,6 +288,7 @@ relay_assuan_reply 1 || exit 1
 # Wait for the first OPTION ttyname (or the first real command) before
 # deciding, so the tty is known when the agent sends it.
 decided=0
+saw_ttytype=0
 while :; do
   rc=0
   IFS= read -r -t 0.5 line || rc=$?
@@ -304,6 +305,11 @@ while :; do
           fi
           start_out_relay
           printf '%s\n' "$line" >&8 || break
+          ;;
+        'OPTION ttytype='*)
+          saw_ttytype=1
+          printf '%s\n' "$line" >&8 || break
+          relay_assuan_reply 1 || break
           ;;
         OPTION | OPTION\ *)
           printf '%s\n' "$line" >&8 || break
@@ -322,6 +328,10 @@ while :; do
           if [ -n "$popupTty" ]; then
             printf 'OPTION ttyname=%s\n' "$popupTty" >&8 || break
             relay_assuan_reply 0 || break
+            if [ -z "${GPG_TTY:-}" ] && [ "$saw_ttytype" -eq 0 ]; then
+              printf 'OPTION ttytype=tmux-256color\n' >&8 || break
+              relay_assuan_reply 0 || break
+            fi
           fi
           start_out_relay
           printf '%s\n' "$line" >&8 || break

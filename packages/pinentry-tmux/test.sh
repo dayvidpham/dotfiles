@@ -267,8 +267,9 @@ if command -v script > /dev/null && command -v python3 > /dev/null; then
   log_lacks '^qt ' "$tmp/log10a" "empty GPG_TTY with an attached tmux client must not open Qt on the agent display"
   log_has '^popup-client=/dev/pts/47$' "$tmp/log10a" "empty GPG_TTY did not route to the most recently active tmux client"
   log_has '^OPTION ttyname=/dev/pts/99$' "$tmp/log10a" "empty GPG_TTY did not inject OPTION ttyname for pinentry-curses"
+  log_has '^OPTION ttytype=tmux-256color$' "$tmp/log10a" "empty GPG_TTY did not inject OPTION ttytype=tmux-256color"
   [ "$(wc -l < "$tmp/out10a")" -eq 4 ] || fail "test 10a Assuan reply count drifted (expected 4: greeting + OPTION grab + GETPIN + BYE)"
-  echo "ok 10a - empty GPG_TTY routes to the active tmux client and injects OPTION ttyname"
+  echo "ok 10a - empty GPG_TTY routes to the active tmux client and injects OPTION ttyname + ttytype"
 
   # --- test 11: empty GPG_TTY with no tmux client falls back to remote Qt ----
   : > "$tmp/log10b"
