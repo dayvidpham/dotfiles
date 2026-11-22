@@ -24,7 +24,7 @@ module is not enabled there).
    The exact YAML key required is:
 
    ```yaml
-   gitlab_registry_pat: <your-gitlab-pat>
+   gitlab_registry_humanoid_pat: <your-gitlab-pat>
    ```
 
 2. Encrypt the file in place using the `.sops.yaml` rule for
@@ -41,7 +41,7 @@ module is not enabled there).
    ./switch.sh nixos
    ```
 
-Once activated, `sops-nix` decrypts `gitlab_registry_pat` to:
+Once activated, `sops-nix` decrypts `gitlab_registry_humanoid_pat` to:
 
 ```text
 /run/secrets/gitlab/registry-pat
@@ -127,7 +127,7 @@ oras push \
 
 ## Rotating the PAT
 
-1. Update `gitlab_registry_pat` in the encrypted YAML file:
+1. Update `gitlab_registry_humanoid_pat` in the encrypted YAML file:
 
    ```bash
    sops secrets/gitlab/secrets.yaml

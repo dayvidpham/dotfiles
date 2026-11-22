@@ -189,7 +189,7 @@ pkgs.runCommand "gitlab-registry-login-check"
     PY
 
     # 2. Verify secrets.yaml.example documents the exact key.
-    grep -Fq 'gitlab_registry_pat:' ${../secrets/gitlab/secrets.yaml.example}
+    grep -Fq 'gitlab_registry_humanoid_pat:' ${../secrets/gitlab/secrets.yaml.example}
 
     # 3. Verify the real desktop package help, argument validation, and user guard.
     test -x ${realPkg}/bin/gitlab-registry-login

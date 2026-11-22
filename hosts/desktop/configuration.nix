@@ -406,7 +406,7 @@ in
   # provisioned and staged in git.
   sops.secrets."gitlab/registry-pat" = lib.mkIf (builtins.pathExists ../../secrets/gitlab/secrets.yaml) {
     sopsFile = ../../secrets/gitlab/secrets.yaml;
-    key = "gitlab_registry_pat";
+    key = "gitlab_registry_humanoid_pat";
     owner = "minttea";
     mode = "0400";
   };

@@ -71,7 +71,7 @@ let
 
       if [[ ! -e "$secret_file" ]]; then
         echo "gitlab-registry-login: secret file not found: $secret_file" >&2
-        echo "gitlab-registry-login: create and encrypt secrets/gitlab/secrets.yaml (key: gitlab_registry_pat), stage it with 'git add', and run './switch.sh nixos'." >&2
+        echo "gitlab-registry-login: create and encrypt secrets/gitlab/secrets.yaml (key: gitlab_registry_humanoid_pat), stage it with 'git add', and run './switch.sh nixos'." >&2
         exit 1
       fi
 
