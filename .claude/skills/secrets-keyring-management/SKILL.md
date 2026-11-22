@@ -83,6 +83,8 @@ Both `desktop` and `flowX13` set `sops.age.keyFile = "/var/lib/sops-nix/keys.txt
 | **Use `format = "binary"` for `passphrase.scrypt`** | `scrypt enc` outputs raw binary and `scrypt dec -P <file>` reads the passphrase from stdin (`-P`), so `sops-nix` places the raw ciphertext directly on in-memory `ramfs` at `/run/secrets/gpg/passphrase.scrypt` with no temp file. |
 | **Pass explicit `scrypt` params (`--logN 15 -r 8 -p 1`)** | Avoids `scrypt enc`'s default 5-second CPU time (`-t 5`) and host-RAM scaling across desktop (61 GB) and flowX13 (16 GB). |
 | **Flatpak Secret portal** | `pass-secret-service` implements `org.freedesktop.secrets`, not `org.freedesktop.impl.portal.Secret`. Native Nix apps work directly; sandboxed Flatpaks requesting the XDG Secret portal will not. |
+| **SSH public-key login does not auto-unlock** | SSH key auth never sends your Linux login password to PAM. If `gpg-agent` is already unlocked (within the 24h TTL), SSH works with no prompt; after a headless reboot, run `gpg-unlock` once or let `pinentry-tmux` prompt. |
+| **Stopping legacy `gnome-keyring-daemon`** | Use `pkill -f gnome-keyring-daemon` (the binary name exceeds Linux's 15-char `comm` limit, so plain `pkill gnome-keyring-daemon` matches nothing and leaves `pass-secret-service.service` stuck in `activating (start)` waiting for `org.freedesktop.secrets`). |
 
 ## Rotating the Linux Login Password or GPG Passphrase
 

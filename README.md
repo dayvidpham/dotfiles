@@ -131,9 +131,13 @@ encrypted files live under `secrets/`. Nothing decrypted is ever committed or
 placed in the Nix store.
 
 Notable secrets include the Syncthing API key, the Dolt federation password,
-and the GitHub runner registration token and App private key. See
-`docs/lessons-learned-sops-secrets-injection.md` and
-`docs/user-feedback-sops.md` for the design and troubleshooting notes.
+the GitHub runner registration token and App private key, and the
+`scrypt`-encrypted GPG passphrase (`secrets/gpg/passphrase.scrypt`) used by
+`greetd`/`swaylock` PAM and `gpg-unlock` to auto-unlock `gpg-agent` and
+`pass-secret-service` (replacing `gnome-keyring-daemon`). See
+`docs/lessons-learned-sops-secrets-injection.md`, `docs/user-feedback-sops.md`,
+and [`.claude/skills/secrets-keyring-management/SKILL.md`](./.claude/skills/secrets-keyring-management/SKILL.md)
+for the architecture, key layout, and rotation playbook.
 
 ## Custom packages
 
@@ -145,7 +149,8 @@ Defined in `packages/` and exported through the flake's overlay:
 | `scythe` | Lightweight screenshot utility (saves to `~/Pictures/scythe`) |
 | `waybar-balcony` | Waybar configuration for the balcony theme |
 | `ImPlay` | mpv-based image/video viewer |
-| `pinentry-tmux` | `pinentry` that prompts inside tmux |
+| `pass-secret-service` | Patched `pass` Secret Service backend that re-syncs from disk across D-Bus buses |
+| `pinentry-tmux` | `pinentry` that prompts in the active tmux client or requester's Wayland display |
 | `zotero` | Pinned Zotero build with packaging fixes |
 | `evbridge` | Patched input bridge used by the Sunshine stream |
 | `dwl`, `clip` | Wayland compositor / clipboard helpers |
