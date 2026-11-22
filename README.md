@@ -327,6 +327,7 @@ Design notes and runbooks live in [`docs/`](./docs):
 - [`remote-desktop.md`](./docs/remote-desktop.md) — persistent headless sway session over wayvnc
 - [`remote-clipboard.md`](./docs/remote-clipboard.md) — bidirectional clipboard over the ssh tunnel
 - [`github-runner.md`](./docs/github-runner.md) — self-hosted runner module on the desktop
+- [`gitlab-registry-login.md`](./docs/gitlab-registry-login.md) — on-demand GitLab container registry login (Podman + ORAS) on desktop
 - [`runner-vm-spike.md`](./docs/runner-vm-spike.md) — per-job Cloud Hypervisor runner VMs
 - [`beads-dolt-architecture.md`](./docs/beads-dolt-architecture.md) — Beads + Dolt server architecture
 - [`debug-vm.md`](./docs/debug-vm.md) — debug VM structure, networking, and security

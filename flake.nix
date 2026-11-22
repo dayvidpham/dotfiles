@@ -483,6 +483,12 @@
           homeConfig = self.homeConfigurations."minttea@desktop".config;
         };
 
+        gitlab-registry-login = import ./checks/gitlab-registry-login.nix {
+          inherit pkgs;
+          desktopConfig = self.nixosConfigurations.desktop.config;
+          flowX13Config = self.nixosConfigurations.flowX13.config;
+        };
+
         flowX13-gpu-profiles =
         let
           base = self.nixosConfigurations.flowX13.config;

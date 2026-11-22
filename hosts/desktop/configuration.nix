@@ -319,6 +319,9 @@ in
   CUSTOM.virtualisation.libvirtd.enable = true;
   CUSTOM.virtualisation.llm-sandbox.enable = false;
 
+  # On-demand GitLab container registry login (writes $XDG_RUNTIME_DIR/gitlab-registry/auth.json)
+  CUSTOM.programs.gitlab-registry-login.enable = true;
+
   # OpenClaw AI Assistant (secure containerized setup)
   # OpenClaw VM - microVM-based isolation for gateway
   CUSTOM.virtualisation.openclaw-vm = {
@@ -393,6 +396,17 @@ in
   sops.secrets."gpg/passphrase.scrypt" = lib.mkIf (builtins.pathExists ../../secrets/gpg/passphrase.scrypt) {
     sopsFile = ../../secrets/gpg/passphrase.scrypt;
     format = "binary";
+    owner = "minttea";
+    mode = "0400";
+  };
+
+  # GitLab container registry PAT (dayvidpham-agent_bot at registry.gitlab.com)
+  # for on-demand `gitlab-registry-login`. Separate from the GPG keyring and
+  # desktop-only. Activates automatically once secrets/gitlab/secrets.yaml is
+  # provisioned and staged in git.
+  sops.secrets."gitlab/registry-pat" = lib.mkIf (builtins.pathExists ../../secrets/gitlab/secrets.yaml) {
+    sopsFile = ../../secrets/gitlab/secrets.yaml;
+    key = "gitlab_registry_pat";
     owner = "minttea";
     mode = "0400";
   };
