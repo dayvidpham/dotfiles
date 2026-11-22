@@ -124,14 +124,17 @@ in
         ++ lib.optional (loginRuntimeDir != null) "TMUX_TMPDIR=${loginRuntimeDir}"
         ++ lib.optional (loginRuntimeDir != null) "XDG_RUNTIME_DIR=${loginRuntimeDir}";
 
-        # Start tmux server, creating a session if none exist
+        # Start tmux server, creating a session if none exist. If continuum /
+        # resurrect already created the default session during server startup,
+        # `has-session` succeeds and we exit 0 instead of failing with
+        # "duplicate session".
         ExecStart = pkgs.writeShellScript "tmux-server-start" ''
           ${runtimeEnv}
           if ${tmux} has-session 2>/dev/null; then
             echo "tmux server already running with sessions"
             exit 0
           fi
-          exec ${tmux} new-session -d -s "${cfg.server.defaultSession}"
+          ${tmux} new-session -d -s "${cfg.server.defaultSession}" || ${tmux} has-session 2>/dev/null
         '';
 
         # Default KillMode would cgroup-kill the server if this unit is ever

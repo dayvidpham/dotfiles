@@ -215,23 +215,37 @@ in
     # greetd login and swaylock unlock via the scrypt-encrypted passphrase.
     # NixOS defaults rules.auth.unix.control to "sufficient" when
     # enableGnomeKeyring is false, which short-circuits on PAM_SUCCESS before
-    # unix.order + 100 runs. Override it to continue on success and die on
-    # failure, then let gpg-pam-unlock terminate the auth stack before pam_deny.
+    # unix.order + 100 runs. Override unix to continue on success and die on
+    # failure, run gpg-pam-unlock as "optional" (so pam_exec's PAM_IGNORE during
+    # greetd's pam_setcred() is ignored instead of aborting greeter startup),
+    # then terminate the auth stack with pam_permit (sufficient) before pam_deny.
+    security.pam.services.greetd.enableGnomeKeyring = lib.mkForce false;
     security.pam.services.greetd.rules.auth.unix.control =
       lib.mkForce "[success=ok new_authtok_reqd=ok ignore=ignore default=die]";
     security.pam.services.greetd.rules.auth.gpg-pam-unlock = {
       order = config.security.pam.services.greetd.rules.auth.unix.order + 100;
-      control = "[success=done ignore=done default=done]";
+      control = "optional";
       modulePath = "${pkgs.pam}/lib/security/pam_exec.so";
       args = [ "expose_authtok" "quiet" "${gpgPamUnlock}" ];
     };
+    security.pam.services.greetd.rules.auth.gpg-pam-unlock-done = {
+      order = config.security.pam.services.greetd.rules.auth.unix.order + 200;
+      control = "sufficient";
+      modulePath = "${pkgs.pam}/lib/security/pam_permit.so";
+    };
+    security.pam.services.swaylock.enableGnomeKeyring = lib.mkForce false;
     security.pam.services.swaylock.rules.auth.unix.control =
       lib.mkForce "[success=ok new_authtok_reqd=ok ignore=ignore default=die]";
     security.pam.services.swaylock.rules.auth.gpg-pam-unlock = {
       order = config.security.pam.services.swaylock.rules.auth.unix.order + 100;
-      control = "[success=done ignore=done default=done]";
+      control = "optional";
       modulePath = "${pkgs.pam}/lib/security/pam_exec.so";
       args = [ "expose_authtok" "quiet" "${gpgPamUnlock}" ];
+    };
+    security.pam.services.swaylock.rules.auth.gpg-pam-unlock-done = {
+      order = config.security.pam.services.swaylock.rules.auth.unix.order + 200;
+      control = "sufficient";
+      modulePath = "${pkgs.pam}/lib/security/pam_permit.so";
     };
 
     #####################################################
