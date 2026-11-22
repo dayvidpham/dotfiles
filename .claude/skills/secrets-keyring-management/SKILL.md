@@ -86,6 +86,21 @@ Both `desktop` and `flowX13` set `sops.age.keyFile = "/var/lib/sops-nix/keys.txt
 | **SSH public-key login does not auto-unlock** | SSH key auth never sends your Linux login password to PAM. If `gpg-agent` is already unlocked (within the 24h TTL), SSH works with no prompt; after a headless reboot, run `gpg-unlock` once or let `pinentry-tmux` prompt. |
 | **Stopping legacy `gnome-keyring-daemon`** | Use `pkill -f gnome-keyring-daemon` (the binary name exceeds Linux's 15-char `comm` limit, so plain `pkill gnome-keyring-daemon` matches nothing and leaves `pass-secret-service.service` stuck in `activating (start)` waiting for `org.freedesktop.secrets`). |
 
+## PAM Auth Stack Advisory (`greetd` & `swaylock`)
+
+The generated `auth` stack on `greetd` and `swaylock` is:
+
+```text
+1. auth [success=ok new_authtok_reqd=ok ignore=ignore default=die] pam_unix.so
+2. auth optional                                                   pam_exec.so gpg-pam-unlock
+3. auth sufficient                                                 pam_permit.so
+4. auth required                                                   pam_deny.so
+```
+
+- **Why `pam_permit.so` is safe here:** `pam_unix.so` uses `default=die`, so any auth failure aborts at line 1 before `pam_exec` or `pam_permit` can run. `pam_permit.so` only exists so `greetd`'s `pam_setcred()` returns `PAM_SUCCESS` (since `pam_exec.so` returns `PAM_IGNORE` for `setcred`).
+- **No lockout risk:** `gpg-pam-unlock` is `optional` and backgrounds itself; missing/mismatched `passphrase.scrypt` or a dead `gpg-agent` cannot block login/unlock. `/etc/pam.d/login` (TTY), `sudo`, and `sshd` are untouched.
+- **Warning when adding other PAM auth factors:** Because `rules.auth.unix.control` is `lib.mkForce`d on `greetd` and `swaylock`, **revisit these rules before enabling `fprintd`, `pam_u2f`, or any other PAM auth module** so they don't get bypassed or short-circuited by `pam_unix` (`default=die`) or `pam_permit`.
+
 ## Rotating the Linux Login Password or GPG Passphrase
 
 If either password changes, re-encrypt `secrets/gpg/passphrase.scrypt` (interactive `zsh`, never commit plaintext):
