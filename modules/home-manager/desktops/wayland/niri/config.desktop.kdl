@@ -42,4 +42,5 @@ output "GIGA-BYTE TECHNOLOGY CO., LTD. M27Q 21330B007981" { // right
 debug {
     render-drm-device "/dev/dri/by-path/pci-0000:01:00.0-render"
     wait-for-frame-completion-before-queueing
+    disable-direct-scanout
 }
