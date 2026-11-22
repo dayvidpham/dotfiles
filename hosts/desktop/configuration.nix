@@ -267,11 +267,25 @@ in
 
   nix.settings.allowed-users = [
     "minttea"
+    "harmonia"
   ];
   nix.settings.secret-key-files = [
     "/etc/nix/desktop-cache-1-private-key.pem"
     "/etc/nix/tsnet-cache-1-private-key.pem"
   ];
+
+  # Serve desktop's /nix/store as a read-only HTTP binary cache over Tailscale
+  # only (100.64.0.3:5000). Reuses the existing tsnet signing key; FreeBind
+  # lets the socket bind at boot before tailscale0 brings up 100.64.0.3.
+  services.harmonia.cache = {
+    enable = true;
+    signKeyPaths = [ "/etc/nix/tsnet-cache-1-private-key.pem" ];
+    settings = {
+      bind = "100.64.0.3:5000";
+      priority = 30;
+    };
+  };
+  systemd.sockets.harmonia.socketConfig.FreeBind = true;
 
   ######################################
   # Window manager & GPU
