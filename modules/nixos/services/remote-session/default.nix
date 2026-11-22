@@ -296,6 +296,12 @@ in
         description = "Seconds between peer clipboard polls";
       };
     };
+
+    vnc.enable = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Run wayvnc against the persistent remote-session compositor";
+    };
   };
 
   config = mkIf cfg.enable {
@@ -352,7 +358,7 @@ in
       };
     };
 
-    systemd.services.remote-session-vnc = {
+    systemd.services.remote-session-vnc = mkIf cfg.vnc.enable {
       description = "VNC server for the persistent remote session";
       documentation = [ "man:wayvnc(1)" ];
 

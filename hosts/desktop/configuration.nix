@@ -420,7 +420,8 @@ in
     enable = true;
     user = "minttea";
     # Sole remote compositor: preserve the proven NVIDIA/NVENC render path.
-    # wayvnc uses software capture/encoding; NVIDIA VA-API is decode-only.
+    # Sunshine/Moonlight is the active viewer, so wayvnc is disabled.
+    vnc.enable = false;
     renderDevice = "/dev/dri/by-path/pci-0000:01:00.0-render";
     wayvncGpu = false;
     outputMode = "1920x1080@60Hz";

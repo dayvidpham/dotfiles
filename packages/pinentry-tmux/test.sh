@@ -100,10 +100,14 @@ while IFS= read -r line; do
   case "$line" in
     'OPTION ttyname='*)
       [ -c "${line#OPTION ttyname=}" ] && printf 'tty-exists\n' >> "$STUB_LOG"
+      printf 'OK\n'
       ;;
     BYE*)
       printf 'OK bye\n'
       exit 0
+      ;;
+    *)
+      printf 'OK\n'
       ;;
   esac
 done
@@ -253,7 +257,7 @@ if command -v script > /dev/null && command -v python3 > /dev/null; then
 
   # --- test 10: empty GPG_TTY prefers the active tmux client over Qt ---------
   : > "$tmp/log10a"
-  printf 'GETPIN\nBYE\n' |
+  printf 'OPTION grab\nGETPIN\nBYE\n' |
     stub_run "$tmp/log10a" \
       STUB_CLIENTS="$(printf '%s\n' \
         '/dev/pts/46 desktop-session 1000' \
@@ -262,7 +266,9 @@ if command -v script > /dev/null && command -v python3 > /dev/null; then
     fail "shim exited nonzero (test 10a)"
   log_lacks '^qt ' "$tmp/log10a" "empty GPG_TTY with an attached tmux client must not open Qt on the agent display"
   log_has '^popup-client=/dev/pts/47$' "$tmp/log10a" "empty GPG_TTY did not route to the most recently active tmux client"
-  echo "ok 10a - empty GPG_TTY routes to the active tmux client even when desktop display exists"
+  log_has '^OPTION ttyname=/dev/pts/99$' "$tmp/log10a" "empty GPG_TTY did not inject OPTION ttyname for pinentry-curses"
+  [ "$(wc -l < "$tmp/out10a")" -eq 4 ] || fail "test 10a Assuan reply count drifted (expected 4: greeting + OPTION grab + GETPIN + BYE)"
+  echo "ok 10a - empty GPG_TTY routes to the active tmux client and injects OPTION ttyname"
 
   # --- test 11: empty GPG_TTY with no tmux client falls back to remote Qt ----
   : > "$tmp/log10b"

@@ -5,9 +5,10 @@ let
   session = config.CUSTOM.services.remote-session;
   services = config.systemd.services;
   compositor = services.remote-session-compositor;
-  consumers = map (name: services.${name}) [
-    "remote-session-vnc" "clip-peer-sync" "sunshine-spike" "sunshine-evbridge"
-  ];
+  consumers = map (name: services.${name}) (
+    lib.optional session.vnc.enable "remote-session-vnc"
+    ++ [ "clip-peer-sync" "sunshine-spike" "sunshine-evbridge" ]
+  );
   owner = "remote-session-compositor.service";
   environment = service: service.serviceConfig.Environment;
   linked = service:

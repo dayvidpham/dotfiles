@@ -176,10 +176,11 @@ newest_client() {
 }
 
 scratch="$(mktemp -d "${TMPDIR:-/tmp}/pinentry-tmux.XXXXXX")"
-mkfifo "$scratch/in" "$scratch/tty" "$scratch/done"
+mkfifo "$scratch/in" "$scratch/out" "$scratch/tty" "$scratch/done"
 popupPid=""
 popupTty=""
 pinentryPid=""
+outPid=""
 
 # Idempotent teardown: stop pinentry, close the popup, drop scratch files.
 cleanup() {
@@ -187,6 +188,11 @@ cleanup() {
     kill "$pinentryPid" 2> /dev/null || true
     wait "$pinentryPid" 2> /dev/null || true
     pinentryPid=""
+  fi
+  if [ -n "$outPid" ]; then
+    kill "$outPid" 2> /dev/null || true
+    wait "$outPid" 2> /dev/null || true
+    outPid=""
   fi
   if [ -n "$popupPid" ]; then
     # O_RDWR open never blocks, even if the popup already exited.
@@ -250,12 +256,34 @@ decide_surface() {
   return 1
 }
 
-# pinentry's user interface is the tty; stdio carries the Assuan protocol. A
-# fifo on stdin lets commands be rewritten on the way in while pinentry's
-# stdout goes straight back to gpg-agent.
-pinentry-curses "$@" < "$scratch/in" &
+# pinentry's user interface is the tty; stdio carries the Assuan protocol.
+# FIFOs on stdin and stdout let us rewrite or inject OPTION ttyname (and
+# absorb its OK reply so Assuan stays in lockstep) before handing stdout over
+# to a direct cat relay for the rest of the session.
+pinentry-curses "$@" < "$scratch/in" > "$scratch/out" &
 pinentryPid=$!
 exec 8<> "$scratch/in"
+exec 7< "$scratch/out"
+
+relay_assuan_reply() { # <echo: 1|0>
+  local echo_reply="$1" reply
+  while IFS= read -r reply <&7; do
+    [ "$echo_reply" -eq 1 ] && printf '%s\n' "$reply"
+    case "$reply" in
+      OK | OK\ * | ERR | ERR\ *) return 0 ;;
+    esac
+  done
+  return 1
+}
+
+start_out_relay() {
+  cat <&7 &
+  outPid=$!
+  exec 7<&-
+}
+
+# Relay pinentry's initial Assuan greeting so gpg-agent sends its first line.
+relay_assuan_reply 1 || exit 1
 
 # Wait for the first OPTION ttyname (or the first real command) before
 # deciding, so the tty is known when the agent sends it.
@@ -274,19 +302,34 @@ while :; do
           if [ -n "$popupTty" ]; then
             line="OPTION ttyname=$popupTty"
           fi
+          start_out_relay
+          printf '%s\n' "$line" >&8 || break
           ;;
         OPTION | OPTION\ *)
-          : # wait for the ttyname option
+          printf '%s\n' "$line" >&8 || break
+          relay_assuan_reply 1 || break
+          ;;
+        BYE | BYE\ *)
+          decided=1
+          start_out_relay
+          printf '%s\n' "$line" >&8 || break
           ;;
         *)
           decided=1
           if ! decide_surface ""; then
             exit 1
           fi
+          if [ -n "$popupTty" ]; then
+            printf 'OPTION ttyname=%s\n' "$popupTty" >&8 || break
+            relay_assuan_reply 0 || break
+          fi
+          start_out_relay
+          printf '%s\n' "$line" >&8 || break
           ;;
       esac
+    else
+      printf '%s\n' "$line" >&8 || break
     fi
-    printf '%s\n' "$line" >&8 || break
   elif [ "$rc" -gt 128 ]; then
     kill -0 "$pinentryPid" 2> /dev/null || break
   else
@@ -297,3 +340,7 @@ done
 exec 8>&-
 wait "$pinentryPid" 2> /dev/null || true
 pinentryPid=""
+if [ -n "$outPid" ]; then
+  wait "$outPid" 2> /dev/null || true
+  outPid=""
+fi
