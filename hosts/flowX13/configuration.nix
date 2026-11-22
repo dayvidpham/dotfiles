@@ -261,6 +261,16 @@ in
     owner = "minttea";
   };
 
+  # GPG passphrase (scrypt-encrypted with the Linux login password) for
+  # greetd/swaylock PAM unlock and gpg-unlock. Activates automatically once
+  # secrets/gpg/passphrase.scrypt is provisioned and tracked in git.
+  sops.secrets."gpg/passphrase.scrypt" = lib.mkIf (builtins.pathExists ../../secrets/gpg/passphrase.scrypt) {
+    sopsFile = ../../secrets/gpg/passphrase.scrypt;
+    format = "binary";
+    owner = "minttea";
+    mode = "0400";
+  };
+
   ######################################
   # Some user setup: Most user-stuff will be in home-manager
   users.users.minttea = {

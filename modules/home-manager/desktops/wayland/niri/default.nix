@@ -51,27 +51,9 @@ in
       programs.niri.config = null;
       programs.niri.settings = null;
 
-      # niri-flake enables services.gnome-keyring (home), whose unit starts a
-      # daemon at every graphical session. A daemon from an earlier session
-      # keeps the D-Bus names and the unlock state, so the new one only piles
-      # up and the stale owner ends up serving — and eventually wedging — GUI
-      # passphrase prompts (plabs-mzn). Skip the unit while a daemon is already
-      # running: PAM (greetd, pam_gnome_keyring auto_start) starts one at the
-      # first login and unlocks it on every login.
-      #
-      # Start it after niri rather than at graphical-session-pre: the unlock
-      # dialog (gcr-prompter) is D-Bus-activated by the systemd user manager,
-      # so it inherits that manager's environment. At graphical-session-pre
-      # WAYLAND_DISPLAY has not been imported yet and gcr-prompter dies with
-      # "cannot open display", permanently wedging the daemon's prompt path.
-      systemd.user.services.gnome-keyring = {
-        Install.WantedBy = mkForce [ "graphical-session.target" ];
-        Unit = {
-          ConditionPathExists = [ "!%t/keyring/control" ];
-          PartOf = mkForce [ "graphical-session.target" ];
-          After = [ "niri.service" ];
-        };
-      };
+      # niri-flake enables services.gnome-keyring (home) by default, which
+      # conflicts with services.pass-secret-service (our Secret Service backend).
+      services.gnome-keyring.enable = mkForce false;
       xdg.configFile."niri/config.kdl".source = config.lib.file.mkOutOfStoreSymlink /home/minttea/dotfiles/modules/home-manager/desktops/wayland/niri/config.kdl;
 
       home.packages = [

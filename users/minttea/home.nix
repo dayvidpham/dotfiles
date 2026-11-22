@@ -97,6 +97,16 @@ rec {
     enable = mkDefault false;
   };
 
+  # Secret Service (org.freedesktop.secrets) backed by pass + gpg-agent,
+  # replacing gnome-keyring-daemon + gcr-prompter. Patched to sync items from
+  # ~/.password-store on lookup so physical niri's bus and remote-session's
+  # private D-Bus stay in sync. Keep the default storePath (~/.password-store)
+  # so D-Bus activation on the private bus matches the systemd unit.
+  services.pass-secret-service = {
+    enable = true;
+    package = pkgs.callPackage ../../packages/pass-secret-service { };
+  };
+
   # NOTE: niri, experimental
   CUSTOM.wayland.windowManager.niri.enable = true;
 
@@ -134,6 +144,7 @@ rec {
     code-cursor-fhs
 
     # Utils
+    pass # standard unix password manager (backs pass-secret-service)
     mprocs # multi-processor manager TUI
     gh # GitHub CLI tool
     glab # GitLab CLI tool

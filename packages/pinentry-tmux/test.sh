@@ -123,7 +123,9 @@ chmod +x "$tmp/stubpin/pinentry-qt"
 
 stub_run() { # <log> <extra env>... -- reads stdin
   local log="$1"; shift
-  env -u TMUX -u GPG_TTY STUB_LOG="$log" "$@" PATH="$tmp/stubtmux:$tmp/stubpin:$PATH" "$shim"
+  env -u TMUX -u GPG_TTY -u WAYLAND_DISPLAY -u DISPLAY \
+    PINENTRY_REMOTE_RUNTIME_DIR="$tmp/no-remote" \
+    STUB_LOG="$log" "$@" PATH="$tmp/stubtmux:$tmp/stubpin:$PATH" "$shim"
 }
 
 # --- test 1: pane tty is rewritten to the popup tty ------------------------
@@ -248,8 +250,32 @@ if command -v script > /dev/null && command -v python3 > /dev/null; then
   log_lacks '^qt ' "$tmp/log9" "a display-less terminal must not get a Qt prompt on the agent's display"
   log_has "^OPTION ttyname=$bare_tty\$" "$tmp/log9" "display-less terminal should keep its own tty"
   echo "ok 9 - display-less terminal stays on its tty"
+
+  # --- test 10: empty GPG_TTY prefers the active tmux client over Qt ---------
+  : > "$tmp/log10a"
+  printf 'GETPIN\nBYE\n' |
+    stub_run "$tmp/log10a" \
+      STUB_CLIENTS="$(printf '%s\n' \
+        '/dev/pts/46 desktop-session 1000' \
+        '/dev/pts/47 remote-session 2000')" \
+      XDG_RUNTIME_DIR="$tmp/rt-agent" WAYLAND_DISPLAY=wayland-1 > "$tmp/out10a" 2>&1 ||
+    fail "shim exited nonzero (test 10a)"
+  log_lacks '^qt ' "$tmp/log10a" "empty GPG_TTY with an attached tmux client must not open Qt on the agent display"
+  log_has '^popup-client=/dev/pts/47$' "$tmp/log10a" "empty GPG_TTY did not route to the most recently active tmux client"
+  echo "ok 10a - empty GPG_TTY routes to the active tmux client even when desktop display exists"
+
+  # --- test 11: empty GPG_TTY with no tmux client falls back to remote Qt ----
+  : > "$tmp/log10b"
+  printf 'GETPIN\nBYE\n' |
+    stub_run "$tmp/log10b" STUB_NO_CLIENTS=1 \
+      PINENTRY_REMOTE_RUNTIME_DIR="$tmp/rt-requester" \
+      XDG_RUNTIME_DIR="$tmp/nonexistent" WAYLAND_DISPLAY="" DISPLAY="" > "$tmp/out10b" 2>&1 ||
+    fail "shim exited nonzero (test 10b)"
+  log_has "^qt runtime=$tmp/rt-requester wayland=wayland-1\$" "$tmp/log10b" \
+    "empty GPG_TTY with no tmux client did not fall back to the remote Wayland display"
+  echo "ok 10b - empty GPG_TTY with no tmux client falls back to remote Wayland Qt"
 else
-  echo "skip 8-9 - display tests need script and python3"
+  echo "skip 8-10b - display tests need script and python3"
 fi
 
 # --- test 10 (integration): real tmux server + scripted attached client -----

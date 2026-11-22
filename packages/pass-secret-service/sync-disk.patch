@@ -1,0 +1,51 @@
+--- a/pass_secret_service/interfaces/collection.py
++++ b/pass_secret_service/interfaces/collection.py
+@@ -92,12 +92,25 @@
+         prompt = "/"
+         return prompt
+ 
++    async def _sync_items(self):
++        disk_ids = set(await self._get_items())
++        known_ids = set(self.items.keys())
++        for item_id in known_ids - disk_ids:
++            item = self.items.pop(item_id)
++            await item._unregister()
++        for item_id in disk_ids - known_ids:
++            await Item._init(self, item_id)
++        for item_id in disk_ids & known_ids:
++            self.items[item_id].properties = await self.items[item_id]._get_item_properties()
++
+     @method()
+     async def SearchItems(self, attributes: "a{ss}") -> "ao":
++        await self._sync_items()
+         return self._search_items(attributes)
+ 
+     @method()
+     async def CreateItem(self, properties: "a{sv}", secret: "(oayays)", replace: "b") -> "oo":
++        await self._sync_items()
+         prompt = "/"
+         if replace:
+             attributes = properties.get(ITEM_ATTRIBUTES, Variant("a{ss}", {})).value
+--- a/pass_secret_service/interfaces/service.py
++++ b/pass_secret_service/interfaces/service.py
+@@ -170,8 +170,20 @@
+         prompt = "/"
+         return [collection.path, prompt]
+ 
++    async def _sync_collections(self):
++        disk_ids = set(await self._get_collections())
++        known_ids = set(self.collections.keys())
++        for collection_id in known_ids - disk_ids:
++            collection = self.collections.pop(collection_id)
++            await collection._unregister()
++        for collection_id in disk_ids - known_ids:
++            await Collection._init(self, collection_id)
++        for collection in self.collections.values():
++            await collection._sync_items()
++
+     @method()
+     async def SearchItems(self, attributes: "a{ss}") -> "aoao":
++        await self._sync_collections()
+         unlocked = []
+         locked = []
+         for collection in self.collections.values():

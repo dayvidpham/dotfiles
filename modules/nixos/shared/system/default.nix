@@ -20,6 +20,76 @@ let
   mkDefaults = (defset:
     lib.mapAttrsRecursiveCond shouldMakeDefault (_: value: mkDefault value) defset
   );
+
+  # Keygrips for primary GPG key 1DB15D3B97FF019A ([SC] signing + [E] encryption
+  # subkey used by pass-secret-service).
+  gpgKeygrips = [
+    "E2101ABFD3D26D46D0832434AE7BB4D1521DE24D"
+    "B12AB1EB03B8F5D3E7F937DC29870B2B1C9E3700"
+  ];
+  gpgSecretPath = "/run/secrets/gpg/passphrase.scrypt";
+
+  # PAM auth hook (pam_exec expose_authtok): decrypts the scrypt-encrypted GPG
+  # passphrase using the Linux login password on stdin and presets both keygrips
+  # into gpg-agent. Handles both greetd (UID 0, also called for PAM_USER=greeter)
+  # and swaylock (UID 1000). Never puts either password in argv or environ.
+  gpgPamUnlock = pkgs.writeShellScript "gpg-pam-unlock" ''
+    [ "''${PAM_USER:-}" = "minttea" ] || exit 0
+    [ -r "${gpgSecretPath}" ] || exit 0
+
+    IFS= read -r -d "" login_pass || true
+    [ -n "$login_pass" ] || exit 0
+
+    (
+      umask 077
+      gpg_pass="$(printf '%s\n' "$login_pass" | ${pkgs.scrypt}/bin/scrypt dec -P "${gpgSecretPath}" 2>/dev/null || true)"
+      [ -n "$gpg_pass" ] || exit 0
+
+      if [ "$(${pkgs.coreutils}/bin/id -u)" -eq 0 ]; then
+        printf '%s\n' "$gpg_pass" | ${pkgs.util-linux}/bin/runuser -u minttea -- ${pkgs.bash}/bin/bash -c '
+          IFS= read -r pass || exit 0
+          uid="$(${pkgs.coreutils}/bin/id -u)"
+          export HOME="/home/minttea" XDG_RUNTIME_DIR="/run/user/$uid"
+          for _ in $(${pkgs.coreutils}/bin/seq 1 50); do
+            [ -d "$XDG_RUNTIME_DIR" ] && break
+            ${pkgs.coreutils}/bin/sleep 0.1
+          done
+          ${pkgs.gnupg}/bin/gpgconf --launch gpg-agent
+          for grip in ${lib.concatStringsSep " " gpgKeygrips}; do
+            printf "%s\n" "$pass" | ${pkgs.gnupg}/libexec/gpg-preset-passphrase --preset "$grip"
+          done
+        '
+      else
+        uid="$(${pkgs.coreutils}/bin/id -u)"
+        export HOME="/home/minttea" XDG_RUNTIME_DIR="/run/user/$uid"
+        ${pkgs.gnupg}/bin/gpgconf --launch gpg-agent
+        for grip in ${lib.concatStringsSep " " gpgKeygrips}; do
+          printf '%s\n' "$gpg_pass" | ${pkgs.gnupg}/libexec/gpg-preset-passphrase --preset "$grip"
+        done
+      fi
+    ) </dev/null >/dev/null 2>&1 &
+    exit 0
+  '';
+
+  # Interactive CLI helper to preset both GPG keygrips on demand (e.g. over SSH
+  # after a headless reboot or after nixos-rebuild reloads gpg-agent).
+  gpgUnlock = pkgs.writeShellApplication {
+    name = "gpg-unlock";
+    runtimeInputs = [ pkgs.scrypt pkgs.gnupg pkgs.coreutils ];
+    text = ''
+      set -euo pipefail
+      if [ ! -r "${gpgSecretPath}" ]; then
+        echo "gpg-unlock: ${gpgSecretPath} not found" >&2
+        exit 1
+      fi
+      gpg_pass="$(scrypt dec "${gpgSecretPath}")"
+      gpgconf --launch gpg-agent
+      for grip in ${lib.concatStringsSep " " gpgKeygrips}; do
+        printf '%s\n' "$gpg_pass" | ${pkgs.gnupg}/libexec/gpg-preset-passphrase --preset "$grip"
+      done
+      echo "gpg-unlock: preset ${toString (builtins.length gpgKeygrips)} keygrips into gpg-agent"
+    '';
+  };
 in
 {
   imports = [
@@ -121,21 +191,40 @@ in
     programs.gnupg.agent = {
       enable = true;
       enableSSHSupport = true;
-      # Qt-first pinentry: a graphical session gets a pinentry-qt dialog, which
-      # has its own surface and therefore also works for prompts requested from
-      # a TUI pane (opencode/lazygit/nvim :terminal). Display-less sessions fall
-      # back to a tmux popup with pinentry-curses, since those panes otherwise
-      # share one pty with the prompt, which breaks passphrase input. See
-      # packages/pinentry-tmux.
+      # Qt-first pinentry with tmux-popup fallback for TUI panes and tty-less
+      # Secret Service / ssh-agent requests. See packages/pinentry-tmux.
       # pkgs-unstable so the popup's tmux client matches the persistent
       # server's and home-manager's tmux.
       pinentryPackage = pkgs-unstable.callPackage ../../../../packages/pinentry-tmux { };
+      # Configured here (/etc/gnupg/gpg-agent.conf) rather than in Home Manager
+      # (~/.gnupg/gpg-agent.conf), because a user gpg-agent.conf shadows the
+      # system one and would drop pinentry-program.
+      # - no-allow-external-cache prevents pinentry from calling Secret Service
+      #   (which is backed by pass-secret-service -> gpg-agent -> deadlock).
+      # - allow-preset-passphrase lets PAM (greetd/swaylock) and gpg-unlock
+      #   preset keygrips into gpg-agent's in-memory cache.
+      settings = {
+        no-allow-external-cache = "";
+        allow-preset-passphrase = "";
+        default-cache-ttl = "86400";
+        max-cache-ttl = "86400";
+      };
     };
-    services.gnome.gnome-keyring.enable = true;
-    security.pam.services.greetd.enableGnomeKeyring = true;
-    # If the login keyring was started without a password (e.g. D-Bus
-    # activation after the session ended), unlocking the screen unlocks it too.
-    security.pam.services.swaylock.enableGnomeKeyring = true;
+
+    # Unlock gpg-agent (and therefore pass-secret-service) automatically on
+    # greetd login and swaylock unlock via the scrypt-encrypted passphrase.
+    security.pam.services.greetd.rules.auth.gpg-pam-unlock = {
+      order = config.security.pam.services.greetd.rules.auth.unix.order + 100;
+      control = "optional";
+      modulePath = "${pkgs.pam}/lib/security/pam_exec.so";
+      args = [ "expose_authtok" "quiet" "${gpgPamUnlock}" ];
+    };
+    security.pam.services.swaylock.rules.auth.gpg-pam-unlock = {
+      order = config.security.pam.services.swaylock.rules.auth.unix.order + 100;
+      control = "optional";
+      modulePath = "${pkgs.pam}/lib/security/pam_exec.so";
+      args = [ "expose_authtok" "quiet" "${gpgPamUnlock}" ];
+    };
 
     #####################################################
     # Package management, packages
@@ -152,15 +241,9 @@ in
     environment.systemPackages = [
       # greeter
       pkgs.tuigreet
-      # gnome-keyring shows its unlock dialog through the D-Bus activatable
-      # org.gnome.keyring.SystemPrompter service, which gcr ships as
-      # libexec/gcr-prompter. Only packages in environment.systemPackages get
-      # their share/dbus-1/services linked into /run/current-system/sw, so
-      # without gcr here the keyring can never prompt and Secret Service
-      # clients (Chrome, Brave, Discord) block forever waiting for an unlock
-      # that can never be answered. `pkgs.gcr` is gcr 3, which still ships the
-      # prompter; `pkgs.gcr_4` does not.
-      pkgs.gcr
+      # On-demand GPG / pass-secret-service unlock helper (SSH / post-rebuild)
+      gpgUnlock
+      pkgs.scrypt
       # remote wayland
       pkgs-unstable.waypipe
     ];

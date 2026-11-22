@@ -99,6 +99,18 @@ tty_is_tmux_pane() {
   return 1
 }
 
+# Fall back to the persistent remote-session Wayland compositor when a
+# tty-less request (pass-secret-service, ssh-agent) has neither an attached
+# tmux client nor a desktop display.
+adopt_remote_display() {
+  local dir="${PINENTRY_REMOTE_RUNTIME_DIR:-/run/user/$(id -u)/remote}"
+  if [ -S "$dir/wayland-1" ]; then
+    export XDG_RUNTIME_DIR="$dir" WAYLAND_DISPLAY="wayland-1"
+    return 0
+  fi
+  return 1
+}
+
 adopt_requester_display
 
 # No server means no popup is possible: a graphical session still gets Qt,
@@ -107,12 +119,24 @@ if ! resolve_tmux; then
   if have_display; then
     exec pinentry-qt "$@"
   fi
+  if [ -z "${GPG_TTY:-}" ] && adopt_remote_display; then
+    exec pinentry-qt "$@"
+  fi
   exec pinentry-curses "$@"
 fi
 
 # Non-TUI graphical request: a Qt window needs neither a popup nor a tty.
-if have_display && ! tty_is_tmux_pane; then
-  exec pinentry-qt "$@"
+# When GPG_TTY is empty (pass-secret-service, ssh-agent), prefer the most
+# recently active tmux client if any client is attached; only use Qt when no
+# tmux client can take the prompt.
+if [ -n "${GPG_TTY:-}" ]; then
+  if have_display && ! tty_is_tmux_pane; then
+    exec pinentry-qt "$@"
+  fi
+elif [ -z "$(tmux list-clients -F '#{client_tty}' 2> /dev/null)" ]; then
+  if have_display || adopt_remote_display; then
+    exec pinentry-qt "$@"
+  fi
 fi
 
 pane_rows() { tmux list-panes -a -F '#{pane_tty} #{session_name}' 2> /dev/null || true; }
