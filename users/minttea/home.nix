@@ -165,6 +165,7 @@ rec {
     glow # charmbracelet markdown reader
     tuicr # pr cli tool
     imagemagick # image conversion/manipulation (png -> jpg, resize, crop)
+    python314Packages.huggingface-hub # hf CLI application
 
     # For SFU
     openfortivpn
